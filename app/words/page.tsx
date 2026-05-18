@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
   addHeroExp,
@@ -9,6 +9,11 @@ import {
   type HeroExpResult,
 } from "../../data/hero";
 import { getReadingForLevel } from "../../data/readings";
+import {
+  getStoredFuriganaEnabled,
+  setStoredFuriganaEnabled,
+  subscribeToFuriganaEnabledChange,
+} from "../../data/preferences";
 import { learningWords, type LearningWord } from "../../data/words";
 import SpeechButton from "../components/SpeechButton";
 
@@ -134,6 +139,11 @@ export default function WordsPage() {
   const [studyExpNotice, setStudyExpNotice] =
     useState<StudyExpNotice | null>(null);
   const [rangeIndex, setRangeIndex] = useState<number | null>(null);
+  const furiganaEnabled = useSyncExternalStore(
+    subscribeToFuriganaEnabledChange,
+    getStoredFuriganaEnabled,
+    () => false
+  );
 
   useEffect(() => {
     if (!studyExpNotice) return;
@@ -229,6 +239,10 @@ export default function WordsPage() {
     if (mode === "list") setRangeIndex(null);
   };
 
+  const toggleFurigana = () => {
+    setStoredFuriganaEnabled(!furiganaEnabled);
+  };
+
   const handleMemoryChoice = (choice: MemoryChoice) => {
     const studiedWord = memoryQueue[0];
     const gainedExp = studiedWord ? getMemoryStudyXp(studiedWord, choice) : 0;
@@ -271,6 +285,16 @@ export default function WordsPage() {
           <Link href="/" className="eq-back-link">
             ← ホームへ戻る
           </Link>
+          <button
+            type="button"
+            className={`wordbook-furigana-toggle${
+              furiganaEnabled ? " is-on" : ""
+            }`}
+            onClick={toggleFurigana}
+            aria-pressed={furiganaEnabled}
+          >
+            ふりがな {furiganaEnabled ? "ON" : "OFF"}
+          </button>
         </nav>
 
         {studyMode === "list" && (
@@ -606,18 +630,26 @@ export default function WordsPage() {
 
                 {memoryAnswered && (
                   <div className="memory-answer">
-                    <div className="memory-answer-grid">
+                    <div
+                      className={
+                        furiganaEnabled
+                          ? "memory-answer-grid"
+                          : "memory-answer-grid single"
+                      }
+                    >
                       <section className="memory-answer-box">
                         <span>日本語訳</span>
                         <strong>{currentMemoryWord.meaning}</strong>
                       </section>
 
-                      <section className="memory-answer-box">
-                        <span>ふりがな</span>
-                        <strong>
-                          {currentMemoryReading ?? "ふりがな未登録"}
-                        </strong>
-                      </section>
+                      {furiganaEnabled && (
+                        <section className="memory-answer-box">
+                          <span>ふりがな</span>
+                          <strong>
+                            {currentMemoryReading ?? "ふりがな未登録"}
+                          </strong>
+                        </section>
+                      )}
                     </div>
 
                     <section className="memory-answer-box memory-example-box">
@@ -669,7 +701,7 @@ export default function WordsPage() {
                           />
                         </div>
                         <p className="words-meaning">{word.meaning}</p>
-                        {reading && (
+                        {furiganaEnabled && reading && (
                           <p className="words-reading">({reading})</p>
                         )}
                       </div>
@@ -718,6 +750,30 @@ export default function WordsPage() {
       </section>
 
       <style jsx>{`
+        .wordbook-furigana-toggle {
+          margin-left: auto;
+          min-height: 36px;
+          border: 1px solid rgba(45, 212, 191, 0.3);
+          border-radius: 999px;
+          background: rgba(20, 184, 166, 0.08);
+          color: #99f6e4;
+          padding: 0 14px;
+          font: inherit;
+          font-size: 13px;
+          font-weight: 1000;
+          cursor: pointer;
+          transition:
+            border-color 0.16s ease,
+            background 0.16s ease,
+            color 0.16s ease;
+        }
+
+        .wordbook-furigana-toggle.is-on {
+          border-color: rgba(250, 204, 21, 0.52);
+          background: rgba(250, 204, 21, 0.12);
+          color: #fef3c7;
+        }
+
         .wordbook-stage {
           display: flex;
           justify-content: center;
@@ -1264,6 +1320,10 @@ export default function WordsPage() {
           gap: 10px;
         }
 
+        .memory-answer-grid.single {
+          grid-template-columns: 1fr;
+        }
+
         .memory-answer-box {
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 16px;
@@ -1620,13 +1680,114 @@ export default function WordsPage() {
         }
 
         @media (max-width: 720px) {
+          .eq-topbar {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            margin-bottom: 10px !important;
+            padding: 6px 8px !important;
+          }
+
+          .eq-back-link {
+            width: 100%;
+            min-width: 0;
+            justify-content: center;
+            padding-inline: 10px !important;
+          }
+
+          .wordbook-furigana-toggle {
+            width: 100%;
+            min-width: 0;
+            margin-left: 0;
+            min-height: 34px;
+            padding: 0 11px;
+            font-size: 12px;
+          }
+
+          .eq-hero {
+            grid-template-columns: 1fr;
+            gap: 12px;
+            padding: 16px !important;
+          }
+
+          .eq-page-title {
+            margin-top: 12px;
+            font-size: 30px !important;
+            line-height: 1.12 !important;
+          }
+
+          .eq-lead {
+            margin-top: 10px;
+            font-size: 13px;
+            line-height: 1.55;
+            overflow-wrap: anywhere;
+          }
+
+          .wordbook-stage {
+            display: none;
+          }
+
+          .wordbook-mode-actions {
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 14px;
+          }
+
+          .wordbook-mode-action {
+            min-height: 48px;
+            font-size: 14px;
+          }
+
+          .eq-status-strip {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 8px;
+          }
+
+          .eq-status-card {
+            min-height: 0;
+            padding: 10px 8px !important;
+            border-radius: 14px !important;
+          }
+
+          .eq-status-card span {
+            font-size: 10px;
+          }
+
+          .eq-status-card strong {
+            margin-top: 4px;
+            font-size: 20px;
+          }
+
+          .words-filter-panel {
+            gap: 12px;
+            margin-top: 12px;
+            padding: 14px;
+          }
+
+          .wordbook-search {
+            min-height: 44px;
+            border-radius: 14px;
+            font-size: 13px;
+          }
+
+          .words-filter-head {
+            gap: 8px;
+          }
+
+          .words-filter-head strong {
+            font-size: 11px;
+          }
+
           .wordbook-memory-toolbar {
             align-items: stretch;
             flex-direction: column;
+            gap: 8px;
+            margin-top: 0;
+            padding: 8px;
           }
 
           .wordbook-memory-controls {
             justify-content: stretch;
+            gap: 8px;
           }
 
           .memory-level-tabs,
@@ -1640,16 +1801,31 @@ export default function WordsPage() {
 
           .words-level-tabs {
             grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 7px;
           }
 
           .words-kind-tabs {
             grid-template-columns: 1fr;
+            gap: 7px;
+          }
+
+          .wordbook-level-tab,
+          .wordbook-kind-chip,
+          .memory-level-tab,
+          .wordbook-memory-back-button {
+            min-height: 40px;
+            border-radius: 13px;
+            font-size: 12px;
+          }
+
+          .memory-stage {
+            margin-top: 8px;
           }
 
           .memory-card {
             min-height: 0;
-            border-radius: 22px;
-            padding: 16px;
+            border-radius: 18px;
+            padding: 12px;
           }
 
           .memory-card::before {
@@ -1667,12 +1843,15 @@ export default function WordsPage() {
           }
 
           .memory-word {
-            font-size: clamp(40px, 15vw, 62px);
+            margin-top: 8px;
+            font-size: clamp(34px, 13vw, 52px);
           }
 
           .memory-primary-actions {
             display: grid;
             grid-template-columns: 1fr;
+            gap: 8px;
+            margin-top: 10px;
           }
 
           .memory-action-spacer {
@@ -1688,29 +1867,101 @@ export default function WordsPage() {
             grid-template-columns: 1fr;
           }
 
+          .memory-answer {
+            margin-top: 10px;
+          }
+
+          .memory-answer-box {
+            border-radius: 14px;
+            padding: 10px;
+          }
+
+          .memory-example-en {
+            font-size: 14px;
+            line-height: 1.45;
+          }
+
+          .memory-example-ja {
+            font-size: 13px;
+            line-height: 1.45;
+          }
+
           .memory-review-button {
             min-height: 52px;
           }
 
+          .words-list {
+            gap: 10px;
+            margin-top: 12px;
+          }
+
+          .words-card {
+            border-radius: 18px !important;
+            padding: 12px !important;
+          }
+
           .words-card-top {
             flex-direction: column;
+            gap: 8px;
           }
 
           .words-badges {
             justify-content: flex-start;
+            gap: 6px;
+          }
+
+          .words-badges span {
+            min-height: 24px;
+            padding: 0 8px;
+            font-size: 10px;
           }
 
           .words-word-area h2 {
-            font-size: 26px;
+            font-size: 22px;
           }
 
           .words-word-area .words-meaning {
-            font-size: 16px;
+            margin-top: 4px;
+            font-size: 15px;
+          }
+
+          .words-word-area .words-reading {
+            margin-top: 2px;
+            font-size: 12px;
+            line-height: 1.35;
+          }
+
+          .words-example {
+            margin-top: 10px;
+            border-radius: 14px;
+            padding: 10px;
           }
 
           .words-example-head {
             align-items: flex-start;
             flex-direction: column;
+            gap: 6px;
+            margin-bottom: 6px;
+          }
+
+          .words-example-en {
+            font-size: 14px;
+            line-height: 1.45;
+          }
+
+          .words-example-ja {
+            margin-top: 4px;
+            font-size: 13px;
+            line-height: 1.45;
+          }
+
+          .words-more-area {
+            margin: 14px 0 0;
+          }
+
+          .words-more-button {
+            min-width: 0;
+            min-height: 48px;
           }
         }
 

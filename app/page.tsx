@@ -466,7 +466,7 @@ export default function Home() {
         .primary-action,
         .secondary-action,
         .panel-link {
-          min-height: 58px;
+          min-height: 68px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -503,7 +503,7 @@ export default function Home() {
         .panel-link:hover,
         .home-action-card:hover,
         .mini-monster:hover {
-          transform: translateY(-3px);
+          transform: translateY(-4px);
         }
 
         .secondary-action:hover,
@@ -966,7 +966,7 @@ export default function Home() {
         .panel-link {
           width: 100%;
           margin-top: 18px;
-          min-height: 48px;
+          min-height: 50px;
           font-size: 15px;
         }
 

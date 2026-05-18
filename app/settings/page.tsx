@@ -10,6 +10,7 @@ const ALL_STORAGE_KEYS = [
   "packTickets",
   "eikenQuestFrontierProgress",
   "furiganaEnabled",
+  "bgmEnabled",
   "heroStatus",
   "heroGold",
   "shopState",
@@ -61,7 +62,7 @@ export default function SettingsPage() {
             <span>SETTINGS</span>
           </div>
           <h1 className="eq-page-title">設定</h1>
-          <p className="eq-lead">アプリの設定とデータ管理を行います。</p>
+          <p className="eq-lead">保存されたゲームデータの管理を行います。</p>
         </div>
 
         <div className="settings-sections">
@@ -212,7 +213,7 @@ export default function SettingsPage() {
 
         .settings-danger-card {
           border: 1px solid rgba(239, 68, 68, 0.28);
-          border-radius: 20px;
+          border-radius: 24px;
           background: rgba(239, 68, 68, 0.04);
           padding: 24px;
           display: flex;
@@ -269,7 +270,7 @@ export default function SettingsPage() {
         .settings-reset-trigger {
           align-self: flex-start;
           border: 1px solid rgba(239, 68, 68, 0.45);
-          border-radius: 12px;
+          border-radius: 14px;
           background: rgba(239, 68, 68, 0.08);
           color: #f87171;
           font: inherit;
@@ -287,7 +288,7 @@ export default function SettingsPage() {
 
         .settings-confirm-box {
           border: 1px solid rgba(239, 68, 68, 0.55);
-          border-radius: 16px;
+          border-radius: 18px;
           background: rgba(30, 8, 8, 0.7);
           padding: 20px;
           display: flex;
@@ -326,7 +327,7 @@ export default function SettingsPage() {
         .settings-confirm-label input {
           min-height: 44px;
           border: 1px solid rgba(239, 68, 68, 0.4);
-          border-radius: 12px;
+          border-radius: 14px;
           background: rgba(2, 6, 23, 0.68);
           color: #fecaca;
           font: inherit;
@@ -351,7 +352,7 @@ export default function SettingsPage() {
           flex: 1;
           min-height: 42px;
           border: 1px solid rgba(100, 116, 139, 0.4);
-          border-radius: 12px;
+          border-radius: 14px;
           background: rgba(255, 255, 255, 0.05);
           color: #94a3b8;
           font: inherit;
@@ -370,7 +371,7 @@ export default function SettingsPage() {
           flex: 2;
           min-height: 42px;
           border: 1px solid rgba(239, 68, 68, 0.7);
-          border-radius: 12px;
+          border-radius: 14px;
           background: linear-gradient(135deg, #7f1d1d, #991b1b);
           color: #fecaca;
           font: inherit;
@@ -391,7 +392,7 @@ export default function SettingsPage() {
 
         .settings-done-card {
           border: 1px solid rgba(52, 211, 153, 0.3);
-          border-radius: 20px;
+          border-radius: 24px;
           background: rgba(52, 211, 153, 0.05);
           padding: 32px 24px;
           display: flex;
@@ -422,6 +423,22 @@ export default function SettingsPage() {
         .settings-home-link {
           margin-top: 8px;
         }
+
+        @media (max-width: 560px) {
+          .settings-page {
+            padding-bottom: 36px;
+          }
+
+          .settings-hero {
+            margin-bottom: 22px;
+          }
+
+          .settings-sections {
+            gap: 18px;
+          }
+
+        }
+
       `}</style>
     </main>
   );

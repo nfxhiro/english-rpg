@@ -52,6 +52,11 @@ import {
   subscribeToBgmEnabledChange,
 } from "../../data/bgm";
 import {
+  getStoredFuriganaEnabled,
+  setStoredFuriganaEnabled,
+  subscribeToFuriganaEnabledChange,
+} from "../../data/preferences";
+import {
   EarnedCard,
   getOwnedCount,
   MonsterCard,
@@ -324,15 +329,14 @@ function getBlockProgress(
 }
 
 function getBlockProgressPercent(progress: BlockProgress) {
-  const clearedCount = [
-    progress.miniCleared,
-    progress.normalCleared,
-    progress.bossCleared,
-    progress.completeCleared,
-    progress.crowned,
-  ].filter(Boolean).length;
+  const totalQuestCount = questModeConfigList.length;
+  if (totalQuestCount === 0) return 0;
 
-  return clearedCount * 20;
+  const clearedCount = questModeConfigList.filter((config) => {
+    return progress[config.progressKey];
+  }).length;
+
+  return Math.round((clearedCount / totalQuestCount) * 100);
 }
 
 function getQuestCleared(progress: BlockProgress, mode: QuestMode) {
@@ -431,7 +435,6 @@ export default function QuizPage() {
   const [activeBoss, setActiveBoss] = useState<Boss>(defaultBoss);
   const [isStarted, setIsStarted] = useState(false);
   const [isReady, setIsReady] = useState(false);
-  const [furiganaEnabled, setFuriganaEnabled] = useState(false);
   const [heroLevel, setHeroLevel] = useState(1);
   const [totalGoldEarned, setTotalGoldEarned] = useState(0);
   const [questLevelKey, setQuestLevelKey] = useState<string | null>(null);
@@ -445,6 +448,11 @@ export default function QuizPage() {
     getStoredBgmEnabled,
     () => true
   );
+  const furiganaEnabled = useSyncExternalStore(
+    subscribeToFuriganaEnabledChange,
+    getStoredFuriganaEnabled,
+    () => false
+  );
   const [buddyCard, setBuddyCard] = useState<MonsterCard | null>(null);
   const [buddyEarnedCard, setBuddyEarnedCard] = useState<EarnedCard | null>(null);
   const [buddyQuestExpResult, setBuddyQuestExpResult] =
@@ -454,7 +462,6 @@ export default function QuizPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       try {
-        setFuriganaEnabled(localStorage.getItem("furiganaEnabled") === "true");
         setQuestProgress(loadQuestProgress());
         setHeroLevel(loadHeroStatus().level);
         const loadedShopState = loadShopState();
@@ -467,7 +474,6 @@ export default function QuizPage() {
         setBuddyEarnedCard(selectedEarnedCard);
       } catch (error) {
         console.error("クエストモードの初期化に失敗しました:", error);
-        setFuriganaEnabled(false);
         setQuestProgress({});
         setHeroLevel(1);
         setBuddyCard(null);
@@ -502,6 +508,12 @@ export default function QuizPage() {
 
   // Cleanup on unmount
   useEffect(() => () => bgmPlayer.stopBattle(), []);
+
+  useEffect(() => {
+    if (gameStatus === "playing") return;
+
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [gameStatus]);
 
   const currentQuestion = questions[currentIndex];
   const answeredCount = answerRecords.length;
@@ -549,9 +561,7 @@ export default function QuizPage() {
       : "";
 
   const toggleFurigana = () => {
-    const next = !furiganaEnabled;
-    setFuriganaEnabled(next);
-    localStorage.setItem("furiganaEnabled", String(next));
+    setStoredFuriganaEnabled(!furiganaEnabled);
   };
 
   const recordQuestClear = useCallback(
@@ -624,6 +634,7 @@ export default function QuizPage() {
         })
       );
       setIsStarted(true);
+      window.scrollTo({ top: 0, behavior: "auto" });
       setChoices(nextQuestions.length > 0 ? createChoices(nextQuestions[0]) : []);
     },
     []
@@ -679,27 +690,36 @@ export default function QuizPage() {
     else bgmPlayer.playSfxMiss();
     const nextCorrectCount = isCorrect ? correctCount + 1 : correctCount;
     const nextMistakeCount = isCorrect ? mistakeCount : mistakeCount + 1;
-    const correctDamage = 100 / clearCorrectCount;
     const mistakeDamage = 100 / maxMistakes;
     const nextPlayerHp = getPlayerHpByMistakeCount(
       nextMistakeCount,
       maxMistakes
     );
-    const nextBossHp = getBossHpByCorrectCount(
-      nextCorrectCount,
-      clearCorrectCount
-    );
     const reachedFinalQuestion = currentIndex + 1 >= totalQuestions;
     const reachedClear = nextCorrectCount >= clearCorrectCount;
+    const canStillEarnCrown =
+      activeQuestConfig.mode === "complete" &&
+      nextMistakeCount === 0 &&
+      reachedClear &&
+      !reachedFinalQuestion;
     const reachedGameOver =
       nextMistakeCount >= maxMistakes ||
       (reachedFinalQuestion && nextCorrectCount < clearCorrectCount);
-    const nextStatus: GameStatus | null = reachedClear
+    const nextStatus: GameStatus | null = reachedClear && !canStillEarnCrown
       ? "clear"
       : reachedGameOver
         ? "gameOver"
         : null;
-    const bossDefeated = isCorrect && reachedClear;
+    const bossHpTarget =
+      activeQuestConfig.mode === "complete" && nextMistakeCount === 0
+        ? totalQuestions
+        : clearCorrectCount;
+    const correctDamage = 100 / bossHpTarget;
+    const nextBossHp =
+      nextStatus === "clear"
+        ? 0
+        : getBossHpByCorrectCount(nextCorrectCount, bossHpTarget);
+    const bossDefeated = isCorrect && nextStatus === "clear";
 
     const answerRecord: AnswerRecord = {
       word: currentQuestion.word,
@@ -728,6 +748,7 @@ export default function QuizPage() {
       setBossHp(nextBossHp);
     } else {
       setPlayerHp(nextPlayerHp);
+      if (nextStatus === "clear") setBossHp(0);
     }
     setAnswerRecords(nextAnswerRecords);
     setAnswerEffect({
@@ -934,6 +955,7 @@ export default function QuizPage() {
       onBackToSelect={backToSelect}
       onToggleFurigana={toggleFurigana}
       playerHp={playerHp}
+      questMode={activeQuestConfig.mode}
       questTitle={questTitle}
       selectedAnswer={selectedAnswer}
       totalQuestions={totalQuestions}
@@ -1277,6 +1299,7 @@ function QuestBattleMode({
   onBackToSelect,
   onToggleFurigana,
   playerHp,
+  questMode,
   questTitle,
   selectedAnswer,
   totalQuestions,
@@ -1300,6 +1323,7 @@ function QuestBattleMode({
   onBackToSelect: () => void;
   onToggleFurigana: () => void;
   playerHp: number;
+  questMode: QuestMode;
   questTitle: string;
   selectedAnswer: string | null;
   totalQuestions: number;
@@ -1347,6 +1371,7 @@ function QuestBattleMode({
           clearCorrectCount={clearCorrectCount}
           correctCount={correctCount}
           currentQuestionNumber={currentQuestionNumber}
+          questMode={questMode}
           maxMistakes={maxMistakes}
           mistakeCount={mistakeCount}
           totalQuestions={totalQuestions}
@@ -1406,6 +1431,7 @@ function ProgressPanel({
   currentQuestionNumber,
   maxMistakes,
   mistakeCount,
+  questMode,
   totalQuestions,
 }: {
   answeredCount: number;
@@ -1414,9 +1440,15 @@ function ProgressPanel({
   currentQuestionNumber: number;
   maxMistakes: number;
   mistakeCount: number;
+  questMode: QuestMode;
   totalQuestions: number;
 }) {
   const remainingCorrect = Math.max(0, clearCorrectCount - correctCount);
+  const isCrownRun =
+    questMode === "complete" &&
+    mistakeCount === 0 &&
+    correctCount >= clearCorrectCount;
+  const remainingCrownCorrect = Math.max(0, totalQuestions - correctCount);
 
   return (
     <section className={styles.progressPanel} aria-label="ルールと進行状況">
@@ -1430,9 +1462,15 @@ function ProgressPanel({
         <span>
           ミス <strong>{mistakeCount}</strong> / {maxMistakes}
         </span>
-        <span>
-          クリアまであと <strong>{remainingCorrect}</strong> 正解
-        </span>
+        {isCrownRun ? (
+          <span>
+            王冠まであと <strong>{remainingCrownCorrect}</strong> 正解
+          </span>
+        ) : (
+          <span>
+            クリアまであと <strong>{remainingCorrect}</strong> 正解
+          </span>
+        )}
         <span>回答済み {answeredCount}</span>
       </div>
     </section>
@@ -1880,7 +1918,7 @@ function QuestResultScreen({
 
   return (
     <main className={styles.root}>
-      <section className={styles.screen}>
+      <section className={cx(styles.screen, styles.resultScreen)}>
         <QuestHeader />
 
         <section

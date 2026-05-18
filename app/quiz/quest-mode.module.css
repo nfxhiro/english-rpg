@@ -54,6 +54,12 @@
   gap: 16px;
 }
 
+.resultScreen {
+  min-height: auto;
+  justify-content: flex-start;
+  padding-bottom: 40px;
+}
+
 .selectScreen {
   max-width: 1240px;
 }
@@ -4044,7 +4050,57 @@
   }
 
   .battleArea {
-    min-height: 280px;
+    min-height: 360px;
+    padding: 12px;
+  }
+
+  .hpLayer {
+    position: relative;
+    z-index: 5;
+    gap: 8px;
+  }
+
+  .hpMeter {
+    padding: 8px 10px;
+    border-radius: 14px;
+  }
+
+  .hpLabel {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .hpLabel span {
+    font-size: 12px;
+  }
+
+  .hpLabel strong {
+    font-size: 14px;
+  }
+
+  .hpTrack {
+    height: 10px;
+  }
+
+  .combatants {
+    z-index: 3;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: end;
+    bottom: 34px;
+  }
+
+  .playerUnit {
+    justify-self: start;
+  }
+
+  .buddyUnit {
+    justify-self: center;
+  }
+
+  .bossUnit {
+    justify-self: end;
   }
 
   .playerSprite {
@@ -4093,7 +4149,7 @@
   }
 
   .battleArea {
-    min-height: 250px;
+    min-height: 380px;
   }
 
   .hpLayer {
@@ -4101,9 +4157,15 @@
   }
 
   .combatants {
-    left: 12px;
-    right: 12px;
-    gap: 6px;
+    left: 10px;
+    right: 10px;
+    bottom: 32px;
+    gap: 4px;
+  }
+
+  .unitNameBlock strong,
+  .unitNameBlock span {
+    max-width: 104px;
   }
 
   .buddyBadge {

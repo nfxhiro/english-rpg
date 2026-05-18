@@ -45,6 +45,9 @@ next-env.d.ts
 
 # codex browser profiles (testing)
 .codex-chrome-profile-*/
+.codex-edge-profile-*/
+.codex-edge-cdp-*/
+.codex-screenshots/
 
 # dev server logs
 .next-dev*.log
