@@ -23,12 +23,14 @@ import {
   defaultQuestConfig,
   getBossForQuest,
   getPartClearReward,
+  getQuestBackgroundConfig,
+  getQuestBlockConfig,
   getQuestModeConfig,
   getQuestWorldByLevel,
-  questBoardStatus,
   questModeConfigList,
   type BossConfig as Boss,
   type PartClearReward,
+  type QuestBackgroundConfig,
   type QuestConfig,
   type QuestMode,
 } from "../../data/questConfig";
@@ -58,7 +60,6 @@ import {
 } from "../../data/preferences";
 import {
   EarnedCard,
-  getOwnedCount,
   MonsterCard,
 } from "../../data/cards";
 import {
@@ -68,7 +69,6 @@ import {
 import {
   addBuddyExpToEarnedCards,
   getBuddyQuestExpReward,
-  getAwakeningLevel,
   getMonsterLevelProgress,
   getPartnerLevelGoldBonusRate,
   getPartnerRarityGoldBonusRate,
@@ -174,6 +174,25 @@ const questModeClassNames: Record<QuestMode, string> = {
 
 function cx(...classNames: Array<string | false | null | undefined>) {
   return classNames.filter(Boolean).join(" ");
+}
+
+type QuestBackgroundStyle = CSSProperties & Record<
+  "--quest-bg-image" | "--quest-bg-overlay" | "--quest-bg-pattern" | "--quest-bg-accent",
+  string
+>;
+
+function getQuestBackgroundStyle(
+  background: QuestBackgroundConfig,
+  questMode?: QuestMode
+): QuestBackgroundStyle {
+  const useBossOverlay = questMode === "boss" || questMode === "complete";
+
+  return {
+    "--quest-bg-image": background.backgroundImage,
+    "--quest-bg-overlay": useBossOverlay ? background.bossOverlay : background.overlay,
+    "--quest-bg-pattern": background.pattern,
+    "--quest-bg-accent": background.accent,
+  };
 }
 
 function shuffleArray<T>(array: T[]) {
@@ -516,7 +535,6 @@ export default function QuizPage() {
   }, [gameStatus]);
 
   const currentQuestion = questions[currentIndex];
-  const answeredCount = answerRecords.length;
   const totalQuestions = questions.length || activeQuestConfig.questionCount;
   const clearCorrectCount = activeQuestConfig.clearCorrectCount;
   const maxMistakes = activeQuestConfig.maxMissCount;
@@ -546,9 +564,15 @@ export default function QuizPage() {
       ? getPartClearReward(activeBlockId, activeQuestConfig.mode)
       : undefined;
 
-  const activeWorldName = questLevelKey
-    ? (getQuestWorldByLevel(questLevelKey)?.worldName ?? "")
-    : "";
+  const activeQuestWorld = questLevelKey
+    ? getQuestWorldByLevel(questLevelKey)
+    : undefined;
+  const activeQuestBlock = getQuestBlockConfig(activeBlockId);
+  const activeQuestBackground = getQuestBackgroundConfig(
+    activeQuestBlock?.backgroundKey,
+    activeQuestBlock?.levelId ?? activeQuestWorld?.id
+  );
+  const activeWorldName = activeQuestWorld?.worldName ?? "";
   const activeDungeonName =
     activeBlockId && questLevelKey
       ? (wordGroupsByLevel[questLevelKey]?.find((g) => g.id === activeBlockId)?.stageName ?? "")
@@ -937,26 +961,20 @@ export default function QuizPage() {
     <QuestBattleMode
       key={questId}
       answerEffect={answerEffect}
-      answeredCount={answeredCount}
+      background={activeQuestBackground}
       boss={currentBoss}
       bossHp={bossHp}
       buddyCard={buddyCard}
-      buddyEarnedCard={buddyEarnedCard}
       choices={choices}
-      clearCorrectCount={clearCorrectCount}
-      correctCount={correctCount}
       currentQuestion={currentQuestion}
       currentQuestionNumber={currentQuestionNumber}
       furiganaEnabled={furiganaEnabled}
       heroLevel={heroLevel}
-      maxMistakes={maxMistakes}
-      mistakeCount={mistakeCount}
       onAnswer={handleAnswer}
       onBackToSelect={backToSelect}
       onToggleFurigana={toggleFurigana}
       playerHp={playerHp}
       questMode={activeQuestConfig.mode}
-      questTitle={questTitle}
       selectedAnswer={selectedAnswer}
       totalQuestions={totalQuestions}
     />
@@ -1013,6 +1031,15 @@ function QuestSelectScreen({
   const crownedBlockCount = selectedGroups.filter((group) => {
     return getBlockProgress(questProgress, group.id).crowned;
   }).length;
+  const clearedQuestModeCount = selectedGroups.reduce((total, group) => {
+    const progress = getBlockProgress(questProgress, group.id);
+    const clearedModes = questModeConfigList.filter((config) => {
+      return progress[config.progressKey];
+    }).length;
+
+    return total + clearedModes;
+  }, 0);
+  const totalQuestModeCount = selectedGroups.length * questModeConfigList.length;
   const levelSuffix = getLevelColorSuffix(selectedLevel);
 
   return (
@@ -1122,17 +1149,31 @@ function QuestSelectScreen({
                 {selectedWorld?.worldName ?? selectedLevel}
                 <span>{selectedLevelWords.length}語</span>
               </h2>
-              <small>
-                CLEAR {clearedBlockCount} / {selectedGroups.length} ・ 王冠 {crownedBlockCount}
-              </small>
+              <p className={styles.questBoardCrownHint}>
+                👑 100問全問正解で王冠獲得
+              </p>
             </div>
             <div className={styles.questBoardProgress}>
-              <span>総合進行度 {selectedLevelProgress}%</span>
-              <div className={styles.blockProgressTrack} aria-hidden="true">
+              <div className={styles.questBoardProgressHead}>
+                <span>総合進行度</span>
+                <strong>{selectedLevelProgress}%</strong>
+              </div>
+              <div className={styles.questBoardProgressTrack} aria-hidden="true">
                 <div
-                  className={styles.blockProgressFill}
+                  className={styles.questBoardProgressFill}
                   style={{ width: `${selectedLevelProgress}%` }}
                 />
+              </div>
+              <div className={styles.questBoardProgressStats}>
+                <span>
+                  <strong>{clearedQuestModeCount}</strong> / {totalQuestModeCount} CLEAR
+                </span>
+                <span>
+                  <strong>{clearedBlockCount}</strong> / {selectedGroups.length} 完全
+                </span>
+                <span>
+                  <strong>{crownedBlockCount}</strong> 王冠
+                </span>
               </div>
             </div>
           </div>
@@ -1171,16 +1212,22 @@ function QuestBlockCard({
   progress: BlockProgress;
 }) {
   const progressPercent = getBlockProgressPercent(progress);
-  const panelStatus = progress.completeCleared ? "CLEAR" : "未クリア";
   const mapIcon = group.mapIcon || (index % 2 === 0 ? "🗺️" : "🧭");
   const isPhrase = group.id.includes("-ph-");
+  const background = getQuestBackgroundConfig(group.backgroundKey, group.levelId);
+  const backgroundStyle = getQuestBackgroundStyle(background);
 
   return (
-    <article className={cx(styles.questRangePanel, isPhrase && styles.phraseRangePanel)}>
-      <div className={styles.rangeMagicRing} aria-hidden="true" />
+    <article
+      className={cx(styles.questRangePanel, isPhrase && styles.phraseRangePanel)}
+      style={backgroundStyle}
+    >
       <div className={styles.rangePanelHead}>
-        <div className={cx(styles.rangeMapIcon, isPhrase && styles.phraseMapIcon)} aria-hidden="true">
-          {mapIcon}
+        <div className={styles.rangeVisual} aria-hidden="true">
+          <div className={styles.rangeScenePreview} />
+          <div className={cx(styles.rangeMapIcon, isPhrase && styles.phraseMapIcon)}>
+            {mapIcon}
+          </div>
         </div>
         <div className={styles.rangeTitle}>
           <p>{isPhrase ? "PHRASE QUEST" : "QUEST RANGE"}</p>
@@ -1196,37 +1243,6 @@ function QuestBlockCard({
             />
           </div>
         </div>
-      </div>
-
-      <div className={styles.rangeStatusRow} aria-label={`${group.label}の状態`}>
-        <span
-          className={cx(
-            styles.rangeStatus,
-            progress.completeCleared && styles.statusCleared
-          )}
-        >
-          {panelStatus}
-        </span>
-        {questBoardStatus.map((item) => (
-          <span
-            key={item.key}
-            className={cx(
-              styles.rangeStatus,
-              progress[item.key] && styles.statusCleared
-            )}
-          >
-            {item.label} {progress[item.key] ? "CLEAR" : "未クリア"}
-          </span>
-        ))}
-        <span
-          className={cx(
-            styles.rangeStatus,
-            styles.crownStatus,
-            progress.crowned && styles.statusCrowned
-          )}
-        >
-          王冠 {progress.crowned ? "獲得" : "未獲得"}
-        </span>
       </div>
 
       <div className={styles.questModeGrid}>
@@ -1265,12 +1281,9 @@ function QuestBlockCard({
                   {cleared ? "CLEAR" : "未クリア"}
                 </span>
               </div>
-              <span className={styles.questCardName}>{config.label}</span>
               <strong>{questConfig.questionCount}問</strong>
-              <small>{copy.short}</small>
-              <div className={styles.questStartRibbon}>
-                {cleared ? "再挑戦" : copy.detail}
-              </div>
+              <small>{questConfig.clearCorrectCount}問正解でクリア</small>
+              <small>{questConfig.maxMissCount}ミスでゲームオーバー</small>
             </button>
           );
         })}
@@ -1281,50 +1294,38 @@ function QuestBlockCard({
 
 function QuestBattleMode({
   answerEffect,
-  answeredCount,
+  background,
   boss,
   bossHp,
   buddyCard,
-  buddyEarnedCard,
   choices,
-  clearCorrectCount,
-  correctCount,
   currentQuestion,
   currentQuestionNumber,
   furiganaEnabled,
   heroLevel,
-  maxMistakes,
-  mistakeCount,
   onAnswer,
   onBackToSelect,
   onToggleFurigana,
   playerHp,
   questMode,
-  questTitle,
   selectedAnswer,
   totalQuestions,
 }: {
   answerEffect: AnswerEffect | null;
-  answeredCount: number;
+  background: QuestBackgroundConfig;
   boss: Boss;
   bossHp: number;
   buddyCard: MonsterCard | null;
-  buddyEarnedCard: EarnedCard | null;
   choices: string[];
-  clearCorrectCount: number;
-  correctCount: number;
   currentQuestion: LearningWord;
   currentQuestionNumber: number;
   furiganaEnabled: boolean;
   heroLevel: number;
-  maxMistakes: number;
-  mistakeCount: number;
   onAnswer: (choice: string) => void;
   onBackToSelect: () => void;
   onToggleFurigana: () => void;
   playerHp: number;
   questMode: QuestMode;
-  questTitle: string;
   selectedAnswer: string | null;
   totalQuestions: number;
 }) {
@@ -1347,41 +1348,12 @@ function QuestBattleMode({
           </div>
         </div>
 
-        <div className={styles.battleHero}>
-          <div className={styles.battleHeroCopy}>
-            <div className={styles.battleTitleBlock}>
-              <p className={styles.modeBadge}>クエストモード</p>
-              <h1>{questTitle}</h1>
-            </div>
-            <p className={styles.battleLead}>
-              4つの答えから正しい意味を選んで、ボスにダメージを与えよう。
-            </p>
-          </div>
-          <div className={styles.battleHeroStatus}>
-            <span>
-              第{currentQuestionNumber}問 / 全{totalQuestions}問
-            </span>
-            <strong>{clearCorrectCount}問正解でクリア</strong>
-            <small>{maxMistakes}ミスでゲームオーバー</small>
-          </div>
-        </div>
-
-        <ProgressPanel
-          answeredCount={answeredCount}
-          clearCorrectCount={clearCorrectCount}
-          correctCount={correctCount}
-          currentQuestionNumber={currentQuestionNumber}
-          questMode={questMode}
-          maxMistakes={maxMistakes}
-          mistakeCount={mistakeCount}
-          totalQuestions={totalQuestions}
-        />
         <BattleQuizScreen
           answerEffect={answerEffect}
+          background={background}
           boss={boss}
           bossHp={bossHp}
           buddyCard={buddyCard}
-          buddyEarnedCard={buddyEarnedCard}
           choices={choices}
           currentQuestion={currentQuestion}
           currentQuestionNumber={currentQuestionNumber}
@@ -1389,7 +1361,9 @@ function QuestBattleMode({
           heroLevel={heroLevel}
           onAnswer={onAnswer}
           playerHp={playerHp}
+          questMode={questMode}
           selectedAnswer={selectedAnswer}
+          totalQuestions={totalQuestions}
         />
       </section>
     </main>
@@ -1424,65 +1398,12 @@ function FuriganaToggle({
   );
 }
 
-function ProgressPanel({
-  answeredCount,
-  clearCorrectCount,
-  correctCount,
-  currentQuestionNumber,
-  maxMistakes,
-  mistakeCount,
-  questMode,
-  totalQuestions,
-}: {
-  answeredCount: number;
-  clearCorrectCount: number;
-  correctCount: number;
-  currentQuestionNumber: number;
-  maxMistakes: number;
-  mistakeCount: number;
-  questMode: QuestMode;
-  totalQuestions: number;
-}) {
-  const remainingCorrect = Math.max(0, clearCorrectCount - correctCount);
-  const isCrownRun =
-    questMode === "complete" &&
-    mistakeCount === 0 &&
-    correctCount >= clearCorrectCount;
-  const remainingCrownCorrect = Math.max(0, totalQuestions - correctCount);
-
-  return (
-    <section className={styles.progressPanel} aria-label="ルールと進行状況">
-      <div className={styles.statusChipRow}>
-        <span>
-          第{currentQuestionNumber}問 / 全{totalQuestions}問
-        </span>
-        <span>
-          正解 <strong>{correctCount}</strong>
-        </span>
-        <span>
-          ミス <strong>{mistakeCount}</strong> / {maxMistakes}
-        </span>
-        {isCrownRun ? (
-          <span>
-            王冠まであと <strong>{remainingCrownCorrect}</strong> 正解
-          </span>
-        ) : (
-          <span>
-            クリアまであと <strong>{remainingCorrect}</strong> 正解
-          </span>
-        )}
-        <span>回答済み {answeredCount}</span>
-      </div>
-    </section>
-  );
-}
-
 function BattleQuizScreen({
   answerEffect,
+  background,
   boss,
   bossHp,
   buddyCard,
-  buddyEarnedCard,
   choices,
   currentQuestion,
   currentQuestionNumber,
@@ -1490,13 +1411,15 @@ function BattleQuizScreen({
   heroLevel,
   onAnswer,
   playerHp,
+  questMode,
   selectedAnswer,
+  totalQuestions,
 }: {
   answerEffect: AnswerEffect | null;
+  background: QuestBackgroundConfig;
   boss: Boss;
   bossHp: number;
   buddyCard: MonsterCard | null;
-  buddyEarnedCard: EarnedCard | null;
   choices: string[];
   currentQuestion: LearningWord;
   currentQuestionNumber: number;
@@ -1504,18 +1427,21 @@ function BattleQuizScreen({
   heroLevel: number;
   onAnswer: (choice: string) => void;
   playerHp: number;
+  questMode: QuestMode;
   selectedAnswer: string | null;
+  totalQuestions: number;
 }) {
   return (
     <div className={styles.battleQuizGrid}>
       <BattleArea
         answerEffect={answerEffect}
+        background={background}
         boss={boss}
         bossHp={bossHp}
         buddyCard={buddyCard}
-        buddyEarnedCard={buddyEarnedCard}
         heroLevel={heroLevel}
         playerHp={playerHp}
+        questMode={questMode}
       />
       <QuestionArea
         choices={choices}
@@ -1524,6 +1450,7 @@ function BattleQuizScreen({
         furiganaEnabled={furiganaEnabled}
         onAnswer={onAnswer}
         selectedAnswer={selectedAnswer}
+        totalQuestions={totalQuestions}
       />
     </div>
   );
@@ -1552,7 +1479,89 @@ function getHeroLevelStyle(level: number): Record<string, string> {
   return {};
 }
 
-const BOSS_SHAPE_CLASSES: Partial<Record<Boss["shape"], string>> = {
+type BossShapeGroup =
+  | "demon"
+  | "dragon"
+  | "slime"
+  | "golem"
+  | "ghost"
+  | "wolf"
+  | "plant"
+  | "wizard"
+  | "insect"
+  | "core"
+  | "fairy"
+  | "bird"
+  | "book"
+  | "armor"
+  | "beast"
+  | "serpent"
+  | "priest"
+  | "knight"
+  | "cosmic"
+  | "spirit"
+  | "clock"
+  | "relic";
+
+const fallbackShapeGroup: BossShapeGroup = "beast";
+
+const shapeGroupMap = {
+  demon: "demon",
+  dragon: "dragon",
+  slime: "slime",
+  golem: "golem",
+  ghost: "ghost",
+  wolf: "wolf",
+  plant: "plant",
+  wizard: "wizard",
+  insect: "insect",
+  core: "core",
+  leafbeast: "plant",
+  mushroomking: "plant",
+  waterfairy: "fairy",
+  sunbird: "bird",
+  treant: "plant",
+  forestgolem: "golem",
+  wordsprite: "book",
+  harborguard: "armor",
+  merchantbeast: "beast",
+  windbird: "bird",
+  anchorgolem: "golem",
+  lighthouseghost: "ghost",
+  stormbeast: "beast",
+  seadrake: "dragon",
+  phrasebook: "book",
+  stoneguard: "golem",
+  runecore: "core",
+  sandserpent: "serpent",
+  shadowpriest: "priest",
+  loremage: "wizard",
+  tombwraith: "ghost",
+  pharaohlord: "demon",
+  sunpriest: "priest",
+  wordrelic: "relic",
+  scrollking: "book",
+  silverwarden: "armor",
+  cloudbeast: "beast",
+  bridgeknight: "knight",
+  towermage: "wizard",
+  starseer: "wizard",
+  thundermage: "wizard",
+  lightpriest: "priest",
+  skyknight: "knight",
+  dragonpriest: "priest",
+  starguardian: "cosmic",
+  skydragon: "dragon",
+  starspirit: "spirit",
+  timekeeper: "clock",
+  memorysage: "book",
+  frontierdragon: "dragon",
+  oraclesprite: "cosmic",
+  mooncaster: "wizard",
+  cosmicpriest: "cosmic",
+} satisfies Record<Boss["shape"], BossShapeGroup>;
+
+const BOSS_SHAPE_CLASSES: Partial<Record<BossShapeGroup, string>> = {
   dragon: styles.bossSpriteDragon,
   golem: styles.bossSpriteGolem,
   slime: styles.bossSpriteSlime,
@@ -1562,33 +1571,56 @@ const BOSS_SHAPE_CLASSES: Partial<Record<Boss["shape"], string>> = {
   wizard: styles.bossSpriteWizard,
   insect: styles.bossSpriteInsect,
   core: styles.bossSpriteCore,
+  fairy: styles.bossSpriteInsect,
+  bird: styles.bossSpriteInsect,
+  book: styles.bossSpriteWizard,
+  armor: styles.bossSpriteGolem,
+  beast: styles.bossSpriteWolf,
+  serpent: styles.bossSpriteWolf,
+  priest: styles.bossSpriteWizard,
+  knight: styles.bossSpriteGolem,
+  cosmic: styles.bossSpriteCore,
+  spirit: styles.bossSpriteCore,
+  clock: styles.bossSpriteCore,
+  relic: styles.bossSpriteGolem,
 };
+
+function getBossShapeClass(shape: Boss["shape"]) {
+  const shapeGroup = shapeGroupMap[shape] ?? fallbackShapeGroup;
+  return BOSS_SHAPE_CLASSES[shapeGroup];
+}
 
 function BattleArea({
   answerEffect,
+  background,
   boss,
   bossHp,
   buddyCard,
-  buddyEarnedCard,
   heroLevel,
   playerHp,
+  questMode,
 }: {
   answerEffect: AnswerEffect | null;
+  background: QuestBackgroundConfig;
   boss: Boss;
   bossHp: number;
   buddyCard: MonsterCard | null;
-  buddyEarnedCard: EarnedCard | null;
   heroLevel: number;
   playerHp: number;
+  questMode: QuestMode;
 }) {
   const bossStyle = { "--boss-accent": boss.accent } as CSSProperties;
+  const backgroundStyle = getQuestBackgroundStyle(background, questMode);
+  const isBossBackdrop = questMode === "boss" || questMode === "complete";
   const heroStyle = getHeroLevelStyle(heroLevel) as CSSProperties;
   const bossDisplayName = parseBossDisplayName(boss.name);
-  const buddyProgress = getMonsterLevelProgress(buddyEarnedCard?.exp ?? 0);
-  const buddyAwakeningLevel = getAwakeningLevel(getOwnedCount(buddyEarnedCard ?? undefined));
 
   return (
-    <section className={styles.battleArea} aria-label="ボスバトル">
+    <section
+      className={cx(styles.battleArea, isBossBackdrop && styles.bossBattleBackdrop)}
+      style={backgroundStyle}
+      aria-label="ボスバトル"
+    >
       <div className={styles.castleBack} aria-hidden="true">
         <span />
         <span />
@@ -1604,15 +1636,29 @@ function BattleArea({
         <div
           className={cx(
             styles.playerUnit,
+            answerEffect?.type === "correct" && styles.playerAttack,
             answerEffect?.type === "wrong" && styles.unitHit
           )}
         >
-          <div className={styles.playerSprite} style={heroStyle} aria-hidden="true">
-            <span className={styles.playerCape} />
-            <span className={styles.playerHead} />
-            <span className={styles.playerBody} />
-            <span className={styles.playerShield} />
-            <span className={styles.playerBlade} />
+          <div className={styles.playerSpriteGroup}>
+            {buddyCard && (
+              <span
+                className={cx(
+                  styles.playerCompanionEmoji,
+                  answerEffect?.type === "correct" && styles.playerCompanionCheer
+                )}
+                aria-hidden="true"
+              >
+                {buddyCard.monsterEmoji}
+              </span>
+            )}
+            <div className={styles.playerSprite} style={heroStyle} aria-hidden="true">
+              <span className={styles.playerCape} />
+              <span className={styles.playerHead} />
+              <span className={styles.playerBody} />
+              <span className={styles.playerShield} />
+              <span className={styles.playerBlade} />
+            </div>
           </div>
           {answerEffect?.type === "wrong" && (
             <span className={cx(styles.unitDamageTag, styles.unitDamageTagHero)}>
@@ -1625,27 +1671,6 @@ function BattleArea({
           </div>
         </div>
 
-        {buddyCard && buddyEarnedCard && (
-          <div
-            className={cx(
-              styles.buddyUnit,
-              answerEffect?.type === "correct" && styles.buddyCheer
-            )}
-          >
-            <div className={styles.buddyBadge}>同行中</div>
-            <div className={styles.buddySprite} aria-hidden="true">
-              <span>{buddyCard.monsterEmoji}</span>
-            </div>
-            <div className={styles.unitNameBlock}>
-              <strong>{buddyCard.name}</strong>
-              <span>
-                {buddyCard.emoji} {buddyCard.attribute} / {buddyCard.rarity} / Lv.{buddyProgress.level}
-                {buddyAwakeningLevel > 0 ? ` / 覚醒${buddyAwakeningLevel}` : ""}
-              </span>
-            </div>
-          </div>
-        )}
-
         <div
           className={cx(
             styles.bossUnit,
@@ -1654,7 +1679,7 @@ function BattleArea({
           )}
           style={bossStyle}
         >
-          <div className={cx(styles.bossSprite, BOSS_SHAPE_CLASSES[boss.shape])} aria-hidden="true">
+          <div className={cx(styles.bossSprite, getBossShapeClass(boss.shape))} aria-hidden="true">
             <span className={styles.bossGlow} />
             <span className={styles.bossWingLeft} />
             <span className={styles.bossWingRight} />
@@ -1738,6 +1763,7 @@ function QuestionArea({
   furiganaEnabled,
   onAnswer,
   selectedAnswer,
+  totalQuestions,
 }: {
   choices: string[];
   currentQuestion: LearningWord;
@@ -1745,12 +1771,13 @@ function QuestionArea({
   furiganaEnabled: boolean;
   onAnswer: (choice: string) => void;
   selectedAnswer: string | null;
+  totalQuestions: number;
 }) {
   return (
     <section className={styles.questionPanel} aria-label="クイズ問題">
       <div className={styles.questionTopline}>
         <div className={styles.questionMeta}>
-          <span>第{currentQuestionNumber}問</span>
+          <span>第{currentQuestionNumber}問 / 全{totalQuestions}問</span>
           <span>{currentQuestion.level}</span>
         </div>
         <SpeechButton

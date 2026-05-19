@@ -62,6 +62,7 @@ export type WordGroup = {
   worldId: EikenLevelId;
   stageName: string;
   mapIcon: string;
+  backgroundKey: string;
   words: LearningWord[];
 };
 
@@ -93,6 +94,7 @@ function createWordGroup(id: string, raw: RawWordCard[]): WordGroup {
     worldId: world.id,
     stageName: block.stageName,
     mapIcon: block.mapIcon,
+    backgroundKey: block.backgroundKey,
     words: toWords(raw),
   };
 }
