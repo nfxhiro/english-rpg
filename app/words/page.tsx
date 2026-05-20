@@ -631,20 +631,22 @@ export default function WordsPage() {
         ) : studyMode === "memory" ? (
           <div className="memory-stage">
             {currentMemoryWord ? (
-              <div className="memory-workspace">
-                <aside className="memory-index" aria-label="残りの暗記カード">
-                  {memoryQueue.slice(0, 100).map((word, index) => (
-                    <button
-                      key={`${word.word}-${word.meaning}-${index}`}
-                      type="button"
-                      className={index === 0 ? "current" : ""}
-                      onClick={() => handleMemoryJump(index)}
-                      title={word.word}
-                    >
-                      {String(index + 1).padStart(2, "0")}
-                    </button>
-                  ))}
-                </aside>
+              <div className={levelFilter === "all" ? "memory-workspace no-aside" : "memory-workspace"}>
+                {levelFilter !== "all" && (
+                  <aside className="memory-index" aria-label="残りの暗記カード">
+                    {memoryQueue.slice(0, 100).map((word, index) => (
+                      <button
+                        key={`${word.word}-${word.meaning}-${index}`}
+                        type="button"
+                        className={index === 0 ? "current" : ""}
+                        onClick={() => handleMemoryJump(index)}
+                        title={word.word}
+                      >
+                        {String(index + 1).padStart(2, "0")}
+                      </button>
+                    ))}
+                  </aside>
+                )}
 
                 <article
                   className={
@@ -1205,6 +1207,10 @@ export default function WordsPage() {
           grid-template-columns: 96px minmax(0, 1fr);
           gap: 14px;
           align-items: start;
+        }
+
+        .memory-workspace.no-aside {
+          grid-template-columns: minmax(0, 1fr);
         }
 
         .memory-index {
