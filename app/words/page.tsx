@@ -668,56 +668,6 @@ export default function WordsPage() {
                     <div style={{ width: `${memoryProgressPercent}%` }} />
                   </div>
 
-                  <div className="memory-notice-row">
-                    <div
-                      className={
-                        studyExpNotice
-                          ? "memory-exp-notice"
-                          : "memory-exp-notice is-empty"
-                      }
-                      role={studyExpNotice ? "status" : undefined}
-                      aria-hidden={studyExpNotice ? undefined : true}
-                    >
-                      {studyExpNotice ? (
-                        <>
-                          <strong>EXP +{studyExpNotice.gainedExp}</strong>
-                          <span>
-                            {studyExpNotice.leveledUp
-                              ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
-                              : "主人公EXP"}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <strong>EXP +0</strong>
-                          <span>主人公EXP</span>
-                        </>
-                      )}
-                    </div>
-
-                    <div
-                      className={
-                        studyGoldNotice !== null
-                          ? "memory-gold-notice"
-                          : "memory-gold-notice is-empty"
-                      }
-                      role={studyGoldNotice !== null ? "status" : undefined}
-                      aria-hidden={studyGoldNotice !== null ? undefined : true}
-                    >
-                      {studyGoldNotice !== null ? (
-                        <>
-                          <strong>🪙 +{studyGoldNotice}</strong>
-                          <span>ゴールド獲得</span>
-                        </>
-                      ) : (
-                        <>
-                          <strong>🪙 +0</strong>
-                          <span>ゴールド</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
                   <div className="memory-badges">
                     <span>{currentMemoryWord.level}</span>
                     <span>{currentMemoryWord.type}</span>
@@ -777,6 +727,23 @@ export default function WordsPage() {
                       );
                     })}
                   </div>
+
+                  {memoryAnswered && memoryIsCorrect && (
+                    <div className="memory-notice-row">
+                      <div className="memory-exp-notice" role="status">
+                        <strong>EXP +{studyExpNotice?.gainedExp ?? 3}</strong>
+                        <span>
+                          {studyExpNotice?.leveledUp
+                            ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
+                            : "主人公EXP"}
+                        </span>
+                      </div>
+                      <div className="memory-gold-notice" role="status">
+                        <strong>🪙 +{studyGoldNotice ?? 3}</strong>
+                        <span>ゴールド獲得</span>
+                      </div>
+                    </div>
+                  )}
 
                   {memoryAnswered && (
                     <div
@@ -1350,7 +1317,6 @@ export default function WordsPage() {
           align-items: center;
           justify-content: center;
           gap: 6px;
-          margin: 6px auto 0;
           border: 1px solid rgba(250, 204, 21, 0.42);
           border-radius: 999px;
           background:
@@ -1379,23 +1345,13 @@ export default function WordsPage() {
           font-weight: 900;
         }
 
-        .memory-exp-notice.is-empty {
-          min-height: 0;
-          height: 0;
-          margin-top: 0;
-          border: 0;
-          padding: 0;
-          overflow: hidden;
-          visibility: hidden;
-          animation: none;
-        }
-
         .memory-notice-row {
           display: flex;
           justify-content: center;
           align-items: center;
           gap: 8px;
           flex-wrap: wrap;
+          margin-top: 10px;
         }
 
         .memory-gold-notice {
@@ -1406,7 +1362,6 @@ export default function WordsPage() {
           align-items: center;
           justify-content: center;
           gap: 6px;
-          margin: 6px 0 0;
           border: 1px solid rgba(52, 211, 153, 0.42);
           border-radius: 999px;
           background:
@@ -1433,17 +1388,6 @@ export default function WordsPage() {
           font-size: 11px;
           line-height: 1.2;
           font-weight: 900;
-        }
-
-        .memory-gold-notice.is-empty {
-          min-height: 0;
-          height: 0;
-          margin-top: 0;
-          border: 0;
-          padding: 0;
-          overflow: hidden;
-          visibility: hidden;
-          animation: none;
         }
 
         .memory-badges {
