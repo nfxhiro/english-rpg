@@ -1,6 +1,6 @@
 export type WrittenQuestion = {
   id: string;
-  level: "eiken5" | "eiken4" | "eiken3" | "eiken_pre2";
+  level: "英検5級" | "英検4級" | "英検3級" | "英検準2級";
   category: "vocabulary" | "grammar" | "phrase" | "conversation" | "writing";
   question: string;
   choices: string[];
@@ -12,7 +12,7 @@ export type WrittenQuestion = {
 export const eiken3Written001_100: WrittenQuestion[] = [
   {
     id: "eiken3-written-001",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "I have studied English ___ I was ten.",
     choices: ["for", "since", "during", "until"],
@@ -22,7 +22,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-002",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "Please ___ the door when you leave the room.",
     choices: ["spend", "build", "close", "carry"],
@@ -32,7 +32,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-003",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "I'm looking forward ___ seeing you again.",
     choices: ["at", "to", "for", "with"],
@@ -42,7 +42,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-004",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: May I use your pen? B: ___",
     choices: ["No, I don't.", "It is mine.", "I used it.", "Sure. Here you are."],
@@ -52,7 +52,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-005",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: ___ I was tired, I helped my mother.",
     choices: ["Although", "Because", "If", "Until"],
@@ -62,7 +62,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-006",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "Ken wants ___ a doctor in the future.",
     choices: ["be", "being", "to be", "been"],
@@ -72,7 +72,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-007",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "We will ___ at the station at nine.",
     choices: ["borrow", "arrive", "finish", "invite"],
@@ -82,7 +82,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-008",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "My sister is good ___ playing the piano.",
     choices: ["for", "with", "to", "at"],
@@ -92,7 +92,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-009",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: How was your trip? B: ___",
     choices: ["I go by bus.", "It was wonderful.", "It is under the desk.", "At three o'clock."],
@@ -102,7 +102,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-010",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence for an email: Thank you for your letter. ___",
     choices: ["I am a station.", "I was very happy to read it.", "This is a red bag.", "Please rain tomorrow."],
@@ -112,7 +112,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-011",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "This bike is ___ than mine.",
     choices: ["fast", "fastest", "faster", "more fast"],
@@ -122,7 +122,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-012",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "I have a math test tomorrow, so I must ___ tonight.",
     choices: ["travel", "forget", "sell", "study"],
@@ -132,7 +132,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-013",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "Please take care ___ my dog while I am away.",
     choices: ["with", "of", "to", "by"],
@@ -142,7 +142,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-014",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: Would you like some cake? B: ___",
     choices: ["It is sunny.", "I went there.", "Yes, please.", "She is my aunt."],
@@ -152,7 +152,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-015",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: I have never ___ to Hokkaido.",
     choices: ["go", "went", "going", "been"],
@@ -162,7 +162,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-016",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "This song ___ by many people in Japan.",
     choices: ["sings", "singing", "is sung", "sang"],
@@ -172,7 +172,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-017",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "Can I ___ your eraser? I forgot mine.",
     choices: ["catch", "break", "answer", "borrow"],
@@ -182,7 +182,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-018",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "I get along ___ my classmates.",
     choices: ["to", "with", "for", "about"],
@@ -192,7 +192,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-019",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: Excuse me. Where is the library? B: ___",
     choices: ["I like books.", "It opens at ten.", "It's next to the bank.", "I read it yesterday."],
@@ -202,7 +202,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-020",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence to finish the note: I will call you ___.",
     choices: ["last year", "every yesterday", "by bus", "after dinner"],
@@ -212,7 +212,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-021",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "The girl ___ is reading a book is my cousin.",
     choices: ["where", "who", "when", "which"],
@@ -222,7 +222,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-022",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "It is important to ___ the environment.",
     choices: ["collect", "arrive", "protect", "decide"],
@@ -232,7 +232,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-023",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "___ the way, do you know my brother?",
     choices: ["On", "In", "By", "At"],
@@ -242,7 +242,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-024",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: I'm sorry I'm late. B: ___",
     choices: ["It's on the table.", "That's all right.", "I like winter.", "You are from Canada."],
@@ -252,7 +252,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-025",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: I want to know ___ now.",
     choices: ["where is Tom", "where Tom is", "where Tom", "Tom where is"],
@@ -262,7 +262,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-026",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "My father enjoys ___ in the garden.",
     choices: ["work", "worked", "working", "to work"],
@@ -272,7 +272,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-027",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "I got a ___ from my friend in Canada.",
     choices: ["ticket", "message", "weather", "homework"],
@@ -282,7 +282,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-028",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "There is a bus stop in front ___ our school.",
     choices: ["to", "at", "by", "of"],
@@ -292,7 +292,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-029",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: What time does the movie start? B: ___",
     choices: ["In the park.", "It was fun.", "With my sister.", "At seven thirty."],
@@ -302,7 +302,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-030",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence for a diary: ___, I visited my grandparents.",
     choices: ["Next month", "Last Sunday", "Every tomorrow", "Soon later"],
@@ -312,7 +312,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-031",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "I was doing my homework ___ my mother came home.",
     choices: ["because", "when", "if", "before"],
@@ -322,7 +322,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-032",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "We bought two ___ for the concert.",
     choices: ["lessons", "tickets", "clouds", "kitchens"],
@@ -332,7 +332,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-033",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "Many students took part ___ the speech contest.",
     choices: ["on", "at", "in", "from"],
@@ -342,7 +342,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-034",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: Could you help me with this box? B: ___",
     choices: ["It is green.", "I bought milk.", "At school.", "Of course."],
@@ -352,7 +352,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-035",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: This is the park ___ I play soccer.",
     choices: ["who", "which", "what", "where"],
@@ -362,7 +362,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-036",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "You should ___ your hands before dinner.",
     choices: ["washed", "washing", "wash", "to wash"],
@@ -372,7 +372,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-037",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "My uncle lives ___, so he speaks English every day.",
     choices: ["quietly", "early", "abroad", "inside"],
@@ -382,7 +382,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-038",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "At ___, I didn't understand the rule.",
     choices: ["last", "first", "least", "once"],
@@ -392,7 +392,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-039",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: What's the matter? B: ___",
     choices: ["It's ten dollars.", "I like soccer.", "I have a headache.", "She is tall."],
@@ -402,7 +402,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-040",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence to ask a teacher: ___ I ask a question?",
     choices: ["Must", "Will", "Do", "May"],
@@ -412,7 +412,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-041",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "The cake ___ by my sister yesterday.",
     choices: ["made", "was made", "is making", "makes"],
@@ -422,7 +422,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-042",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "The museum was very ___, so we learned a lot.",
     choices: ["hungry", "interesting", "sleepy", "cloudy"],
@@ -432,7 +432,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-043",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "We are ___ a hurry. The train leaves soon.",
     choices: ["on", "at", "to", "in"],
@@ -442,7 +442,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-044",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: How often do you play tennis? B: ___",
     choices: ["Twice a week.", "Last year.", "At the station.", "It is mine."],
@@ -452,7 +452,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-045",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: Reading books ___ important for children.",
     choices: ["are", "were", "be", "is"],
@@ -462,7 +462,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-046",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "Tom is the ___ student in his class.",
     choices: ["tall", "taller", "tallest", "most tall"],
@@ -472,7 +472,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-047",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "Please ___ me to your birthday party.",
     choices: ["hurt", "miss", "wear", "invite"],
@@ -482,7 +482,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-048",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "Kyoto is famous ___ its old temples.",
     choices: ["to", "for", "with", "by"],
@@ -492,7 +492,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-049",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: Can I try this shirt on? B: ___",
     choices: ["I like apples.", "It is Tuesday.", "The fitting room is over there.", "I went home."],
@@ -502,7 +502,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-050",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence for a postcard: The sea is beautiful here. ___",
     choices: ["I am enjoying my vacation.", "He studies math every night.", "This desk is heavy.", "Please close the window."],
@@ -512,7 +512,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-051",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "I have already ___ my lunch.",
     choices: ["eat", "ate", "eaten", "eating"],
@@ -522,7 +522,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-052",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "We need to buy some food because the fridge is ___.",
     choices: ["popular", "kind", "empty", "strong"],
@@ -532,7 +532,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-053",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "There are a lot ___ flowers in the park.",
     choices: ["to", "of", "at", "for"],
@@ -542,7 +542,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-054",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: Shall we go to the park after lunch? B: ___",
     choices: ["It is a pencil.", "I was born in May.", "She can swim.", "That's a good idea."],
@@ -552,7 +552,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-055",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: Please tell me ___ to get to the museum.",
     choices: ["what", "who", "why", "how"],
@@ -562,7 +562,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-056",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "If it ___ tomorrow, we will stay home.",
     choices: ["rain", "rained", "rains", "will rain"],
@@ -572,7 +572,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-057",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "My neighbor is very ___ and always helps us.",
     choices: ["late", "deep", "noisy", "kind"],
@@ -582,7 +582,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-058",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "My teacher gave us an example, ___ example, a short email.",
     choices: ["by", "for", "at", "in"],
@@ -592,7 +592,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-059",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: Do you mind opening the window? B: ___",
     choices: ["I am twelve.", "It is delicious.", "On Sunday.", "No, not at all."],
@@ -602,7 +602,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-060",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: The movie was so exciting ___ I watched it twice.",
     choices: ["if", "when", "but", "that"],
@@ -612,7 +612,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-061",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "The book ___ I bought yesterday is interesting.",
     choices: ["who", "that", "where", "when"],
@@ -622,7 +622,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-062",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "I made a ___ to meet Yuki at the station.",
     choices: ["river", "season", "library", "promise"],
@@ -632,7 +632,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-063",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "We had a good ___ at the school festival.",
     choices: ["way", "hand", "time", "place"],
@@ -642,7 +642,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-064",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: Could you say that again? B: ___",
     choices: ["I don't like tests.", "It is my bag.", "Yes, I can run fast.", "Sure. I said the test is tomorrow."],
@@ -652,7 +652,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-065",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: I am interested ___ learning about animals.",
     choices: ["to", "for", "with", "in"],
@@ -662,7 +662,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-066",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "This problem is ___ difficult for me to answer.",
     choices: ["enough", "very much", "many", "too"],
@@ -672,7 +672,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-067",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "The road is not ___ at night, so be careful.",
     choices: ["safe", "brightly", "delicious", "famous"],
@@ -682,7 +682,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-068",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "Don't be afraid to make a ___.",
     choices: ["mistake", "station", "holiday", "noise"],
@@ -692,7 +692,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-069",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: How much is this notebook? B: ___",
     choices: ["It's 150 yen.", "It is near my house.", "I wrote a letter.", "Every morning."],
@@ -702,7 +702,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-070",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence for a report: We should use less plastic ___ it helps the earth.",
     choices: ["because", "until", "before", "or"],
@@ -712,7 +712,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-071",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "Have you ever ___ a koala?",
     choices: ["see", "saw", "seen", "seeing"],
@@ -722,7 +722,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-072",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "It is ___ to bring a passport when you travel abroad.",
     choices: ["quiet", "similar", "necessary", "weak"],
@@ -732,7 +732,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-073",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "We should get ___ the bus at the next stop.",
     choices: ["off", "into", "over", "through"],
@@ -742,7 +742,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-074",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: What do you think of this plan? B: ___",
     choices: ["I think it's great.", "It is on Monday.", "She lives in Nara.", "I have two brothers."],
@@ -752,7 +752,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-075",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: My brother is old enough ___ alone.",
     choices: ["travel", "traveling", "traveled", "to travel"],
@@ -762,7 +762,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-076",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "There are ___ apples in the basket.",
     choices: ["much", "any", "some", "little"],
@@ -772,7 +772,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-077",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "I will ___ my room before my friends come.",
     choices: ["clean", "grow", "borrow", "wear"],
@@ -782,7 +782,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-078",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "Please call me as soon ___ you arrive.",
     choices: ["as", "than", "so", "if"],
@@ -792,7 +792,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-079",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: I'm going to move to Osaka next month. B: ___",
     choices: ["Really? Good luck!", "It is under the chair.", "I ate breakfast.", "No, I can't swim."],
@@ -802,7 +802,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-080",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: My mother asked me ___ dinner.",
     choices: ["cook", "cooking", "cooked", "to cook"],
@@ -812,7 +812,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-081",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "I don't know ___ he lives.",
     choices: ["where", "what", "who", "whose"],
@@ -822,7 +822,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-082",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "We had a wonderful ___ during our trip to Okinawa.",
     choices: ["experience", "umbrella", "dictionary", "kitchen"],
@@ -832,7 +832,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-083",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "Put ___ your coat. It is cold outside.",
     choices: ["off", "up", "on", "away"],
@@ -842,7 +842,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-084",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: Why were you absent yesterday? B: ___",
     choices: ["Because I had a fever.", "At my school.", "It is blue.", "I like music."],
@@ -852,7 +852,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-085",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence for a thank-you card: ___ for helping me yesterday.",
     choices: ["Thank you", "Excuse me", "See you", "Welcome home"],
@@ -862,7 +862,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-086",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "English is spoken ___ many countries.",
     choices: ["by", "in", "to", "of"],
@@ -872,7 +872,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-087",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "My sister wants to become a ___ because she likes helping sick people.",
     choices: ["nurse", "river", "season", "ticket"],
@@ -882,7 +882,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-088",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "Don't be late ___ school.",
     choices: ["of", "to", "for", "with"],
@@ -892,7 +892,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-089",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: What are you going to do this weekend? B: ___",
     choices: ["I visited my aunt.", "I'm going to watch a soccer game.", "It is near the sea.", "She is kind."],
@@ -902,7 +902,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-090",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: This is the camera ___ my father gave me.",
     choices: ["who", "when", "that", "where"],
@@ -912,7 +912,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-091",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "My grandmother has lived here ___ more than fifty years.",
     choices: ["since", "for", "from", "during"],
@@ -922,7 +922,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-092",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "We must ___ which club to join by Friday.",
     choices: ["decide", "carry", "laugh", "sleep"],
@@ -932,7 +932,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-093",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "Please hand ___ your report by tomorrow.",
     choices: ["in", "out", "off", "over"],
@@ -942,7 +942,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-094",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: I passed the English test. B: ___",
     choices: ["Congratulations!", "It is raining.", "I need a ticket.", "At the door."],
@@ -952,7 +952,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-095",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: I went to bed early ___ I was very sleepy.",
     choices: ["because", "but", "or", "before"],
@@ -962,7 +962,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-096",
-    level: "eiken3",
+    level: "英検3級",
     category: "grammar",
     question: "This computer is as ___ as that one.",
     choices: ["new", "newer", "newest", "more new"],
@@ -972,7 +972,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-097",
-    level: "eiken3",
+    level: "英検3級",
     category: "vocabulary",
     question: "Please write your name and ___ on this form.",
     choices: ["address", "weather", "forest", "festival"],
@@ -982,7 +982,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-098",
-    level: "eiken3",
+    level: "英検3級",
     category: "phrase",
     question: "Let's take a ___ after studying for an hour.",
     choices: ["break", "dream", "picture", "seat"],
@@ -992,7 +992,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-099",
-    level: "eiken3",
+    level: "英検3級",
     category: "conversation",
     question: "A: May I speak to Ms. Tanaka? B: ___",
     choices: ["Speaking.", "I am hungry.", "It is ten minutes.", "You are welcome."],
@@ -1002,7 +1002,7 @@ export const eiken3Written001_100: WrittenQuestion[] = [
   },
   {
     id: "eiken3-written-100",
-    level: "eiken3",
+    level: "英検3級",
     category: "writing",
     question: "Choose the best sentence: I have just ___ my homework.",
     choices: ["finish", "finished", "finishing", "to finish"],
