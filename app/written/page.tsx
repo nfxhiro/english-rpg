@@ -46,6 +46,7 @@ export default function WrittenPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [answeredIds, setAnsweredIds] = useState<Record<string, boolean>>({});
+  const [correctIds, setCorrectIds] = useState<Record<string, boolean>>({});
   const [goldNotice, setGoldNotice] = useState<number | null>(null);
   const [expNotice, setExpNotice] = useState<{ gained: number } | null>(null);
 
@@ -97,6 +98,7 @@ export default function WrittenPage() {
     setSelectedIndex(choiceIndex);
     setAnsweredIds((prev) => ({ ...prev, [currentQuestion.id]: true }));
     if (choiceIndex === currentQuestion.answerIndex) {
+      setCorrectIds((prev) => ({ ...prev, [currentQuestion.id]: true }));
       addGold(3);
       setGoldNotice(3);
       const heroResult = addHeroExp(loadHeroStatus(), 3);
@@ -107,6 +109,7 @@ export default function WrittenPage() {
 
   const resetProgress = () => {
     setAnsweredIds({});
+    setCorrectIds({});
     setSelectedIndex(null);
     setCurrentIndex(0);
     setCategoryFilter("all");
@@ -173,7 +176,9 @@ export default function WrittenPage() {
                 type="button"
                 className={[
                   index === currentIndex ? "current" : "",
-                  answeredIds[question.id] ? "answered" : "",
+                  answeredIds[question.id]
+                    ? correctIds[question.id] ? "correct" : "wrong"
+                    : "",
                 ].filter(Boolean).join(" ")}
                 onClick={() => goToQuestion(index)}
               >
@@ -487,8 +492,16 @@ export default function WrittenPage() {
           background: rgba(20, 184, 166, 0.18);
         }
 
-        .written-index button.answered {
-          box-shadow: inset 0 -3px 0 rgba(250, 204, 21, 0.78);
+        .written-index button.correct {
+          border-color: rgba(52, 211, 153, 0.5);
+          background: rgba(52, 211, 153, 0.14);
+          color: #6ee7b7;
+        }
+
+        .written-index button.wrong {
+          border-color: rgba(248, 113, 113, 0.55);
+          background: rgba(248, 113, 113, 0.12);
+          color: #fca5a5;
         }
 
         .written-question-panel {
