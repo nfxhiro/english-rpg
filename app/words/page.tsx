@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import {
+  addGold,
   addHeroExp,
   loadHeroStatus,
   saveHeroStatus,
@@ -321,6 +322,7 @@ export default function WordsPage() {
     setMemoryAnswered(true);
 
     if (isCorrect) {
+      addGold(3);
       const gainedExp = getMemoryStudyXp();
       const heroResult = addHeroExp(loadHeroStatus(), gainedExp);
       saveHeroStatus(heroResult.after);

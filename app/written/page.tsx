@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  addGold,
   addHeroExp,
   loadHeroStatus,
   saveHeroStatus,
@@ -78,6 +79,7 @@ export default function WrittenPage() {
     setSelectedIndex(choiceIndex);
     setAnsweredIds((prev) => ({ ...prev, [currentQuestion.id]: true }));
     if (choiceIndex === currentQuestion.answerIndex) {
+      addGold(3);
       const heroResult = addHeroExp(loadHeroStatus(), 3);
       saveHeroStatus(heroResult.after);
     }
