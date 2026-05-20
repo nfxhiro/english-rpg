@@ -179,6 +179,8 @@ export default function WordsPage() {
   );
   const [memoryDoneCount, setMemoryDoneCount] = useState(0);
   const [memoryHistory, setMemoryHistory] = useState<LearningWord[]>([]);
+  const [sessionWords, setSessionWords] = useState<LearningWord[]>(() => [...learningWords]);
+  const [clearedNos, setClearedNos] = useState<Set<string>>(new Set());
   const [studyExpNotice, setStudyExpNotice] =
     useState<StudyExpNotice | null>(null);
   const [studyGoldNotice, setStudyGoldNotice] = useState<number | null>(null);
@@ -256,6 +258,8 @@ export default function WordsPage() {
   };
 
   const resetMemorySessionForWords = (words: LearningWord[]) => {
+    setSessionWords(words);
+    setClearedNos(new Set());
     setMemoryQueue(words);
     setMemoryDoneCount(0);
     setMemoryHistory([]);
@@ -332,6 +336,7 @@ export default function WordsPage() {
     setMemoryAnswered(true);
 
     if (isCorrect) {
+      setClearedNos((prev) => new Set([...prev, studiedWord.no]));
       addGold(3);
       setStudyGoldNotice(3);
       const gainedExp = getMemoryStudyXp();
@@ -631,20 +636,33 @@ export default function WordsPage() {
         ) : studyMode === "memory" ? (
           <div className="memory-stage">
             {currentMemoryWord ? (
-              <div className={levelFilter === "all" ? "memory-workspace no-aside" : "memory-workspace"}>
-                {levelFilter !== "all" && (
+              <div className={rangeIndex === null ? "memory-workspace no-aside" : "memory-workspace"}>
+                {rangeIndex !== null && (
                   <aside className="memory-index" aria-label="残りの暗記カード">
-                    {memoryQueue.slice(0, 100).map((word, index) => (
-                      <button
-                        key={`${word.word}-${word.meaning}-${index}`}
-                        type="button"
-                        className={index === 0 ? "current" : ""}
-                        onClick={() => handleMemoryJump(index)}
-                        title={word.word}
-                      >
-                        {String(index + 1).padStart(2, "0")}
-                      </button>
-                    ))}
+                    {sessionWords.map((word, index) => {
+                      const isCleared = clearedNos.has(word.no);
+                      const isCurrent = word.no === currentMemoryWord?.no;
+                      const queueIndex = memoryQueue.findIndex((q) => q.no === word.no);
+                      const className = [
+                        isCleared ? "cleared" : "",
+                        isCurrent ? "current" : "",
+                        !isCleared && !isCurrent && queueIndex < 0 ? "done" : "",
+                      ].filter(Boolean).join(" ") || undefined;
+                      return (
+                        <button
+                          key={word.no}
+                          type="button"
+                          className={className}
+                          onClick={() => {
+                            if (!isCleared && queueIndex >= 0) handleMemoryJump(queueIndex);
+                          }}
+                          title={word.word}
+                          disabled={isCleared}
+                        >
+                          {String(index + 1).padStart(2, "0")}
+                        </button>
+                      );
+                    })}
                   </aside>
                 )}
 
@@ -658,16 +676,33 @@ export default function WordsPage() {
                   <div className="memory-card-glow" />
 
                   <div className="memory-progress-row">
-                    <span>
-                      暗記進捗 {memoryCurrentNumber} / {memorySessionTotal}
-                    </span>
+                    {rangeIndex !== null ? (
+                      <>
+                        <span>
+                          クリア {clearedNos.size} / {sessionWords.length} 語
+                        </span>
+                        <span className="memory-progress-remain">
+                          残り {memoryQueue.length} 語
+                        </span>
+                      </>
+                    ) : (
+                      <span>
+                        暗記進捗 {memoryCurrentNumber} / {memorySessionTotal}
+                      </span>
+                    )}
                   </div>
 
                   <div
                     className="memory-progress-track"
                     aria-hidden="true"
                   >
-                    <div style={{ width: `${memoryProgressPercent}%` }} />
+                    <div
+                      style={{
+                        width: rangeIndex !== null
+                          ? `${sessionWords.length > 0 ? Math.round((clearedNos.size / sessionWords.length) * 100) : 0}%`
+                          : `${memoryProgressPercent}%`
+                      }}
+                    />
                   </div>
 
                   <div className="memory-badges">
@@ -1241,11 +1276,26 @@ export default function WordsPage() {
             color 0.16s ease;
         }
 
-        .memory-index button:hover,
+        .memory-index button:hover:not(:disabled),
         .memory-index button.current {
           border-color: rgba(45, 212, 191, 0.7);
           color: #ccfbf1;
           background: rgba(20, 184, 166, 0.18);
+        }
+
+        .memory-index button.cleared {
+          border-color: rgba(52, 211, 153, 0.5);
+          background: rgba(52, 211, 153, 0.14);
+          color: #6ee7b7;
+          cursor: default;
+          opacity: 0.8;
+        }
+
+        .memory-index button.current {
+          border-color: rgba(45, 212, 191, 0.9);
+          background: rgba(20, 184, 166, 0.24);
+          color: #ccfbf1;
+          box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.22);
         }
 
         .memory-card {
@@ -1298,6 +1348,10 @@ export default function WordsPage() {
           font-size: 11px;
           font-weight: 900;
           letter-spacing: 0;
+        }
+
+        .memory-progress-remain {
+          color: #64748b !important;
         }
 
         .memory-progress-track {
