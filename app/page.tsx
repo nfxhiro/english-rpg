@@ -186,6 +186,11 @@ export default function Home() {
                 <span>📚</span>
                 単語帳を見る
               </Link>
+
+              <Link href="/written" className="secondary-action">
+                <span>📄</span>
+                筆記トレーニング
+              </Link>
             </div>
 
             <div className="home-stats" aria-label="冒険の概要">
@@ -405,6 +410,18 @@ export default function Home() {
           box-shadow:
             0 30px 80px rgba(0, 0, 0, 0.38),
             inset 0 1px 0 rgba(255, 255, 255, 0.08);
+          animation: homeIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes homeIn {
+          from {
+            opacity: 0;
+            transform: translateY(18px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .hero-panel::before,
@@ -427,12 +444,13 @@ export default function Home() {
           min-height: 34px;
           padding: 0 14px;
           border-radius: 999px;
-          border: 1px solid rgba(45, 212, 191, 0.28);
-          background: rgba(20, 184, 166, 0.08);
+          border: 1px solid rgba(45, 212, 191, 0.36);
+          background: rgba(20, 184, 166, 0.1);
           color: #99f6e4;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 900;
-          letter-spacing: 0;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
         }
 
         .hero-copy h1 {
@@ -458,7 +476,7 @@ export default function Home() {
         .main-actions {
           margin-top: 28px;
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 14px;
           max-width: 620px;
         }
@@ -506,10 +524,28 @@ export default function Home() {
           transform: translateY(-4px);
         }
 
-        .secondary-action:hover,
-        .panel-link:hover {
+        .primary-action:hover {
+          box-shadow: 0 22px 50px rgba(250, 204, 21, 0.36);
+        }
+
+        .secondary-action:hover {
           border-color: rgba(45, 212, 191, 0.36);
           background: rgba(45, 212, 191, 0.08);
+        }
+
+        .panel-link:hover {
+          border-color: rgba(45, 212, 191, 0.36) !important;
+          background: rgba(45, 212, 191, 0.08) !important;
+        }
+
+        .hero-status-panel .panel-link:hover {
+          border-color: rgba(56, 189, 248, 0.38) !important;
+          background: rgba(14, 165, 233, 0.12) !important;
+        }
+
+        .collection-panel .panel-link:hover {
+          border-color: rgba(250, 204, 21, 0.38) !important;
+          background: rgba(250, 204, 21, 0.12) !important;
         }
 
         .home-stats {
@@ -525,8 +561,16 @@ export default function Home() {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          border-top: 1px solid rgba(255, 255, 255, 0.12);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          padding: 12px 16px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.04);
+          transition: border-color 0.18s ease, background 0.18s ease;
+        }
+
+        .home-stats div:hover {
+          border-color: rgba(45, 212, 191, 0.28);
+          background: rgba(45, 212, 191, 0.06);
         }
 
         .home-stats span,
@@ -536,9 +580,10 @@ export default function Home() {
         .collection-meter span,
         .collection-summary span {
           color: #94a3b8;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 900;
-          letter-spacing: 0;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
         }
 
         .home-stats strong {
@@ -690,6 +735,7 @@ export default function Home() {
           grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 14px;
           margin-top: 18px;
+          animation: homeIn 0.55s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         .home-action-card {
@@ -779,8 +825,27 @@ export default function Home() {
         }
 
         .home-action-card:hover {
-          border-color: rgba(45, 212, 191, 0.36);
-          box-shadow: 0 20px 54px rgba(20, 184, 166, 0.12), 0 18px 48px rgba(0, 0, 0, 0.32);
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.36);
+        }
+
+        .home-action-card.is-primary:hover {
+          border-color: rgba(250, 204, 21, 0.52);
+          box-shadow: 0 24px 60px rgba(250, 204, 21, 0.14), 0 18px 48px rgba(0, 0, 0, 0.34);
+        }
+
+        .home-action-card:nth-child(2):hover {
+          border-color: rgba(251, 113, 133, 0.44);
+          box-shadow: 0 24px 60px rgba(251, 113, 133, 0.12), 0 18px 48px rgba(0, 0, 0, 0.34);
+        }
+
+        .home-action-card:nth-child(3):hover {
+          border-color: rgba(45, 212, 191, 0.44);
+          box-shadow: 0 24px 60px rgba(20, 184, 166, 0.14), 0 18px 48px rgba(0, 0, 0, 0.34);
+        }
+
+        .home-action-card:nth-child(4):hover {
+          border-color: rgba(196, 181, 253, 0.42);
+          box-shadow: 0 24px 60px rgba(129, 140, 248, 0.12), 0 18px 48px rgba(0, 0, 0, 0.34);
         }
 
         .action-icon {
@@ -817,6 +882,7 @@ export default function Home() {
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 18px;
           margin-top: 18px;
+          animation: homeIn 0.55s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         .panel {

@@ -3432,8 +3432,8 @@
 .questionText h2 {
   margin: 0;
   color: white;
-  font-size: clamp(34px, 5vw, 54px);
-  line-height: 1.08;
+  font-size: clamp(24px, 3.2vw, 38px);
+  line-height: 1.22;
   font-weight: 900;
   overflow-wrap: anywhere;
 }

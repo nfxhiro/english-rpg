@@ -20,38 +20,11 @@ import SpeechButton from "../components/SpeechButton";
 const DISPLAY_STEP = 100;
 
 type StudyMode = "list" | "memory";
-type MemoryChoice = "again" | "ok" | "perfect";
 type KindFilter = "all" | "word" | "phrase";
 type StudyExpNotice = Pick<
   HeroExpResult,
   "gainedExp" | "leveledUp" | "before" | "after"
 >;
-
-const memoryChoices: {
-  value: MemoryChoice;
-  label: string;
-  note: string;
-  className: string;
-}[] = [
-  {
-    value: "again",
-    label: "もう一回",
-    note: "後でもう一度出す",
-    className: "again",
-  },
-  {
-    value: "ok",
-    label: "だいたいOK",
-    note: "次へ進む",
-    className: "ok",
-  },
-  {
-    value: "perfect",
-    label: "完璧",
-    note: "魔導書に刻む",
-    className: "perfect",
-  },
-];
 
 const kindFilterOptions: {
   value: KindFilter;
@@ -62,20 +35,7 @@ const kindFilterOptions: {
   { value: "phrase", label: "熟語" },
 ];
 
-const memoryPerfectXpByLevel: Record<string, number> = {
-  "英検5級": 8,
-  "英検4級": 10,
-  "英検3級": 12,
-  "英検準2級": 16,
-};
-
-const memoryChoiceXpMultiplier: Record<MemoryChoice, number> = {
-  again: 0,
-  ok: 0.5,
-  perfect: 1,
-};
-
-const DEFAULT_MEMORY_PERFECT_XP = 8;
+const DEFAULT_MEMORY_PERFECT_XP = 3;
 
 function getFilteredWords(
   searchText: string,
@@ -115,14 +75,92 @@ function applyRangeFilter(
   return words.filter((w) => rangeNos.has(w.no));
 }
 
-function getMemoryStudyXp(word: LearningWord, choice: MemoryChoice) {
-  const multiplier = memoryChoiceXpMultiplier[choice];
-  if (multiplier <= 0) return 0;
+function getMemoryStudyXp() {
+  return DEFAULT_MEMORY_PERFECT_XP;
+}
 
-  const perfectXp =
-    memoryPerfectXpByLevel[word.level] ?? DEFAULT_MEMORY_PERFECT_XP;
+function getAnswerLabel(index: number) {
+  return String.fromCharCode(65 + index);
+}
 
-  return Math.max(1, Math.round(perfectXp * multiplier));
+function getMemoryChoiceReading(currentWord: LearningWord, choice: string) {
+  const sameLevelReading = getReadingForLevel(currentWord.level, choice);
+  if (sameLevelReading) return sameLevelReading;
+
+  const sourceWord = learningWords.find((word) => word.meaning === choice);
+  return sourceWord ? getReadingForLevel(sourceWord.level, choice) : undefined;
+}
+
+function getChoiceSeed(word: LearningWord) {
+  const source = `${word.no}-${word.word}-${word.meaning}`;
+  let seed = 2166136261;
+
+  for (let i = 0; i < source.length; i += 1) {
+    seed ^= source.charCodeAt(i);
+    seed = Math.imul(seed, 16777619);
+  }
+
+  return seed >>> 0;
+}
+
+function shuffleWithSeed<T>(items: T[], seed: number) {
+  const nextItems = [...items];
+  let nextSeed = seed || 1;
+
+  for (let i = nextItems.length - 1; i > 0; i -= 1) {
+    nextSeed = (Math.imul(nextSeed, 1664525) + 1013904223) >>> 0;
+    const j = nextSeed % (i + 1);
+    [nextItems[i], nextItems[j]] = [nextItems[j], nextItems[i]];
+  }
+
+  return nextItems;
+}
+
+function createMemoryAnswerChoices(
+  currentWord: LearningWord,
+  sourceWords: LearningWord[]
+) {
+  const seenMeanings = new Set([currentWord.meaning]);
+  const wrongChoices: string[] = [];
+
+  const addWrongChoice = (word: LearningWord) => {
+    if (
+      word.word === currentWord.word ||
+      seenMeanings.has(word.meaning) ||
+      wrongChoices.length >= 3
+    ) {
+      return;
+    }
+
+    seenMeanings.add(word.meaning);
+    wrongChoices.push(word.meaning);
+  };
+
+  const candidateGroups = [
+    sourceWords.filter(
+      (word) =>
+        word.level === currentWord.level && word.type === currentWord.type
+    ),
+    sourceWords.filter(
+      (word) =>
+        word.level === currentWord.level && word.type !== currentWord.type
+    ),
+    sourceWords.filter((word) => word.level !== currentWord.level),
+    learningWords,
+  ];
+
+  for (const group of candidateGroups) {
+    for (const word of group) {
+      addWrongChoice(word);
+    }
+
+    if (wrongChoices.length >= 3) break;
+  }
+
+  return shuffleWithSeed(
+    [currentWord.meaning, ...wrongChoices].slice(0, 4),
+    getChoiceSeed(currentWord)
+  );
 }
 
 export default function WordsPage() {
@@ -135,7 +173,11 @@ export default function WordsPage() {
     ...learningWords,
   ]);
   const [memoryAnswered, setMemoryAnswered] = useState(false);
+  const [memorySelectedIndex, setMemorySelectedIndex] = useState<number | null>(
+    null
+  );
   const [memoryDoneCount, setMemoryDoneCount] = useState(0);
+  const [memoryHistory, setMemoryHistory] = useState<LearningWord[]>([]);
   const [studyExpNotice, setStudyExpNotice] =
     useState<StudyExpNotice | null>(null);
   const [rangeIndex, setRangeIndex] = useState<number | null>(null);
@@ -181,9 +223,20 @@ export default function WordsPage() {
     memorySessionTotal > 0
       ? Math.min(100, Math.round((memoryDoneCount / memorySessionTotal) * 100))
       : 0;
-  const currentMemoryReading = currentMemoryWord
-    ? getReadingForLevel(currentMemoryWord.level, currentMemoryWord.meaning)
-    : undefined;
+  const memoryAnswerChoices = useMemo(() => {
+    if (!currentMemoryWord) return [];
+    return createMemoryAnswerChoices(
+      currentMemoryWord,
+      filteredWords.length > 1 ? filteredWords : learningWords
+    );
+  }, [currentMemoryWord, filteredWords]);
+  const selectedMemoryAnswer =
+    memorySelectedIndex === null
+      ? undefined
+      : memoryAnswerChoices[memorySelectedIndex];
+  const memoryIsCorrect =
+    currentMemoryWord !== undefined &&
+    selectedMemoryAnswer === currentMemoryWord.meaning;
 
   useEffect(() => {
     if (studyMode !== "memory") return;
@@ -197,12 +250,26 @@ export default function WordsPage() {
   const resetMemorySessionForWords = (words: LearningWord[]) => {
     setMemoryQueue(words);
     setMemoryDoneCount(0);
+    setMemoryHistory([]);
     setMemoryAnswered(false);
+    setMemorySelectedIndex(null);
     setStudyExpNotice(null);
   };
 
   const resetMemorySession = () => {
     resetMemorySessionForWords(filteredWords);
+  };
+
+  const handleMemoryJump = (index: number) => {
+    if (index <= 0) return;
+    setMemoryQueue((currentQueue) => {
+      const nextQueue = [...currentQueue];
+      const [selectedWord] = nextQueue.splice(index, 1);
+      return selectedWord ? [selectedWord, ...nextQueue] : currentQueue;
+    });
+    setMemoryAnswered(false);
+    setMemorySelectedIndex(null);
+    setStudyExpNotice(null);
   };
 
   const handleSearchChange = (value: string) => {
@@ -235,6 +302,7 @@ export default function WordsPage() {
   const handleModeChange = (mode: StudyMode) => {
     setStudyMode(mode);
     setMemoryAnswered(false);
+    setMemorySelectedIndex(null);
     setStudyExpNotice(null);
     if (mode === "list") setRangeIndex(null);
   };
@@ -243,11 +311,17 @@ export default function WordsPage() {
     setStoredFuriganaEnabled(!furiganaEnabled);
   };
 
-  const handleMemoryChoice = (choice: MemoryChoice) => {
+  const handleMemoryAnswer = (choiceIndex: number) => {
     const studiedWord = memoryQueue[0];
-    const gainedExp = studiedWord ? getMemoryStudyXp(studiedWord, choice) : 0;
+    if (!studiedWord || memoryAnswered) return;
 
-    if (gainedExp > 0) {
+    const selectedAnswer = memoryAnswerChoices[choiceIndex];
+    const isCorrect = selectedAnswer === studiedWord.meaning;
+    setMemorySelectedIndex(choiceIndex);
+    setMemoryAnswered(true);
+
+    if (isCorrect) {
+      const gainedExp = getMemoryStudyXp();
       const heroResult = addHeroExp(loadHeroStatus(), gainedExp);
       saveHeroStatus(heroResult.after);
       setStudyExpNotice({
@@ -259,19 +333,33 @@ export default function WordsPage() {
     } else {
       setStudyExpNotice(null);
     }
+  };
 
+  const handleMemoryNext = () => {
+    if (!memoryAnswered) return;
+    const currentWord = memoryQueue[0];
+    if (!currentWord) return;
+    setMemoryHistory((prev) => [...prev, currentWord]);
     setMemoryQueue((currentQueue) => {
-      const [currentWord, ...nextWords] = currentQueue;
-      if (!currentWord) return currentQueue;
-
-      if (choice === "again") {
-        return [...nextWords, currentWord];
-      }
-
-      return nextWords;
+      const [head, ...nextWords] = currentQueue;
+      if (!head) return currentQueue;
+      return memoryIsCorrect ? nextWords : [...nextWords, head];
     });
     setMemoryDoneCount((current) => current + 1);
     setMemoryAnswered(false);
+    setMemorySelectedIndex(null);
+    setStudyExpNotice(null);
+  };
+
+  const handleMemoryPrev = () => {
+    if (memoryHistory.length === 0) return;
+    const prevWord = memoryHistory[memoryHistory.length - 1];
+    setMemoryHistory((prev) => prev.slice(0, -1));
+    setMemoryQueue((prev) => [prevWord, ...prev]);
+    setMemoryDoneCount((current) => Math.max(0, current - 1));
+    setMemoryAnswered(false);
+    setMemorySelectedIndex(null);
+    setStudyExpNotice(null);
   };
 
   return (
@@ -527,144 +615,174 @@ export default function WordsPage() {
         ) : studyMode === "memory" ? (
           <div className="memory-stage">
             {currentMemoryWord ? (
-              <article
-                className={
-                  memoryAnswered
-                    ? "memory-card is-answered"
-                    : "memory-card"
-                }
-              >
-                <div className="memory-card-glow" />
+              <div className="memory-workspace">
+                <aside className="memory-index" aria-label="残りの暗記カード">
+                  {memoryQueue.slice(0, 100).map((word, index) => (
+                    <button
+                      key={`${word.word}-${word.meaning}-${index}`}
+                      type="button"
+                      className={index === 0 ? "current" : ""}
+                      onClick={() => handleMemoryJump(index)}
+                      title={word.word}
+                    >
+                      {String(index + 1).padStart(2, "0")}
+                    </button>
+                  ))}
+                </aside>
 
-                <div className="memory-progress-row">
-                  <span>
-                    暗記進捗 {memoryCurrentNumber} / {memorySessionTotal}
-                  </span>
-                  <button type="button" onClick={resetMemorySession}>
-                    最初から
-                  </button>
-                </div>
-
-                <div
-                  className="memory-progress-track"
-                  aria-hidden="true"
-                >
-                  <div style={{ width: `${memoryProgressPercent}%` }} />
-                </div>
-
-                <div
-                  className={
-                    studyExpNotice
-                      ? "memory-exp-notice"
-                      : "memory-exp-notice is-empty"
-                  }
-                  role={studyExpNotice ? "status" : undefined}
-                  aria-hidden={studyExpNotice ? undefined : true}
-                >
-                  {studyExpNotice ? (
-                    <>
-                    <strong>EXP +{studyExpNotice.gainedExp}</strong>
-                    <span>
-                      {studyExpNotice.leveledUp
-                        ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
-                        : "主人公EXP"}
-                    </span>
-                    </>
-                  ) : (
-                    <>
-                      <strong>EXP +0</strong>
-                      <span>主人公EXP</span>
-                    </>
-                  )}
-                </div>
-
-                <div className="memory-badges">
-                  <span>{currentMemoryWord.level}</span>
-                  <span>{currentMemoryWord.type}</span>
-                </div>
-
-                <p className="memory-kicker">MEMORY MODE</p>
-                <h2 className="memory-word">{currentMemoryWord.word}</h2>
-
-                <div
+                <article
                   className={
                     memoryAnswered
-                      ? "memory-primary-actions is-reviewing"
-                      : "memory-primary-actions"
+                      ? "memory-card is-answered"
+                      : "memory-card"
                   }
                 >
-                  {memoryAnswered ? (
-                    memoryChoices.map((choice) => (
-                      <button
-                        key={choice.value}
-                        type="button"
-                        onClick={() => handleMemoryChoice(choice.value)}
-                        className={`memory-review-button ${choice.className}`}
-                      >
-                        <strong>{choice.label}</strong>
-                        <span>{choice.note}</span>
-                      </button>
-                    ))
-                  ) : (
-                    <>
-                      <SpeechButton
-                        text={currentMemoryWord.word}
-                        label="単語を聞く"
-                        activeLabel="停止"
-                        title={`${currentMemoryWord.word} を読み上げる`}
-                        className="memory-speech-button"
-                      />
+                  <div className="memory-card-glow" />
 
-                      <button
-                        type="button"
-                        onClick={() => setMemoryAnswered(true)}
-                        className="memory-reveal-button"
-                      >
-                        答えを見る
-                      </button>
+                  <div className="memory-progress-row">
+                    <span>
+                      暗記進捗 {memoryCurrentNumber} / {memorySessionTotal}
+                    </span>
+                  </div>
 
-                      <span className="memory-action-spacer" aria-hidden="true" />
-                    </>
-                  )}
-                </div>
+                  <div
+                    className="memory-progress-track"
+                    aria-hidden="true"
+                  >
+                    <div style={{ width: `${memoryProgressPercent}%` }} />
+                  </div>
 
-                {memoryAnswered && (
-                  <div className="memory-answer">
+                  <div
+                    className={
+                      studyExpNotice
+                        ? "memory-exp-notice"
+                        : "memory-exp-notice is-empty"
+                    }
+                    role={studyExpNotice ? "status" : undefined}
+                    aria-hidden={studyExpNotice ? undefined : true}
+                  >
+                    {studyExpNotice ? (
+                      <>
+                      <strong>EXP +{studyExpNotice.gainedExp}</strong>
+                      <span>
+                        {studyExpNotice.leveledUp
+                          ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
+                          : "主人公EXP"}
+                      </span>
+                      </>
+                    ) : (
+                      <>
+                        <strong>EXP +0</strong>
+                        <span>主人公EXP</span>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="memory-badges">
+                    <span>{currentMemoryWord.level}</span>
+                    <span>{currentMemoryWord.type}</span>
+                  </div>
+
+                  <p className="memory-kicker">MEMORY MODE</p>
+                  <h2 className="memory-word">{currentMemoryWord.word}</h2>
+
+                  <div className="memory-tools-row">
+                    <SpeechButton
+                      text={currentMemoryWord.word}
+                      label="単語を聞く"
+                      activeLabel="停止"
+                      title={`${currentMemoryWord.word} を読み上げる`}
+                      className="memory-speech-button"
+                    />
+                  </div>
+
+                  <div className="memory-choice-grid">
+                    {memoryAnswerChoices.map((choice, index) => {
+                      const isSelected = memorySelectedIndex === index;
+                      const isAnswer = choice === currentMemoryWord.meaning;
+                      const reading = furiganaEnabled
+                        ? getMemoryChoiceReading(currentMemoryWord, choice)
+                        : undefined;
+                      const className = [
+                        "memory-choice",
+                        memoryAnswered && isAnswer ? "correct" : "",
+                        memoryAnswered && isSelected && !isAnswer
+                          ? "wrong"
+                          : "",
+                        memoryAnswered && !isSelected && !isAnswer
+                          ? "muted"
+                          : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ");
+
+                      return (
+                        <button
+                          key={`${currentMemoryWord.word}-${choice}`}
+                          type="button"
+                          onClick={() => handleMemoryAnswer(index)}
+                          className={className}
+                          disabled={memoryAnswered}
+                        >
+                          <span>{getAnswerLabel(index)}</span>
+                          <strong>
+                            {choice}
+                            {reading && (
+                              <span className="memory-choice-reading">
+                                {reading}
+                              </span>
+                            )}
+                          </strong>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {memoryAnswered && (
                     <div
                       className={
-                        furiganaEnabled
-                          ? "memory-answer-grid"
-                          : "memory-answer-grid single"
+                        memoryIsCorrect
+                          ? "memory-result correct"
+                          : "memory-result wrong"
                       }
                     >
-                      <section className="memory-answer-box">
-                        <span>日本語訳</span>
-                        <strong>{currentMemoryWord.meaning}</strong>
-                      </section>
-
-                      {furiganaEnabled && (
-                        <section className="memory-answer-box">
-                          <span>ふりがな</span>
-                          <strong>
-                            {currentMemoryReading ?? "ふりがな未登録"}
-                          </strong>
-                        </section>
-                      )}
+                      <strong>
+                        {memoryIsCorrect
+                          ? "正解です"
+                          : "もう一度確認しましょう"}
+                      </strong>
+                      <p>
+                        {`${currentMemoryWord.word} は「${currentMemoryWord.meaning}」という意味です。${
+                          memoryIsCorrect
+                            ? ""
+                            : " 間違えた単語は後でもう一度出ます。"
+                        }`}
+                      </p>
                     </div>
+                  )}
 
-                    <section className="memory-answer-box memory-example-box">
-                      <span>例文</span>
-                      <p className="memory-example-en">
-                        {currentMemoryWord.example}
-                      </p>
-                      <p className="memory-example-ja">
-                        {currentMemoryWord.exampleMeaning}
-                      </p>
-                    </section>
-
+                  <div className="memory-actions">
+                    <button
+                      type="button"
+                      onClick={handleMemoryPrev}
+                      disabled={memoryHistory.length === 0}
+                    >
+                      前へ
+                    </button>
+                    <button
+                      type="button"
+                      className="primary"
+                      onClick={handleMemoryNext}
+                      disabled={!memoryAnswered}
+                    >
+                      次へ
+                    </button>
+                    <button type="button" onClick={resetMemorySession}>
+                      リセット
+                    </button>
                   </div>
-                )}
-              </article>
+                </article>
+              </div>
             ) : (
               <div className="eq-panel memory-complete">
                 <p>MEMORY COMPLETE</p>
@@ -785,6 +903,10 @@ export default function WordsPage() {
 
         .wordbook-mode-action {
           font-family: inherit;
+          border-color: rgba(255, 255, 255, 0.12) !important;
+          background: rgba(255, 255, 255, 0.06) !important;
+          color: #f8fafc !important;
+          box-shadow: none !important;
         }
 
         .wordbook-mode-action span {
@@ -792,40 +914,56 @@ export default function WordsPage() {
         }
 
         .wordbook-mode-action.active {
-          outline: 2px solid rgba(255, 255, 255, 0.34);
+          border-color: rgba(45, 212, 191, 0.48) !important;
+          background:
+            linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(15, 23, 42, 0.76)) !important;
+          color: #ccfbf1 !important;
+          outline: 1px solid rgba(45, 212, 191, 0.28);
           outline-offset: 3px;
+        }
+
+        .wordbook-mode-action:hover {
+          border-color: rgba(45, 212, 191, 0.36) !important;
+          background: rgba(45, 212, 191, 0.08) !important;
+        }
+
+        .wordbook-mode-action.active:hover {
+          background:
+            linear-gradient(135deg, rgba(20, 184, 166, 0.24), rgba(15, 23, 42, 0.8)) !important;
         }
 
         .wordbook-memory-toolbar {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
-          margin-top: 8px;
-          border: 1px solid rgba(34, 211, 238, 0.22);
-          border-radius: 18px;
+          gap: 10px;
+          margin-top: 0;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 20px;
           padding: 10px 12px;
-          background: rgba(8, 12, 22, 0.72);
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+          background:
+            radial-gradient(circle at 92% 18%, rgba(20, 184, 166, 0.18), transparent 32%),
+            linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(8, 13, 24, 0.96));
+          box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
         }
 
         .wordbook-memory-summary {
           min-width: 0;
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 8px;
           flex-wrap: wrap;
         }
 
         .wordbook-memory-label {
           color: #99f6e4;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 1000;
         }
 
         .wordbook-memory-summary strong {
           color: #fef3c7;
-          font-size: 14px;
+          font-size: 16px;
           line-height: 1.2;
           font-weight: 1000;
         }
@@ -834,7 +972,7 @@ export default function WordsPage() {
           display: flex;
           align-items: center;
           justify-content: flex-end;
-          gap: 10px;
+          gap: 8px;
           flex-wrap: wrap;
         }
 
@@ -842,7 +980,7 @@ export default function WordsPage() {
           max-width: min(100%, 620px);
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 6px;
           overflow-x: auto;
           scrollbar-width: thin;
           scrollbar-color: rgba(45, 212, 191, 0.42) transparent;
@@ -850,15 +988,15 @@ export default function WordsPage() {
         }
 
         .memory-level-tab {
-          min-height: 38px;
+          min-height: 34px;
           flex: 0 0 auto;
           border: 1px solid rgba(34, 211, 238, 0.24);
           border-radius: 999px;
           background: rgba(15, 23, 42, 0.7);
           color: #cbd5e1;
-          padding: 0 13px;
+          padding: 0 12px;
           font: inherit;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 1000;
           white-space: nowrap;
           cursor: pointer;
@@ -877,10 +1015,10 @@ export default function WordsPage() {
         }
 
         .memory-level-tab.active {
-          border-color: rgba(251, 191, 36, 0.82);
-          background: linear-gradient(135deg, #fde68a, #f59e0b);
-          color: #111827;
-          box-shadow: 0 10px 24px rgba(245, 158, 11, 0.2);
+          border-color: rgba(45, 212, 191, 0.58);
+          background: rgba(45, 212, 191, 0.16);
+          color: #ccfbf1;
+          box-shadow: none;
         }
 
         .memory-range-tabs {
@@ -892,7 +1030,7 @@ export default function WordsPage() {
         }
 
         .memory-range-tab {
-          min-height: 30px;
+          min-height: 28px;
           flex: 0 0 auto;
           border: 1px solid rgba(168, 85, 247, 0.28);
           border-radius: 999px;
@@ -919,22 +1057,22 @@ export default function WordsPage() {
         }
 
         .memory-range-tab.active {
-          border-color: rgba(168, 85, 247, 0.82);
-          background: linear-gradient(135deg, #a855f7, #7c3aed);
-          color: #fff;
-          box-shadow: 0 6px 18px rgba(168, 85, 247, 0.24);
+          border-color: rgba(250, 204, 21, 0.42);
+          background: rgba(250, 204, 21, 0.12);
+          color: #fef3c7;
+          box-shadow: none;
         }
 
         .wordbook-memory-back-button {
-          min-height: 40px;
+          min-height: 34px;
           flex: 0 0 auto;
           border: 1px solid rgba(34, 211, 238, 0.34);
-          border-radius: 14px;
+          border-radius: 12px;
           background: rgba(20, 184, 166, 0.08);
           color: #99f6e4;
-          padding: 0 14px;
+          padding: 0 12px;
           font: inherit;
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 1000;
           cursor: pointer;
           transition:
@@ -1052,131 +1190,127 @@ export default function WordsPage() {
 
         .memory-stage {
           width: 100%;
+          margin-top: 10px;
+        }
+
+        .memory-workspace {
           display: grid;
-          place-items: center;
-          margin-top: 6px;
+          grid-template-columns: 96px minmax(0, 1fr);
+          gap: 14px;
+          align-items: start;
+        }
+
+        .memory-index {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 6px;
+          max-height: calc(100svh - 190px);
+          overflow: auto;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          padding: 8px;
+          background: rgba(2, 6, 23, 0.48);
+        }
+
+        .memory-index button {
+          aspect-ratio: 1;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 9px;
+          background: rgba(255, 255, 255, 0.055);
+          color: #cbd5e1;
+          font: inherit;
+          font-size: 11px;
+          font-weight: 1000;
+          cursor: pointer;
+          transition:
+            border-color 0.16s ease,
+            background 0.16s ease,
+            color 0.16s ease;
+        }
+
+        .memory-index button:hover,
+        .memory-index button.current {
+          border-color: rgba(45, 212, 191, 0.7);
+          color: #ccfbf1;
+          background: rgba(20, 184, 166, 0.18);
         }
 
         .memory-card {
           position: relative;
           isolation: isolate;
-          width: min(100%, 1040px);
+          width: 100%;
           min-height: auto;
           overflow: hidden;
-          border: 1px solid rgba(34, 211, 238, 0.24);
-          border-radius: 26px;
-          padding: 18px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 20px;
+          padding: 16px;
           background:
-            linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px),
-            radial-gradient(
-              circle at 50% -10%,
-              rgba(34, 211, 238, 0.18),
-              transparent 42%
-            ),
-            radial-gradient(
-              circle at 100% 100%,
-              rgba(251, 191, 36, 0.12),
-              transparent 34%
-            ),
-            linear-gradient(145deg, #020617, #0f172a 56%, #061121);
-          background-size:
-            26px 26px,
-            26px 26px,
-            auto,
-            auto,
-            auto;
+            linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(8, 13, 24, 0.98));
           box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.08),
-            inset 0 -24px 60px rgba(2, 6, 23, 0.54),
-            0 28px 90px rgba(0, 0, 0, 0.38),
-            0 0 80px rgba(34, 211, 238, 0.1);
+            0 18px 48px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+          transition: border-color 0.22s ease, box-shadow 0.22s ease;
         }
 
         .memory-card::before {
-          content: "";
-          position: absolute;
-          inset: 12px;
-          z-index: -1;
-          border: 1px solid rgba(34, 211, 238, 0.12);
-          border-radius: 20px;
-          pointer-events: none;
+          content: none;
         }
 
         .memory-card-glow {
           position: absolute;
-          inset: auto 12% -28% 12%;
-          height: 180px;
-          z-index: -1;
+          top: -60px;
+          right: -60px;
+          width: 200px;
+          height: 200px;
           border-radius: 999px;
-          background: rgba(34, 211, 238, 0.12);
-          filter: blur(48px);
+          background: radial-gradient(circle, rgba(45, 212, 191, 0.12), transparent 64%);
           pointer-events: none;
+          animation: memoryGlowPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes memoryGlowPulse {
+          0%, 100% { opacity: 0.6; transform: scale(0.96); }
+          50% { opacity: 1; transform: scale(1.08); }
         }
 
         .memory-progress-row {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 12px;
+          gap: 10px;
         }
 
         .memory-progress-row span {
-          color: #a5f3fc;
-          font-size: 13px;
-          font-weight: 1000;
-          letter-spacing: 0.08em;
-        }
-
-        .memory-progress-row button {
-          min-height: 36px;
-          border: 1px solid rgba(148, 163, 184, 0.24);
-          border-radius: 999px;
-          background: rgba(15, 23, 42, 0.7);
-          color: #cbd5e1;
-          padding: 0 14px;
-          font: inherit;
-          font-size: 12px;
-          font-weight: 1000;
-          cursor: pointer;
-          transition:
-            transform 0.15s ease,
-            border-color 0.15s ease,
-            color 0.15s ease;
-        }
-
-        .memory-progress-row button:hover {
-          transform: translateY(-1px);
-          border-color: rgba(34, 211, 238, 0.5);
-          color: #ecfeff;
+          color: #94a3b8;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0;
         }
 
         .memory-progress-track {
-          height: 8px;
-          margin-top: 10px;
+          height: 6px;
+          margin-top: 8px;
           overflow: hidden;
           border-radius: 999px;
-          background: rgba(15, 23, 42, 0.9);
-          border: 1px solid rgba(148, 163, 184, 0.16);
+          background: rgba(255, 255, 255, 0.08);
         }
 
         .memory-progress-track div {
           height: 100%;
           border-radius: inherit;
-          background: linear-gradient(90deg, #22d3ee, #facc15);
-          box-shadow: 0 0 18px rgba(34, 211, 238, 0.46);
-          transition: width 0.24s ease;
+          background: linear-gradient(90deg, #2dd4bf, #fde047);
+          transition: width 0.3s ease;
         }
 
         .memory-exp-notice {
           width: fit-content;
           max-width: 100%;
-          min-height: 32px;
+          min-height: 26px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
-          margin: 8px auto 0;
+          gap: 6px;
+          margin: 6px auto 0;
           border: 1px solid rgba(250, 204, 21, 0.42);
           border-radius: 999px;
           background:
@@ -1186,26 +1320,32 @@ export default function WordsPage() {
               transparent 68%
             ),
             rgba(113, 63, 18, 0.24);
-          padding: 0 12px;
+          padding: 0 10px;
           color: #fef3c7;
           box-shadow: 0 16px 42px rgba(250, 204, 21, 0.12);
           animation: memoryExpPop 0.28s ease both;
         }
 
         .memory-exp-notice strong {
-          font-size: 14px;
+          font-size: 12px;
           line-height: 1;
           font-weight: 1000;
         }
 
         .memory-exp-notice span {
           color: #cbd5e1;
-          font-size: 12px;
+          font-size: 11px;
           line-height: 1.2;
           font-weight: 900;
         }
 
         .memory-exp-notice.is-empty {
+          min-height: 0;
+          height: 0;
+          margin-top: 0;
+          border: 0;
+          padding: 0;
+          overflow: hidden;
           visibility: hidden;
           animation: none;
         }
@@ -1214,226 +1354,238 @@ export default function WordsPage() {
           display: flex;
           flex-wrap: wrap;
           justify-content: center;
-          gap: 8px;
-          margin-top: 12px;
+          gap: 6px;
+          margin-top: 8px;
         }
 
         .memory-badges span {
-          min-height: 24px;
+          min-height: 22px;
           display: inline-flex;
           align-items: center;
           border-radius: 999px;
-          padding: 0 9px;
+          padding: 0 8px;
           border: 1px solid rgba(34, 211, 238, 0.36);
           background: rgba(34, 211, 238, 0.1);
           color: #a5f3fc;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 1000;
           line-height: 1.25;
         }
 
         .memory-kicker {
-          display: none;
+          display: block;
+          margin: 8px 0 0;
+          color: #5eead4;
+          font-size: 10px;
+          font-weight: 1000;
+          text-align: center;
+          letter-spacing: 0.14em;
+          opacity: 0.7;
         }
 
         .memory-word {
-          margin: 12px 0 0;
+          min-height: 92px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 8px 0 0;
+          border: 1px solid rgba(45, 212, 191, 0.2);
+          border-radius: 16px;
+          padding: 14px;
+          background: rgba(2, 6, 23, 0.45);
           text-align: center;
-          color: #f8fafc;
-          text-shadow:
-            0 0 24px rgba(34, 211, 238, 0.32),
-            0 4px 24px rgba(0, 0, 0, 0.44);
-          font-size: clamp(42px, 5.5vw, 68px);
-          line-height: 1;
+          color: #ffffff;
+          text-shadow: none;
+          font-size: clamp(24px, 4vw, 42px);
+          line-height: 1.12;
           font-weight: 1000;
           letter-spacing: 0;
           overflow-wrap: anywhere;
         }
 
-        .memory-primary-actions {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(172px, 212px));
+        .memory-tools-row {
+          display: flex;
           justify-content: center;
-          gap: 10px;
-          margin-top: 14px;
-        }
-
-        .memory-primary-actions.is-reviewing {
-          margin-top: 14px;
-        }
-
-        .memory-action-spacer {
-          display: block;
+          margin-top: 8px;
         }
 
         :global(.memory-speech-button) {
-          width: 100%;
-          min-height: 52px;
-          border-radius: 14px;
-          padding: 0 14px;
-          font-size: 14px;
-          box-shadow: 0 16px 44px rgba(34, 211, 238, 0.14);
+          width: min(100%, 210px);
+          min-height: 38px;
+          border-radius: 12px;
+          padding: 0 12px;
+          font-size: 13px;
+          box-shadow: none;
         }
 
-        .memory-reveal-button {
-          width: 100%;
-          min-height: 52px;
-          border: 1px solid rgba(251, 191, 36, 0.46);
-          border-radius: 14px;
-          background:
-            radial-gradient(
-              circle at 50% 0%,
-              rgba(254, 240, 138, 0.28),
-              transparent 64%
-            ),
-            linear-gradient(135deg, #f59e0b, #0e7490);
-          color: #fff7ed;
-          padding: 0 18px;
-          font: inherit;
-          font-size: 15px;
-          font-weight: 1000;
-          line-height: 1.2;
-          cursor: pointer;
-          box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.24),
-            0 20px 60px rgba(245, 158, 11, 0.18);
-          transition:
-            transform 0.16s ease,
-            box-shadow 0.16s ease;
-        }
-
-        .memory-reveal-button:hover {
-          transform: translateY(-2px);
-          box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.28),
-            0 24px 72px rgba(34, 211, 238, 0.2);
-        }
-
-        .memory-answer {
-          margin-top: 14px;
-          animation: memoryAnswerIn 0.24s ease both;
-        }
-
-        .memory-answer-grid {
+        .memory-choice-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 10px;
-        }
-
-        .memory-answer-grid.single {
-          grid-template-columns: 1fr;
-        }
-
-        .memory-answer-box {
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 16px;
-          padding: 12px 14px;
-          background: rgba(2, 6, 23, 0.58);
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        }
-
-        .memory-answer-box span {
-          display: block;
-          color: #67e8f9;
-          font-size: 10px;
-          font-weight: 1000;
-          letter-spacing: 0.12em;
-        }
-
-        .memory-answer-box strong {
-          display: block;
-          margin-top: 4px;
-          color: #fde68a;
-          font-size: 19px;
-          line-height: 1.3;
-          font-weight: 1000;
-          overflow-wrap: anywhere;
-        }
-
-        .memory-example-box {
+          gap: 8px;
           margin-top: 10px;
         }
 
-        .memory-example-en {
-          margin: 6px 0 0;
-          color: #ffffff;
-          font-size: 16px;
-          line-height: 1.45;
-          font-weight: 900;
-        }
-
-        .memory-example-ja {
-          margin: 3px 0 0;
-          color: #cbd5e1;
-          font-size: 14px;
-          line-height: 1.45;
-          font-weight: 800;
-        }
-
-        .memory-review-button {
-          width: 100%;
-          min-height: 56px;
-          border: 1px solid rgba(148, 163, 184, 0.2);
+        .memory-choice {
+          min-height: 60px;
+          display: grid;
+          grid-template-columns: 30px minmax(0, 1fr);
+          align-items: center;
+          gap: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 14px;
-          background: rgba(15, 23, 42, 0.78);
+          background: rgba(255, 255, 255, 0.065);
           color: #f8fafc;
-          padding: 8px 10px;
+          padding: 10px;
+          text-align: left;
           font: inherit;
           cursor: pointer;
           transition:
             transform 0.16s ease,
             border-color 0.16s ease,
             background 0.16s ease,
-            box-shadow 0.16s ease;
+            opacity 0.16s ease;
         }
 
-        .memory-review-button strong,
-        .memory-review-button span {
-          display: block;
-          line-height: 1.25;
+        .memory-choice:hover:not(:disabled) {
+          transform: translateY(-2px);
+          border-color: rgba(45, 212, 191, 0.54);
+          background: rgba(20, 184, 166, 0.16);
         }
 
-        .memory-review-button strong {
-          font-size: 15px;
+        .memory-choice:disabled {
+          cursor: default;
+        }
+
+        .memory-choice > span {
+          width: 30px;
+          height: 30px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.1);
+          color: #a5f3fc;
+          font-size: 12px;
           font-weight: 1000;
         }
 
-        .memory-review-button span {
+        .memory-choice strong {
+          min-width: 0;
+          font-size: 16px;
+          line-height: 1.28;
+          font-weight: 900;
+          overflow-wrap: anywhere;
+        }
+
+        .memory-choice-reading {
+          display: block;
           margin-top: 4px;
-          color: #cbd5e1;
-          font-size: 11px;
+          color: #6ee7b7;
+          font-size: 12px;
+          line-height: 1.25;
           font-weight: 900;
         }
 
-        .memory-review-button:hover {
-          transform: translateY(-2px);
+        .memory-choice.correct {
+          border-color: rgba(52, 211, 153, 0.72);
+          background: rgba(52, 211, 153, 0.18);
         }
 
-        .memory-review-button.again {
-          border-color: rgba(248, 113, 113, 0.34);
-          background: rgba(127, 29, 29, 0.22);
+        .memory-choice.wrong {
+          border-color: rgba(248, 113, 113, 0.76);
+          background: rgba(248, 113, 113, 0.16);
         }
 
-        .memory-review-button.again:hover {
-          box-shadow: 0 18px 50px rgba(248, 113, 113, 0.14);
+        .memory-choice.muted {
+          opacity: 0.58;
         }
 
-        .memory-review-button.ok {
-          border-color: rgba(34, 211, 238, 0.38);
-          background: rgba(14, 116, 144, 0.24);
+        .memory-result {
+          animation: memoryAnswerIn 0.24s ease both;
+          margin-top: 10px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 14px;
+          padding: 12px 14px;
+          margin-bottom: 0;
+          background: rgba(255, 255, 255, 0.06);
         }
 
-        .memory-review-button.ok:hover {
-          box-shadow: 0 18px 50px rgba(34, 211, 238, 0.16);
+        .memory-result.correct {
+          border-color: rgba(52, 211, 153, 0.52);
+          background: rgba(52, 211, 153, 0.09);
+          box-shadow: 0 0 20px rgba(52, 211, 153, 0.08);
         }
 
-        .memory-review-button.perfect {
-          border-color: rgba(250, 204, 21, 0.4);
-          background: rgba(113, 63, 18, 0.26);
+        .memory-result.wrong {
+          border-color: rgba(248, 113, 113, 0.52);
+          background: rgba(248, 113, 113, 0.09);
+          box-shadow: 0 0 20px rgba(248, 113, 113, 0.08);
         }
 
-        .memory-review-button.perfect:hover {
-          box-shadow: 0 18px 50px rgba(250, 204, 21, 0.16);
+        .memory-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          justify-content: flex-end;
+          margin-top: 12px;
+          padding-top: 10px;
+          border-top: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .memory-actions button {
+          min-height: 34px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 999px;
+          padding: 0 13px;
+          background: rgba(255, 255, 255, 0.06);
+          color: #cbd5e1;
+          font: inherit;
+          font-size: 12px;
+          font-weight: 900;
+          cursor: pointer;
+          transition:
+            transform 0.15s ease,
+            border-color 0.15s ease,
+            background 0.15s ease,
+            color 0.15s ease;
+        }
+
+        .memory-actions button:not(:disabled):hover {
+          transform: translateY(-1px);
+          border-color: rgba(45, 212, 191, 0.38);
+          background: rgba(45, 212, 191, 0.08);
+          color: #e2e8f0;
+        }
+
+        .memory-actions button.primary {
+          border-color: rgba(45, 212, 191, 0.58);
+          background: rgba(45, 212, 191, 0.16);
+          color: #ccfbf1;
+          box-shadow: 0 0 14px rgba(45, 212, 191, 0.1);
+        }
+
+        .memory-actions button.primary:not(:disabled):hover {
+          background: rgba(45, 212, 191, 0.22);
+        }
+
+        .memory-actions button:disabled {
+          cursor: not-allowed;
+          opacity: 0.4;
+        }
+
+        .memory-result strong {
+          color: #fef3c7;
+          font-size: 14px;
+          line-height: 1.35;
+          font-weight: 1000;
+        }
+
+        .memory-result p {
+          margin: 5px 0 0;
+          color: #cbd5e1;
+          font-size: 13px;
+          line-height: 1.5;
+          font-weight: 800;
         }
 
         .memory-complete {
@@ -1822,15 +1974,26 @@ export default function WordsPage() {
             margin-top: 8px;
           }
 
+          .memory-workspace {
+            grid-template-columns: 1fr;
+            gap: 10px;
+          }
+
+          .memory-index {
+            grid-template-columns: repeat(10, minmax(38px, 1fr));
+            max-height: none;
+            border-radius: 16px;
+            padding: 8px;
+          }
+
           .memory-card {
             min-height: 0;
             border-radius: 18px;
-            padding: 12px;
+            padding: 14px;
           }
 
           .memory-card::before {
-            inset: 10px;
-            border-radius: 18px;
+            content: none;
           }
 
           .memory-progress-row {
@@ -1844,50 +2007,39 @@ export default function WordsPage() {
 
           .memory-word {
             margin-top: 8px;
-            font-size: clamp(34px, 13vw, 52px);
+            min-height: 92px;
+            padding: 16px 12px;
+            font-size: clamp(26px, 10vw, 40px);
+            line-height: 1.2;
           }
 
-          .memory-primary-actions {
-            display: grid;
+          .memory-tools-row {
+            margin-top: 10px;
+          }
+
+          :global(.memory-speech-button) {
+            width: 100%;
+          }
+
+          .memory-choice-grid {
             grid-template-columns: 1fr;
             gap: 8px;
             margin-top: 10px;
           }
 
-          .memory-action-spacer {
-            display: none;
-          }
-
-          :global(.memory-speech-button),
-          .memory-reveal-button {
-            width: 100%;
-          }
-
-          .memory-answer-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .memory-answer {
-            margin-top: 10px;
-          }
-
-          .memory-answer-box {
+          .memory-choice {
+            min-height: 58px;
             border-radius: 14px;
-            padding: 10px;
           }
 
-          .memory-example-en {
-            font-size: 14px;
-            line-height: 1.45;
+          .memory-result {
+            border-radius: 14px;
+            padding: 12px;
           }
 
-          .memory-example-ja {
-            font-size: 13px;
-            line-height: 1.45;
-          }
-
-          .memory-review-button {
-            min-height: 52px;
+          .memory-actions button {
+            min-height: 40px;
+            border-radius: 999px;
           }
 
           .words-list {
@@ -1970,18 +2122,10 @@ export default function WordsPage() {
             justify-content: flex-start;
           }
 
-          .memory-kicker,
-          .memory-word {
+          .memory-kicker {
             text-align: left;
           }
 
-          .memory-answer-box strong {
-            font-size: 19px;
-          }
-
-          .memory-example-en {
-            font-size: 16px;
-          }
         }
       `}</style>
     </main>
