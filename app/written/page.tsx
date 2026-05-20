@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   addGold,
@@ -46,6 +46,8 @@ export default function WrittenPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [answeredIds, setAnsweredIds] = useState<Record<string, boolean>>({});
+  const [goldNotice, setGoldNotice] = useState<number | null>(null);
+  const [expNotice, setExpNotice] = useState<{ gained: number } | null>(null);
 
   const questions = useMemo(() => {
     if (categoryFilter === "all") return eiken3Written001_100;
@@ -62,16 +64,32 @@ export default function WrittenPage() {
       ? Math.round((answeredCount / eiken3Written001_100.length) * 100)
       : 0;
 
+  useEffect(() => {
+    if (goldNotice === null) return;
+    const t = setTimeout(() => setGoldNotice(null), 2000);
+    return () => clearTimeout(t);
+  }, [goldNotice]);
+
+  useEffect(() => {
+    if (expNotice === null) return;
+    const t = setTimeout(() => setExpNotice(null), 2000);
+    return () => clearTimeout(t);
+  }, [expNotice]);
+
   const changeCategory = (category: CategoryFilter) => {
     setCategoryFilter(category);
     setCurrentIndex(0);
     setSelectedIndex(null);
+    setGoldNotice(null);
+    setExpNotice(null);
   };
 
   const goToQuestion = (nextIndex: number) => {
     const boundedIndex = Math.max(0, Math.min(nextIndex, questions.length - 1));
     setCurrentIndex(boundedIndex);
     setSelectedIndex(null);
+    setGoldNotice(null);
+    setExpNotice(null);
   };
 
   const handleAnswer = (choiceIndex: number) => {
@@ -80,8 +98,10 @@ export default function WrittenPage() {
     setAnsweredIds((prev) => ({ ...prev, [currentQuestion.id]: true }));
     if (choiceIndex === currentQuestion.answerIndex) {
       addGold(3);
+      setGoldNotice(3);
       const heroResult = addHeroExp(loadHeroStatus(), 3);
       saveHeroStatus(heroResult.after);
+      setExpNotice({ gained: heroResult.gainedExp });
     }
   };
 
@@ -90,6 +110,8 @@ export default function WrittenPage() {
     setSelectedIndex(null);
     setCurrentIndex(0);
     setCategoryFilter("all");
+    setGoldNotice(null);
+    setExpNotice(null);
   };
 
   if (!currentQuestion) {
@@ -196,6 +218,19 @@ export default function WrittenPage() {
                 );
               })}
             </div>
+
+            {hasAnswered && isCorrect && (
+              <div className="written-notice-row">
+                <div className="written-exp-notice" role="status">
+                  <strong>EXP +{expNotice?.gained ?? 3}</strong>
+                  <span>主人公EXP</span>
+                </div>
+                <div className="written-gold-notice" role="status">
+                  <strong>🪙 +3</strong>
+                  <span>ゴールド獲得</span>
+                </div>
+              </div>
+            )}
 
             {hasAnswered && (
               <div className={isCorrect ? "written-result correct" : "written-result wrong"}>
@@ -587,6 +622,66 @@ export default function WrittenPage() {
 
         .written-choice.muted {
           opacity: 0.44;
+        }
+
+        .written-notice-row {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin-top: 10px;
+        }
+
+        .written-exp-notice,
+        .written-gold-notice {
+          width: fit-content;
+          min-height: 26px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          border-radius: 999px;
+          padding: 0 10px;
+          animation: writtenNoticeIn 0.28s ease both;
+        }
+
+        .written-exp-notice {
+          border: 1px solid rgba(250, 204, 21, 0.42);
+          background:
+            radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.22), transparent 68%),
+            rgba(113, 63, 18, 0.24);
+          color: #fef3c7;
+          box-shadow: 0 8px 24px rgba(250, 204, 21, 0.1);
+        }
+
+        .written-gold-notice {
+          border: 1px solid rgba(52, 211, 153, 0.42);
+          background:
+            radial-gradient(circle at 50% 0%, rgba(52, 211, 153, 0.22), transparent 68%),
+            rgba(6, 78, 59, 0.28);
+          color: #a7f3d0;
+          box-shadow: 0 8px 24px rgba(52, 211, 153, 0.1);
+        }
+
+        .written-exp-notice strong,
+        .written-gold-notice strong {
+          font-size: 12px;
+          line-height: 1;
+          font-weight: 1000;
+        }
+
+        .written-exp-notice span,
+        .written-gold-notice span {
+          color: #cbd5e1;
+          font-size: 11px;
+          line-height: 1.2;
+          font-weight: 900;
+        }
+
+        @keyframes writtenNoticeIn {
+          from { opacity: 0; transform: translateY(-6px) scale(0.9); }
+          to   { opacity: 1; transform: translateY(0)   scale(1);   }
         }
 
         .written-result {

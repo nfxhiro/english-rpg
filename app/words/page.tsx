@@ -181,6 +181,7 @@ export default function WordsPage() {
   const [memoryHistory, setMemoryHistory] = useState<LearningWord[]>([]);
   const [studyExpNotice, setStudyExpNotice] =
     useState<StudyExpNotice | null>(null);
+  const [studyGoldNotice, setStudyGoldNotice] = useState<number | null>(null);
   const [rangeIndex, setRangeIndex] = useState<number | null>(null);
   const furiganaEnabled = useSyncExternalStore(
     subscribeToFuriganaEnabledChange,
@@ -193,6 +194,12 @@ export default function WordsPage() {
     const t = setTimeout(() => setStudyExpNotice(null), 2000);
     return () => clearTimeout(t);
   }, [studyExpNotice]);
+
+  useEffect(() => {
+    if (studyGoldNotice === null) return;
+    const t = setTimeout(() => setStudyGoldNotice(null), 2000);
+    return () => clearTimeout(t);
+  }, [studyGoldNotice]);
 
   const levels = useMemo(() => {
     return Array.from(new Set(learningWords.map((word) => word.level)));
@@ -255,6 +262,7 @@ export default function WordsPage() {
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
     setStudyExpNotice(null);
+    setStudyGoldNotice(null);
   };
 
   const resetMemorySession = () => {
@@ -271,6 +279,7 @@ export default function WordsPage() {
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
     setStudyExpNotice(null);
+    setStudyGoldNotice(null);
   };
 
   const handleSearchChange = (value: string) => {
@@ -305,6 +314,7 @@ export default function WordsPage() {
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
     setStudyExpNotice(null);
+    setStudyGoldNotice(null);
     if (mode === "list") setRangeIndex(null);
   };
 
@@ -323,6 +333,7 @@ export default function WordsPage() {
 
     if (isCorrect) {
       addGold(3);
+      setStudyGoldNotice(3);
       const gainedExp = getMemoryStudyXp();
       const heroResult = addHeroExp(loadHeroStatus(), gainedExp);
       saveHeroStatus(heroResult.after);
@@ -334,6 +345,7 @@ export default function WordsPage() {
       });
     } else {
       setStudyExpNotice(null);
+      setStudyGoldNotice(null);
     }
   };
 
@@ -351,6 +363,7 @@ export default function WordsPage() {
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
     setStudyExpNotice(null);
+    setStudyGoldNotice(null);
   };
 
   const handleMemoryPrev = () => {
@@ -362,6 +375,7 @@ export default function WordsPage() {
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
     setStudyExpNotice(null);
+    setStudyGoldNotice(null);
   };
 
   return (
@@ -654,30 +668,54 @@ export default function WordsPage() {
                     <div style={{ width: `${memoryProgressPercent}%` }} />
                   </div>
 
-                  <div
-                    className={
-                      studyExpNotice
-                        ? "memory-exp-notice"
-                        : "memory-exp-notice is-empty"
-                    }
-                    role={studyExpNotice ? "status" : undefined}
-                    aria-hidden={studyExpNotice ? undefined : true}
-                  >
-                    {studyExpNotice ? (
-                      <>
-                      <strong>EXP +{studyExpNotice.gainedExp}</strong>
-                      <span>
-                        {studyExpNotice.leveledUp
-                          ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
-                          : "主人公EXP"}
-                      </span>
-                      </>
-                    ) : (
-                      <>
-                        <strong>EXP +0</strong>
-                        <span>主人公EXP</span>
-                      </>
-                    )}
+                  <div className="memory-notice-row">
+                    <div
+                      className={
+                        studyExpNotice
+                          ? "memory-exp-notice"
+                          : "memory-exp-notice is-empty"
+                      }
+                      role={studyExpNotice ? "status" : undefined}
+                      aria-hidden={studyExpNotice ? undefined : true}
+                    >
+                      {studyExpNotice ? (
+                        <>
+                          <strong>EXP +{studyExpNotice.gainedExp}</strong>
+                          <span>
+                            {studyExpNotice.leveledUp
+                              ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
+                              : "主人公EXP"}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <strong>EXP +0</strong>
+                          <span>主人公EXP</span>
+                        </>
+                      )}
+                    </div>
+
+                    <div
+                      className={
+                        studyGoldNotice !== null
+                          ? "memory-gold-notice"
+                          : "memory-gold-notice is-empty"
+                      }
+                      role={studyGoldNotice !== null ? "status" : undefined}
+                      aria-hidden={studyGoldNotice !== null ? undefined : true}
+                    >
+                      {studyGoldNotice !== null ? (
+                        <>
+                          <strong>🪙 +{studyGoldNotice}</strong>
+                          <span>ゴールド獲得</span>
+                        </>
+                      ) : (
+                        <>
+                          <strong>🪙 +0</strong>
+                          <span>ゴールド</span>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   <div className="memory-badges">
@@ -1342,6 +1380,62 @@ export default function WordsPage() {
         }
 
         .memory-exp-notice.is-empty {
+          min-height: 0;
+          height: 0;
+          margin-top: 0;
+          border: 0;
+          padding: 0;
+          overflow: hidden;
+          visibility: hidden;
+          animation: none;
+        }
+
+        .memory-notice-row {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .memory-gold-notice {
+          width: fit-content;
+          max-width: 100%;
+          min-height: 26px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          margin: 6px 0 0;
+          border: 1px solid rgba(52, 211, 153, 0.42);
+          border-radius: 999px;
+          background:
+            radial-gradient(
+              circle at 50% 0%,
+              rgba(52, 211, 153, 0.22),
+              transparent 68%
+            ),
+            rgba(6, 78, 59, 0.28);
+          padding: 0 10px;
+          color: #a7f3d0;
+          box-shadow: 0 16px 42px rgba(52, 211, 153, 0.1);
+          animation: memoryExpPop 0.28s ease both;
+        }
+
+        .memory-gold-notice strong {
+          font-size: 12px;
+          line-height: 1;
+          font-weight: 1000;
+        }
+
+        .memory-gold-notice span {
+          color: #cbd5e1;
+          font-size: 11px;
+          line-height: 1.2;
+          font-weight: 900;
+        }
+
+        .memory-gold-notice.is-empty {
           min-height: 0;
           height: 0;
           margin-top: 0;
