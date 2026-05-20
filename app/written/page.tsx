@@ -184,9 +184,23 @@ export default function WrittenPage() {
 
           <section className="written-question-panel">
             <div className="written-question-meta">
-              <span>{currentQuestion.id}</span>
-              <span>{getCategoryLabel(currentQuestion.category)}</span>
-              <span>{currentIndex + 1} / {questions.length}</span>
+              <div className="written-meta-left">
+                <span>{currentQuestion.id}</span>
+                <span>{getCategoryLabel(currentQuestion.category)}</span>
+                <span>{currentIndex + 1} / {questions.length}</span>
+              </div>
+              {hasAnswered && isCorrect && (
+                <div className="written-meta-notices">
+                  <div className="written-exp-notice" role="status">
+                    <strong>EXP +{expNotice?.gained ?? 3}</strong>
+                    <span>主人公EXP</span>
+                  </div>
+                  <div className="written-gold-notice" role="status">
+                    <strong>🪙 +3</strong>
+                    <span>ゴールド獲得</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="written-question-text">
@@ -218,19 +232,6 @@ export default function WrittenPage() {
                 );
               })}
             </div>
-
-            {hasAnswered && isCorrect && (
-              <div className="written-notice-row">
-                <div className="written-exp-notice" role="status">
-                  <strong>EXP +{expNotice?.gained ?? 3}</strong>
-                  <span>主人公EXP</span>
-                </div>
-                <div className="written-gold-notice" role="status">
-                  <strong>🪙 +3</strong>
-                  <span>ゴールド獲得</span>
-                </div>
-              </div>
-            )}
 
             {hasAnswered && (
               <div className={isCorrect ? "written-result correct" : "written-result wrong"}>
@@ -503,12 +504,20 @@ export default function WrittenPage() {
 
         .written-question-meta {
           display: flex;
-          flex-wrap: wrap;
-          gap: 7px;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
           margin-bottom: 10px;
         }
 
-        .written-question-meta span {
+        .written-meta-left {
+          display: flex;
+          flex-wrap: wrap;
+          align-items: center;
+          gap: 7px;
+        }
+
+        .written-meta-left span {
           min-height: 25px;
           display: inline-flex;
           align-items: center;
@@ -519,6 +528,13 @@ export default function WrittenPage() {
           color: #cbd5e1;
           font-size: 11px;
           font-weight: 900;
+        }
+
+        .written-meta-notices {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
         }
 
         .written-question-text {
@@ -622,15 +638,6 @@ export default function WrittenPage() {
 
         .written-choice.muted {
           opacity: 0.44;
-        }
-
-        .written-notice-row {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 8px;
-          flex-wrap: wrap;
-          margin-top: 10px;
         }
 
         .written-exp-notice,
