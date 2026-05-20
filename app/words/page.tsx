@@ -181,6 +181,7 @@ export default function WordsPage() {
   const [memoryHistory, setMemoryHistory] = useState<LearningWord[]>([]);
   const [sessionWords, setSessionWords] = useState<LearningWord[]>(() => [...learningWords]);
   const [clearedNos, setClearedNos] = useState<Set<string>>(new Set());
+  const [wrongNos, setWrongNos] = useState<Set<string>>(new Set());
   const [studyExpNotice, setStudyExpNotice] =
     useState<StudyExpNotice | null>(null);
   const [studyGoldNotice, setStudyGoldNotice] = useState<number | null>(null);
@@ -260,6 +261,7 @@ export default function WordsPage() {
   const resetMemorySessionForWords = (words: LearningWord[]) => {
     setSessionWords(words);
     setClearedNos(new Set());
+    setWrongNos(new Set());
     setMemoryQueue(words);
     setMemoryDoneCount(0);
     setMemoryHistory([]);
@@ -337,6 +339,7 @@ export default function WordsPage() {
 
     if (isCorrect) {
       setClearedNos((prev) => new Set([...prev, studiedWord.no]));
+      setWrongNos((prev) => { const next = new Set(prev); next.delete(studiedWord.no); return next; });
       addGold(3);
       setStudyGoldNotice(3);
       const gainedExp = getMemoryStudyXp();
@@ -349,6 +352,7 @@ export default function WordsPage() {
         after: heroResult.after,
       });
     } else {
+      setWrongNos((prev) => new Set([...prev, studiedWord.no]));
       setStudyExpNotice(null);
       setStudyGoldNotice(null);
     }
@@ -641,10 +645,12 @@ export default function WordsPage() {
                   <aside className="memory-index" aria-label="残りの暗記カード">
                     {sessionWords.map((word, index) => {
                       const isCleared = clearedNos.has(word.no);
+                      const isWrong = !isCleared && wrongNos.has(word.no);
                       const isCurrent = word.no === currentMemoryWord?.no;
                       const queueIndex = memoryQueue.findIndex((q) => q.no === word.no);
                       const className = [
                         isCleared ? "cleared" : "",
+                        isWrong && !isCurrent ? "wrong" : "",
                         isCurrent ? "current" : "",
                         !isCleared && !isCurrent && queueIndex < 0 ? "done" : "",
                       ].filter(Boolean).join(" ") || undefined;
@@ -1291,6 +1297,12 @@ export default function WordsPage() {
           color: #6ee7b7;
           cursor: default;
           opacity: 0.8;
+        }
+
+        .memory-index button.wrong {
+          border-color: rgba(248, 113, 113, 0.55);
+          background: rgba(248, 113, 113, 0.12);
+          color: #fca5a5;
         }
 
         .memory-index button.current {
