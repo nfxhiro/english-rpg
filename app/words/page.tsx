@@ -676,19 +676,37 @@ export default function WordsPage() {
                   <div className="memory-card-glow" />
 
                   <div className="memory-progress-row">
-                    {rangeIndex !== null ? (
-                      <>
+                    <div className="memory-progress-left">
+                      {rangeIndex !== null ? (
+                        <>
+                          <span>
+                            クリア {clearedNos.size} / {sessionWords.length} 語
+                          </span>
+                          <span className="memory-progress-remain">
+                            残り {memoryQueue.length} 語
+                          </span>
+                        </>
+                      ) : (
                         <span>
-                          クリア {clearedNos.size} / {sessionWords.length} 語
+                          暗記進捗 {memoryCurrentNumber} / {memorySessionTotal}
                         </span>
-                        <span className="memory-progress-remain">
-                          残り {memoryQueue.length} 語
-                        </span>
-                      </>
-                    ) : (
-                      <span>
-                        暗記進捗 {memoryCurrentNumber} / {memorySessionTotal}
-                      </span>
+                      )}
+                    </div>
+                    {memoryAnswered && memoryIsCorrect && (
+                      <div className="memory-meta-notices">
+                        <div className="memory-exp-notice" role="status">
+                          <strong>EXP +{studyExpNotice?.gainedExp ?? 3}</strong>
+                          <span>
+                            {studyExpNotice?.leveledUp
+                              ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
+                              : "主人公EXP"}
+                          </span>
+                        </div>
+                        <div className="memory-gold-notice" role="status">
+                          <strong>🪙 +{studyGoldNotice ?? 3}</strong>
+                          <span>ゴールド獲得</span>
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -765,22 +783,6 @@ export default function WordsPage() {
                     })}
                   </div>
 
-                  {memoryAnswered && memoryIsCorrect && (
-                    <div className="memory-notice-row">
-                      <div className="memory-exp-notice" role="status">
-                        <strong>EXP +{studyExpNotice?.gainedExp ?? 3}</strong>
-                        <span>
-                          {studyExpNotice?.leveledUp
-                            ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
-                            : "主人公EXP"}
-                        </span>
-                      </div>
-                      <div className="memory-gold-notice" role="status">
-                        <strong>🪙 +{studyGoldNotice ?? 3}</strong>
-                        <span>ゴールド獲得</span>
-                      </div>
-                    </div>
-                  )}
 
                   {memoryAnswered && (
                     <div
@@ -1343,11 +1345,26 @@ export default function WordsPage() {
           gap: 10px;
         }
 
+        .memory-progress-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .memory-progress-left span,
         .memory-progress-row span {
           color: #94a3b8;
           font-size: 11px;
           font-weight: 900;
           letter-spacing: 0;
+        }
+
+        .memory-meta-notices {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
         }
 
         .memory-progress-remain {
@@ -1403,15 +1420,6 @@ export default function WordsPage() {
           font-size: 11px;
           line-height: 1.2;
           font-weight: 900;
-        }
-
-        .memory-notice-row {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 8px;
-          flex-wrap: wrap;
-          margin-top: 10px;
         }
 
         .memory-gold-notice {
