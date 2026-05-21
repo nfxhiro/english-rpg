@@ -248,10 +248,6 @@ export default function WordsPage() {
   const memoryIsCorrect =
     currentMemoryWord !== undefined &&
     selectedMemoryAnswer === currentMemoryWord.meaning;
-  const meaningReading = currentMemoryWord
-    ? getReadingForLevel(currentMemoryWord.level, currentMemoryWord.meaning)
-    : undefined;
-
   useEffect(() => {
     if (studyMode !== "memory") return;
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -807,15 +803,11 @@ export default function WordsPage() {
                           : "もう一度確認しましょう"}
                       </strong>
                       <p>
-                        {currentMemoryWord.word} は「
-                        {furiganaEnabled && meaningReading ? (
-                          <ruby>
-                            {currentMemoryWord.meaning}
-                            <rt>{meaningReading}</rt>
-                          </ruby>
-                        ) : currentMemoryWord.meaning}
-                        」という意味です。
-                        {!memoryIsCorrect && " 間違えた単語は後でもう一度出ます。"}
+                        {`${currentMemoryWord.word} は「${currentMemoryWord.meaning}」という意味です。${
+                          memoryIsCorrect
+                            ? ""
+                            : " 間違えた単語は後でもう一度出ます。"
+                        }`}
                       </p>
                     </div>
                   )}
@@ -1705,11 +1697,6 @@ export default function WordsPage() {
           font-size: 14px;
           line-height: 1.35;
           font-weight: 1000;
-        }
-
-        .memory-result p rt {
-          font-size: 10px;
-          color: #94a3b8;
         }
 
         .memory-result p {
