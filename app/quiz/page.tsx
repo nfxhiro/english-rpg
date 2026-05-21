@@ -430,7 +430,11 @@ function getDominantLevel(words: LearningWord[]): string | null {
 }
 
 function getChoiceReading(currentQuestion: LearningWord, choice: string) {
-  return getReadingForLevel(currentQuestion.level, choice);
+  const sameLevelReading = getReadingForLevel(currentQuestion.level, choice);
+  if (sameLevelReading) return sameLevelReading;
+
+  const sourceWord = learningWords.find((word) => word.meaning === choice);
+  return sourceWord ? getReadingForLevel(sourceWord.level, choice) : undefined;
 }
 
 export default function QuizPage() {

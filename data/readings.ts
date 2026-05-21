@@ -3,6 +3,10 @@ import { getEiken3Reading } from "./readings_eiken3";
 import { getEiken4Reading } from "./readings_eiken4";
 import { getEiken5Reading } from "./readings_eiken5";
 import { getEikenPre2Reading } from "./readings_eiken_pre2";
+import {
+  getReadingOverrideKey,
+  readingOverridesByLevelAndMeaning,
+} from "./readingOverrides";
 
 export type ReadingGetter = (meaning: string) => string | undefined;
 
@@ -14,5 +18,8 @@ export const readingGettersByLevel: Record<string, ReadingGetter> = {
 };
 
 export function getReadingForLevel(level: string, meaning: string) {
-  return readingGettersByLevel[level]?.(meaning);
+  return (
+    readingOverridesByLevelAndMeaning[getReadingOverrideKey(level, meaning)] ??
+    readingGettersByLevel[level]?.(meaning)
+  );
 }
