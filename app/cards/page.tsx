@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import AppLoading from "../components/AppLoading";
 import {
   allAttributes,
@@ -174,6 +175,9 @@ export default function CardsPage() {
     return (
       <AppLoading
         icon="🃏"
+        iconSrc="/home-icons/cards.png"
+        iconWidth={1254}
+        iconHeight={787}
         title="カード図鑑を読み込み中..."
         message="所持カード・図鑑達成率・成長状況を確認しています。"
       />
@@ -223,7 +227,18 @@ export default function CardsPage() {
           <div className="book-stage">
             <div className="eq-display-card">
               <div className="eq-display-shine" />
-              <div className="eq-display-icon">📘</div>
+              <div className="eq-display-icon eq-display-image-frame">
+                <Image
+                  src="/home-icons/book.png"
+                  alt=""
+                  width={1229}
+                  height={1042}
+                  className="eq-display-image"
+                  sizes="150px"
+                  aria-hidden="true"
+                  unoptimized
+                />
+              </div>
               <p>COLLECTION BOOK</p>
               <h2>{collectionRate}%</h2>
               <span>

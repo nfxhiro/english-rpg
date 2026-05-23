@@ -12,11 +12,29 @@ import {
   eiken3Written001_100,
   type WrittenQuestion,
 } from "../../data/eiken3_written_001_100";
+import { eiken5Written001_100 } from "../../data/eiken5_written_001_100";
+import { eiken4Written001_100 } from "../../data/eiken4_written_001_100";
+import { eikenPre2Written001_100 } from "../../data/eiken_pre2_written_001_100";
 
-type CategoryFilter = WrittenQuestion["category"] | "all";
+type LevelFilter = WrittenQuestion["level"];
 
-const categoryLabels: Record<CategoryFilter, string> = {
-  all: "すべて",
+const allWrittenQuestions: WrittenQuestion[] = [
+  ...eiken5Written001_100,
+  ...eiken4Written001_100,
+  ...eiken3Written001_100,
+  ...eikenPre2Written001_100,
+];
+
+const levelLabels: Record<LevelFilter, string> = {
+  "英検5級": "5級",
+  "英検4級": "4級",
+  "英検3級": "3級",
+  "英検準2級": "準2級",
+};
+
+const levelFilters: LevelFilter[] = ["英検5級", "英検4級", "英検3級", "英検準2級"];
+
+const categoryLabels: Record<WrittenQuestion["category"], string> = {
   vocabulary: "語彙",
   grammar: "文法",
   phrase: "熟語",
@@ -24,25 +42,33 @@ const categoryLabels: Record<CategoryFilter, string> = {
   writing: "表現",
 };
 
-const categoryFilters: CategoryFilter[] = [
-  "all",
-  "vocabulary",
-  "grammar",
-  "phrase",
-  "conversation",
-  "writing",
-];
-
-function getCategoryLabel(category: WrittenQuestion["category"]) {
-  return categoryLabels[category];
+function shuffleArray<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
 }
 
 function getAnswerLabel(index: number) {
   return String.fromCharCode(65 + index);
 }
 
+const STORAGE_KEY = "writtenProgress";
+
+function loadProgress(): { answeredIds: Record<string, boolean>; correctIds: Record<string, boolean> } {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch {}
+  return { answeredIds: {}, correctIds: {} };
+}
+
 export default function WrittenPage() {
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [levelFilter, setLevelFilter] = useState<LevelFilter>("英検5級");
+  const [isShuffled, setIsShuffled] = useState(false);
+  const [shuffledQuestions, setShuffledQuestions] = useState<WrittenQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [answeredIds, setAnsweredIds] = useState<Record<string, boolean>>({});
@@ -50,19 +76,36 @@ export default function WrittenPage() {
   const [goldNotice, setGoldNotice] = useState<number | null>(null);
   const [expNotice, setExpNotice] = useState<{ gained: number } | null>(null);
 
-  const questions = useMemo(() => {
-    if (categoryFilter === "all") return eiken3Written001_100;
-    return eiken3Written001_100.filter((q) => q.category === categoryFilter);
-  }, [categoryFilter]);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const { answeredIds: a, correctIds: c } = loadProgress();
+      setAnsweredIds(a);
+      setCorrectIds(c);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ answeredIds, correctIds }));
+    } catch {}
+  }, [answeredIds, correctIds]);
+
+  const baseQuestions = useMemo(() => {
+    return allWrittenQuestions.filter((q) => q.level === levelFilter);
+  }, [levelFilter]);
+
+  const questions = isShuffled ? shuffledQuestions : baseQuestions;
 
   const currentQuestion = questions[currentIndex] ?? questions[0];
   const hasAnswered = selectedIndex !== null;
   const isCorrect =
     currentQuestion !== undefined && selectedIndex === currentQuestion.answerIndex;
-  const answeredCount = Object.values(answeredIds).filter(Boolean).length;
+  const correctCount = Object.values(correctIds).filter(Boolean).length;
   const progressPercent =
-    eiken3Written001_100.length > 0
-      ? Math.round((answeredCount / eiken3Written001_100.length) * 100)
+    questions.length > 0
+      ? Math.round((correctCount / questions.length) * 100)
       : 0;
 
   useEffect(() => {
@@ -77,8 +120,26 @@ export default function WrittenPage() {
     return () => clearTimeout(t);
   }, [expNotice]);
 
-  const changeCategory = (category: CategoryFilter) => {
-    setCategoryFilter(category);
+  const changeLevel = (level: LevelFilter) => {
+    setLevelFilter(level);
+    setIsShuffled(false);
+    setCurrentIndex(0);
+    setSelectedIndex(null);
+    setGoldNotice(null);
+    setExpNotice(null);
+  };
+
+  const handleShuffle = () => {
+    setShuffledQuestions(shuffleArray(baseQuestions));
+    setIsShuffled(true);
+    setCurrentIndex(0);
+    setSelectedIndex(null);
+    setGoldNotice(null);
+    setExpNotice(null);
+  };
+
+  const clearShuffle = () => {
+    setIsShuffled(false);
     setCurrentIndex(0);
     setSelectedIndex(null);
     setGoldNotice(null);
@@ -112,9 +173,11 @@ export default function WrittenPage() {
     setCorrectIds({});
     setSelectedIndex(null);
     setCurrentIndex(0);
-    setCategoryFilter("all");
+    setLevelFilter("英検5級");
+    setIsShuffled(false);
     setGoldNotice(null);
     setExpNotice(null);
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
   };
 
   if (!currentQuestion) {
@@ -140,12 +203,12 @@ export default function WrittenPage() {
 
         <header className="written-header">
           <div>
-            <p className="written-kicker">EIKEN GRADE 3</p>
+            <p className="written-kicker">EIKEN WRITTEN TRAINING</p>
             <h1>筆記問題トレーニング</h1>
           </div>
           <div className="written-progress-card">
-            <span>進捗</span>
-            <strong>{answeredCount} / {eiken3Written001_100.length}</strong>
+            <span>正解数</span>
+            <strong>{correctCount} / {questions.length}</strong>
             <div className="written-progress-track" aria-hidden="true">
               <div
                 className="written-progress-fill"
@@ -155,17 +218,24 @@ export default function WrittenPage() {
           </div>
         </header>
 
-        <div className="written-filters" aria-label="カテゴリを選ぶ">
-          {categoryFilters.map((category) => (
+        <div className="written-filters" aria-label="レベルを選ぶ">
+          {levelFilters.map((level) => (
             <button
-              key={category}
+              key={level}
               type="button"
-              className={categoryFilter === category ? "active" : ""}
-              onClick={() => changeCategory(category)}
+              className={levelFilter === level ? "active" : ""}
+              onClick={() => changeLevel(level)}
             >
-              {categoryLabels[category]}
+              {levelLabels[level]}
             </button>
           ))}
+          <button
+            type="button"
+            className={isShuffled ? "shuffle-btn active" : "shuffle-btn"}
+            onClick={isShuffled ? clearShuffle : handleShuffle}
+          >
+            {isShuffled ? "↺ 順番通り" : "シャッフル"}
+          </button>
         </div>
 
         <section className="written-workspace">
@@ -190,8 +260,8 @@ export default function WrittenPage() {
           <section className="written-question-panel">
             <div className="written-question-meta">
               <div className="written-meta-left">
-                <span>{currentQuestion.id}</span>
-                <span>{getCategoryLabel(currentQuestion.category)}</span>
+                <span className="level-badge">{currentQuestion.level}</span>
+                <span>{categoryLabels[currentQuestion.category]}</span>
                 <span>{currentIndex + 1} / {questions.length}</span>
               </div>
               {hasAnswered && isCorrect && (
@@ -273,8 +343,6 @@ export default function WrittenPage() {
       <style jsx>{`
         .written-page {
           min-height: 100svh;
-          background:
-            linear-gradient(160deg, #07111f 0%, #0d1b2c 48%, #0a1717 100%);
           color: #f8fafc;
           padding: 16px 20px;
         }
@@ -446,6 +514,17 @@ export default function WrittenPage() {
           transform: translateY(-1px);
         }
 
+        .shuffle-btn {
+          margin-left: auto;
+        }
+
+        .shuffle-btn.active {
+          border-color: rgba(251, 191, 36, 0.55) !important;
+          background: rgba(251, 191, 36, 0.12) !important;
+          color: #fde68a !important;
+          box-shadow: 0 0 14px rgba(251, 191, 36, 0.1) !important;
+        }
+
         .written-workspace {
           display: grid;
           grid-template-columns: 96px minmax(0, 1fr);
@@ -541,6 +620,12 @@ export default function WrittenPage() {
           color: #cbd5e1;
           font-size: 11px;
           font-weight: 900;
+        }
+
+        .level-badge {
+          border-color: rgba(45, 212, 191, 0.35) !important;
+          background: rgba(45, 212, 191, 0.1) !important;
+          color: #5eead4 !important;
         }
 
         .written-meta-notices {

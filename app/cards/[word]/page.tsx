@@ -86,16 +86,8 @@ function getEarnedCard(card: MonsterCard, earnedCards: EarnedCard[]) {
 }
 
 const DEFAULT_SHOP_STATE: ShopState = {
-  ownedAvatars: [],
-  ownedTitles: [],
-  ownedBackgrounds: [],
-  ownedFrames: [],
-  ownedEffects: [],
-  selectedAvatar: null,
   selectedTitle: null,
   selectedBackground: null,
-  selectedFrame: null,
-  selectedEffect: null,
   selectedMonsterCardId: null,
 };
 
@@ -132,6 +124,9 @@ export default function CardDetailPage() {
     return (
       <AppLoading
         icon="🃏"
+        iconSrc="/home-icons/cards.png"
+        iconWidth={1254}
+        iconHeight={787}
         title="カードを読み込み中..."
         message="モンスターカード情報を確認しています。"
       />

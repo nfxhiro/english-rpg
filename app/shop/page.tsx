@@ -2,139 +2,114 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { loadGold, spendGold } from "../../data/hero";
 import {
-  loadShopState,
-  saveShopState,
-  ShopItem,
-  ShopState,
-  SHOP_AVATARS,
-  SHOP_TITLES,
-  SHOP_BACKGROUNDS,
-  SHOP_FRAMES,
-  SHOP_EFFECTS,
+  EquipCategory,
+  EquipItem,
+  EquipState,
+  loadEquipState,
+  saveEquipState,
+  calcTotalEffects,
+  EQUIP_ITEMS,
 } from "../../data/shop";
 
-type ShopTab = "avatar" | "title" | "background" | "frame" | "effect";
+const CATEGORY_TABS: {
+  id: EquipCategory;
+  label: string;
+  icon: string;
+  image: string;
+}[] = [
+  { id: "weapon",    label: "武器",         icon: "⚔️", image: "/images/equipment/weapon.png" },
+  { id: "shield",    label: "盾",           icon: "🛡️", image: "/images/equipment/shield.png" },
+  { id: "armor",     label: "よろい",       icon: "🥋", image: "/images/equipment/armor.png" },
+  { id: "helmet",    label: "かぶと",       icon: "🪖", image: "/images/equipment/helmet.png" },
+  { id: "accessory", label: "アクセサリー", icon: "💍", image: "/images/equipment/accessory.png" },
+];
 
-const DEFAULT_STATE: ShopState = {
-  ownedAvatars: [],
-  ownedTitles: [],
-  ownedBackgrounds: [],
-  ownedFrames: [],
-  ownedEffects: [],
-  selectedAvatar: null,
-  selectedTitle: null,
-  selectedBackground: null,
-  selectedFrame: null,
-  selectedEffect: null,
-  selectedMonsterCardId: null,
+const EFFECT_LABELS: Record<string, string> = {
+  attack:          "攻撃力",
+  hp:              "HP",
+  damageReduction: "被ダメ軽減",
+  criticalRate:    "クリティカル",
+  healBonus:       "回復ボーナス",
+  goldBonus:       "G増加",
+  expBonus:        "EXP増加",
+  partnerExpBonus: "相棒EXP",
 };
 
-const TAB_ITEMS: Record<ShopTab, ShopItem[]> = {
-  avatar: SHOP_AVATARS,
-  title: SHOP_TITLES,
-  background: SHOP_BACKGROUNDS,
-  frame: SHOP_FRAMES,
-  effect: SHOP_EFFECTS,
+const EFFECT_ICONS: Record<string, string> = {
+  attack:          "⚔️",
+  hp:              "❤️",
+  damageReduction: "🛡️",
+  criticalRate:    "⚡",
+  healBonus:       "💚",
+  goldBonus:       "🪙",
+  expBonus:        "📘",
+  partnerExpBonus: "🤝",
 };
 
-const TAB_LABELS: Record<ShopTab, string> = {
-  avatar: "🧑 アバター",
-  title: "👑 称号",
-  background: "🌌 背景",
-  frame: "🖼️ フレーム",
-  effect: "✨ エフェクト",
+const EFFECT_UNITS: Record<string, string> = {
+  attack:          "",
+  hp:              "",
+  damageReduction: "%",
+  criticalRate:    "倍",
+  healBonus:       "倍",
+  goldBonus:       "%",
+  expBonus:        "%",
+  partnerExpBonus: "%",
+};
+
+const DEFAULT_EQUIP_STATE: EquipState = {
+  ownedItems: [],
+  equippedItems: { weapon: null, shield: null, armor: null, helmet: null, accessory: null },
 };
 
 export default function ShopPage() {
   const [gold, setGold] = useState(0);
-  const [shopState, setShopState] = useState<ShopState>(DEFAULT_STATE);
-  const [activeTab, setActiveTab] = useState<ShopTab>("avatar");
+  const [equipState, setEquipState] = useState<EquipState>(DEFAULT_EQUIP_STATE);
+  const [activeTab, setActiveTab] = useState<EquipCategory>("weapon");
   const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setGold(loadGold());
-      setShopState(loadShopState());
+      setEquipState(loadEquipState());
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
-  function getOwnedList(category: ShopItemCategory): string[] {
-    if (category === "avatar") return shopState.ownedAvatars;
-    if (category === "title") return shopState.ownedTitles;
-    if (category === "background") return shopState.ownedBackgrounds;
-    if (category === "frame") return shopState.ownedFrames;
-    return shopState.ownedEffects;
-  }
-
-  function isOwned(item: ShopItem): boolean {
-    return getOwnedList(item.category).includes(item.id);
-  }
-
-  function isEquipped(item: ShopItem): boolean {
-    if (item.category === "avatar") return shopState.selectedAvatar === item.id;
-    if (item.category === "title") return shopState.selectedTitle === item.name;
-    if (item.category === "background") return shopState.selectedBackground === item.id;
-    if (item.category === "frame") return shopState.selectedFrame === item.id;
-    return shopState.selectedEffect === item.id;
-  }
-
-  function handlePurchase(item: ShopItem) {
-    if (gold < item.price || isOwned(item)) return;
+  function handlePurchase(item: EquipItem) {
+    if (equipState.ownedItems.includes(item.id) || gold < item.price) return;
     const success = spendGold(item.price);
     if (!success) return;
-
-    const newGold = loadGold();
-    setGold(newGold);
-
-    const newState = { ...shopState };
-    if (item.category === "avatar") {
-      newState.ownedAvatars = [...newState.ownedAvatars, item.id];
-    } else if (item.category === "title") {
-      newState.ownedTitles = [...newState.ownedTitles, item.id];
-    } else if (item.category === "background") {
-      newState.ownedBackgrounds = [...newState.ownedBackgrounds, item.id];
-    } else if (item.category === "frame") {
-      newState.ownedFrames = [...newState.ownedFrames, item.id];
-    } else {
-      newState.ownedEffects = [...newState.ownedEffects, item.id];
-    }
-    saveShopState(newState);
-    setShopState(newState);
+    const newState: EquipState = {
+      ...equipState,
+      ownedItems: [...equipState.ownedItems, item.id],
+    };
+    saveEquipState(newState);
+    setEquipState(newState);
+    setGold(loadGold());
     setFeedback(`「${item.name}」を購入しました！`);
     window.setTimeout(() => setFeedback(null), 2500);
   }
 
-  function handleEquip(item: ShopItem) {
-    const currentlyEquipped = isEquipped(item);
-    const newState = { ...shopState };
-    if (item.category === "avatar") {
-      newState.selectedAvatar = currentlyEquipped ? null : item.id;
-    } else if (item.category === "title") {
-      newState.selectedTitle = currentlyEquipped ? null : item.name;
-    } else if (item.category === "background") {
-      newState.selectedBackground = currentlyEquipped ? null : item.id;
-    } else if (item.category === "frame") {
-      newState.selectedFrame = currentlyEquipped ? null : item.id;
-    } else {
-      newState.selectedEffect = currentlyEquipped ? null : item.id;
-    }
-    saveShopState(newState);
-    setShopState(newState);
+  function handleEquip(item: EquipItem) {
+    const isEquipped = equipState.equippedItems[item.category] === item.id;
+    const newState: EquipState = {
+      ...equipState,
+      equippedItems: {
+        ...equipState.equippedItems,
+        [item.category]: isEquipped ? null : item.id,
+      },
+    };
+    saveEquipState(newState);
+    setEquipState(newState);
   }
 
-  const currentItems = TAB_ITEMS[activeTab];
-  const selectedAvatar = SHOP_AVATARS.find((item) => item.id === shopState.selectedAvatar);
-  const selectedBackground = SHOP_BACKGROUNDS.find(
-    (item) => item.id === shopState.selectedBackground
-  );
-  const selectedFrame = SHOP_FRAMES.find((item) => item.id === shopState.selectedFrame);
-  const selectedEffect = SHOP_EFFECTS.find((item) => item.id === shopState.selectedEffect);
-  const loadoutBackground = selectedBackground?.backgroundCss;
-  const loadoutFrame = selectedFrame?.frameCss;
-  const loadoutEffectClass = selectedEffect?.effectClass;
+  const currentItems = EQUIP_ITEMS.filter((i) => i.category === activeTab);
+  const totalEffects = calcTotalEffects(equipState);
+  const hasEffects = Object.keys(totalEffects).length > 0;
 
   return (
     <main className="eq-page shop-page">
@@ -146,83 +121,105 @@ export default function ShopPage() {
 
       <section className="eq-shell">
         <div className="eq-topbar">
-          <Link href="/" className="eq-back-link">
-            ← ホームへ戻る
-          </Link>
+          <Link href="/" className="eq-back-link">← ホームへ戻る</Link>
         </div>
 
         <div className="shop-header">
           <div className="shop-header-text">
             <div className="eq-eyebrow">
-              <span>🛒</span>
-              <span>FRONTIER SHOP</span>
+              <span>⚔️</span>
+              <span>EQUIPMENT SHOP</span>
             </div>
-            <h1 className="eq-page-title">Frontier Shop</h1>
+            <h1 className="eq-page-title">装備ショップ</h1>
             <p className="eq-lead">
-              ゴールドを使ってアバター・称号・背景をカスタマイズしよう。
-              クエストで稼いだゴールドが、個性を彩るアイテムに変わります。
+              武器・盾・よろいを揃えてバトルを有利に進めよう。
+              クエストで稼いだゴールドで強力な装備を手に入れよう。
             </p>
           </div>
 
           <div className="shop-gold-box">
             <span>所持ゴールド</span>
             <strong>{gold.toLocaleString()}G</strong>
-            <Link href="/quiz" className="shop-earn-link">
-              ⚡ クエストで稼ぐ
-            </Link>
+            <Link href="/quiz" className="shop-earn-link">⚡ クエストで稼ぐ</Link>
           </div>
         </div>
 
-        <section className="eq-panel shop-loadout-panel" aria-label="現在の装備">
-          <div className="shop-loadout-stage">
-            <div
-              className="shop-loadout-card"
-              style={loadoutFrame ? { background: loadoutFrame } : undefined}
-            >
-              <div
-                className="shop-loadout-inner"
-                style={loadoutBackground ? { background: loadoutBackground } : undefined}
+        {/* Equipped slots strip */}
+        <div className="shop-equipped-strip">
+          {CATEGORY_TABS.map(({ id, label, icon }) => {
+            const equippedId = equipState.equippedItems[id];
+            const equippedItem = equippedId ? EQUIP_ITEMS.find((i) => i.id === equippedId) : null;
+            return (
+              <button
+                key={id}
+                className={`strip-slot${equippedItem ? " is-equipped" : ""}${activeTab === id ? " is-active" : ""}`}
+                onClick={() => setActiveTab(id)}
               >
-                {loadoutEffectClass && (
-                  <span className={`shop-avatar-effect ${loadoutEffectClass}`} />
-                )}
-                <span className="shop-loadout-avatar">
-                  {selectedAvatar?.emoji ?? "🐉"}
-                </span>
-              </div>
-            </div>
-          </div>
+                <span className="strip-icon">{equippedItem ? equippedItem.icon : icon}</span>
+                <span className="strip-label">{label}</span>
+                <strong className="strip-name">{equippedItem ? equippedItem.name : "未装備"}</strong>
+              </button>
+            );
+          })}
+        </div>
 
-          <div className="shop-loadout-copy">
-            <p className="eq-panel-kicker">CURRENT LOADOUT</p>
-            <h2 className="eq-panel-title">現在の装備</h2>
-            <div className="shop-loadout-chips">
-              <span>🧑 {selectedAvatar?.name ?? "未装備"}</span>
-              <span>🌌 {selectedBackground?.name ?? "未装備"}</span>
-              <span>🖼️ {selectedFrame?.name ?? "未装備"}</span>
-              <span>✨ {selectedEffect?.name ?? "未装備"}</span>
+        {/* Effects summary panel */}
+        <section className="eq-panel shop-effects-panel" aria-label="装備効果合計">
+          <div className="eq-panel-head">
+            <div>
+              <p className="eq-panel-kicker">TOTAL EFFECTS</p>
+              <h2 className="eq-panel-title">装備効果合計</h2>
             </div>
+            <span className="eq-panel-icon">📊</span>
           </div>
+          {hasEffects ? (
+            <div className="effects-grid">
+              {Object.entries(totalEffects).map(([key, val]) => (
+                <div key={key} className="effect-chip">
+                  <span className="effect-icon">{EFFECT_ICONS[key] ?? "✦"}</span>
+                  <span className="effect-label">{EFFECT_LABELS[key] ?? key}</span>
+                  <strong className="effect-value">+{val}{EFFECT_UNITS[key] ?? ""}</strong>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="effects-empty">装備を購入して装備すると、ここに効果が表示されます。</p>
+          )}
         </section>
 
-        <div className="shop-tabs">
-          {(["avatar", "title", "background", "frame", "effect"] as ShopTab[]).map((tab) => (
+        {/* Category tabs */}
+        <div className="equipment-category-grid" aria-label="装備カテゴリ">
+          {CATEGORY_TABS.map(({ id, label, image }) => (
             <button
-              key={tab}
-              className={`shop-tab${activeTab === tab ? " active" : ""}`}
-              onClick={() => setActiveTab(tab)}
+              key={id}
+              type="button"
+              className={`equipment-category-card${activeTab === id ? " is-active" : ""}`}
+              aria-pressed={activeTab === id}
+              onClick={() => setActiveTab(id)}
             >
-              {TAB_LABELS[tab]}
+              <span className="equipment-category-image-frame">
+                <Image
+                  src={image}
+                  alt=""
+                  width={1254}
+                  height={1254}
+                  className="equipment-category-image"
+                  sizes="(max-width: 580px) 128px, 160px"
+                  aria-hidden="true"
+                  unoptimized
+                />
+              </span>
+              <span className="equipment-category-label">{label}</span>
             </button>
           ))}
         </div>
 
+        {/* Item grid */}
         <div className="shop-grid">
           {currentItems.map((item) => {
-            const owned = isOwned(item);
-            const equipped = isEquipped(item);
+            const owned = equipState.ownedItems.includes(item.id);
+            const equipped = equipState.equippedItems[item.category] === item.id;
             const canAfford = gold >= item.price;
-
             return (
               <div
                 key={item.id}
@@ -230,62 +227,40 @@ export default function ShopPage() {
               >
                 {equipped && <div className="shop-equipped-badge">装備中</div>}
 
-                {item.category === "background" && item.backgroundCss ? (
-                  <div
-                    className="shop-card-preview bg-preview"
-                    style={{ background: item.backgroundCss }}
-                  >
-                    <span className="shop-card-emoji">{item.emoji}</span>
-                  </div>
-                ) : item.category === "frame" && item.frameCss ? (
-                  <div className="shop-card-preview frame-preview">
-                    <span
-                      className="shop-frame-sample"
-                      style={{ background: item.frameCss }}
-                    >
-                      <span>{selectedAvatar?.emoji ?? "🐉"}</span>
-                    </span>
-                  </div>
-                ) : item.category === "effect" && item.effectClass ? (
-                  <div className="shop-card-preview">
-                    <span className={`shop-avatar-effect ${item.effectClass}`} />
-                    <span className="shop-card-emoji">{item.emoji}</span>
-                  </div>
-                ) : (
-                  <div className="shop-card-preview">
-                    <span className="shop-card-emoji">{item.emoji}</span>
-                  </div>
-                )}
+                <div className="shop-card-preview">
+                  <span className="shop-card-emoji">{item.icon}</span>
+                </div>
 
                 <div className="shop-card-body">
                   <p className="shop-card-name">{item.name}</p>
                   <p className="shop-card-desc">{item.description}</p>
 
-                  <div className="shop-card-footer">
-                    <span className="shop-card-price">
-                      {item.price.toLocaleString()}G
-                    </span>
+                  <div className="shop-stat-row">
+                    {Object.entries(item.effects).map(([key, val]) => (
+                      <span key={key}>
+                        {EFFECT_ICONS[key] ?? "✦"} {EFFECT_LABELS[key] ?? key} +{val}{EFFECT_UNITS[key] ?? ""}
+                      </span>
+                    ))}
+                  </div>
 
+                  <p className="shop-card-rec">▶ {item.recommendedFor}</p>
+
+                  <div className="shop-card-footer">
+                    <span className="shop-card-price">{item.price.toLocaleString()}G</span>
                     {!owned ? (
                       <button
                         className={`shop-btn buy-btn${!canAfford ? " is-disabled" : ""}`}
                         onClick={() => handlePurchase(item)}
                         disabled={!canAfford}
                       >
-                        {canAfford ? "購入する" : "G不足"}
+                        {canAfford ? "購入する" : "ゴールド不足"}
                       </button>
                     ) : equipped ? (
-                      <button
-                        className="shop-btn equipped-btn"
-                        onClick={() => handleEquip(item)}
-                      >
+                      <button className="shop-btn equipped-btn" onClick={() => handleEquip(item)}>
                         ✓ 装備中
                       </button>
                     ) : (
-                      <button
-                        className="shop-btn equip-btn"
-                        onClick={() => handleEquip(item)}
-                      >
+                      <button className="shop-btn equip-btn" onClick={() => handleEquip(item)}>
                         装備する
                       </button>
                     )}
@@ -296,45 +271,50 @@ export default function ShopPage() {
           })}
         </div>
 
+        {/* Guide panel */}
         <div className="eq-panel shop-guide-panel">
           <div className="eq-panel-head">
             <div>
               <p className="eq-panel-kicker">EQUIP GUIDE</p>
-              <h2 className="eq-panel-title">装備のしかた</h2>
+              <h2 className="eq-panel-title">装備の効果一覧</h2>
             </div>
             <span className="eq-panel-icon">💡</span>
           </div>
 
           <div className="shop-guide-grid">
             <div className="shop-guide-item">
-              <strong>🧑 アバター</strong>
-              <span>ホーム画面のカードエリアに表示されます</span>
+              <strong>⚔️ 攻撃力</strong>
+              <span>ボスへのダメージが増加します</span>
             </div>
             <div className="shop-guide-item">
-              <strong>👑 称号</strong>
-              <span>ホーム画面のHERO STATUSに表示されます</span>
+              <strong>❤️ HP</strong>
+              <span>バトル開始時の最大HPが増えます</span>
             </div>
             <div className="shop-guide-item">
-              <strong>🌌 背景</strong>
-              <span>ホームと主人公ページの舞台に反映されます</span>
+              <strong>🛡️ 被ダメ軽減</strong>
+              <span>ミス時のダメージが%分減少します</span>
             </div>
             <div className="shop-guide-item">
-              <strong>🖼️ フレーム</strong>
-              <span>アバターカードの縁取りとして背景と同時に反映されます</span>
+              <strong>⚡ クリティカル</strong>
+              <span>正解連続時に会心の一撃が出やすくなります</span>
             </div>
             <div className="shop-guide-item">
-              <strong>✨ エフェクト</strong>
-              <span>アバターの周囲に光・炎・魔法陣などの演出を重ねます</span>
+              <strong>💚 回復ボーナス</strong>
+              <span>正解時のHP回復量が増加します</span>
             </div>
             <div className="shop-guide-item">
-              <strong>🛤️ HERO ROAD 称号</strong>
-              <span>主人公ページでレベル到達の称号を装備できます</span>
+              <strong>🪙 G増加</strong>
+              <span>クエスト報酬のゴールドが%増加します</span>
+            </div>
+            <div className="shop-guide-item">
+              <strong>📘 EXP増加</strong>
+              <span>クエスト後の主人公EXPが%増加します</span>
+            </div>
+            <div className="shop-guide-item">
+              <strong>🤝 相棒EXP増加</strong>
+              <span>クエスト後の相棒EXPが%増加します</span>
             </div>
           </div>
-
-          <Link href="/hero" className="eq-button eq-button-ghost shop-hero-link">
-            ⚔️ HERO ROADの称号を見る →
-          </Link>
         </div>
       </section>
 
@@ -367,7 +347,7 @@ export default function ShopPage() {
           grid-template-columns: 1fr auto;
           gap: 24px;
           align-items: start;
-          margin-bottom: 32px;
+          margin-bottom: 24px;
         }
 
         .shop-header-text {
@@ -419,107 +399,243 @@ export default function ShopPage() {
           background: rgba(250,204,21,0.16);
         }
 
-        .shop-loadout-panel {
-          display: grid;
-          grid-template-columns: 190px minmax(0, 1fr);
-          gap: 22px;
-          align-items: center;
-          margin-bottom: 24px;
-        }
-
-        .shop-loadout-stage {
-          display: flex;
-          justify-content: center;
-        }
-
-        .shop-loadout-card {
-          width: 158px;
-          height: 206px;
-          border-radius: 28px;
-          padding: 4px;
-          background: linear-gradient(135deg, #fde68a, #7c3aed, #22d3ee);
-          box-shadow: 0 18px 44px rgba(0,0,0,0.32), 0 0 34px rgba(168,85,247,0.18);
-        }
-
-        .shop-loadout-inner {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          display: grid;
-          place-items: center;
-          overflow: hidden;
-          border-radius: 24px;
-          background:
-            radial-gradient(circle at 50% 16%, rgba(255,255,255,0.16), transparent 40%),
-            #050816;
-        }
-
-        .shop-loadout-avatar {
-          position: relative;
-          z-index: 2;
-          font-size: 76px;
-          line-height: 1;
-          filter: drop-shadow(0 16px 22px rgba(0,0,0,0.5));
-        }
-
-        .shop-loadout-copy {
-          min-width: 0;
-        }
-
-        .shop-loadout-chips {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-top: 14px;
-        }
-
-        .shop-loadout-chips span {
-          min-height: 34px;
-          display: inline-flex;
-          align-items: center;
-          border: 1px solid rgba(250,204,21,0.2);
-          border-radius: 999px;
-          background: rgba(255,255,255,0.06);
-          color: #e2e8f0;
-          padding: 7px 12px;
-          font-size: 12px;
-          font-weight: 900;
-        }
-
-        .shop-tabs {
+        /* Equipped strip */
+        .shop-equipped-strip {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));
           gap: 10px;
+          margin-bottom: 20px;
+        }
+
+        .strip-slot {
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 18px;
+          padding: 13px 10px;
+          background: rgba(255,255,255,0.04);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          cursor: pointer;
+          transition: all 0.18s ease;
+          text-align: center;
+          font-family: inherit;
+        }
+
+        .strip-slot:hover {
+          border-color: rgba(250,204,21,0.25);
+          background: rgba(250,204,21,0.05);
+        }
+
+        .strip-slot.is-active {
+          border-color: rgba(250,204,21,0.45);
+          background: rgba(250,204,21,0.08);
+        }
+
+        .strip-slot.is-equipped {
+          border-color: rgba(34,197,94,0.4);
+          background: rgba(34,197,94,0.07);
+        }
+
+        .strip-slot.is-equipped.is-active {
+          border-color: rgba(34,197,94,0.65);
+        }
+
+        .strip-icon {
+          font-size: 22px;
+          line-height: 1;
+        }
+
+        .strip-label {
+          font-size: 10px;
+          color: #64748b;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+        }
+
+        .strip-name {
+          font-size: 11px;
+          font-weight: 900;
+          color: #64748b;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+          max-width: 100%;
+        }
+
+        .strip-slot.is-equipped .strip-name {
+          color: #86efac;
+        }
+
+        /* Effects panel */
+        .shop-effects-panel {
           margin-bottom: 24px;
         }
 
-        .shop-tab {
-          flex: 1;
-          min-height: 52px;
+        .effects-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 8px;
+        }
+
+        .effect-chip {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 3px;
+          padding: 10px 18px;
           border-radius: 16px;
-          border: 1px solid rgba(255,255,255,0.1);
-          background: rgba(255,255,255,0.055);
+          border: 1px solid rgba(34,211,238,0.25);
+          background: rgba(34,211,238,0.07);
+          min-width: 88px;
+        }
+
+        .effect-icon {
+          font-size: 18px;
+          line-height: 1;
+        }
+
+        .effect-label {
+          font-size: 11px;
           color: #94a3b8;
-          font-size: 15px;
+          font-weight: 800;
+        }
+
+        .effect-value {
+          font-size: 17px;
+          color: #67e8f9;
+          font-weight: 900;
+        }
+
+        .effects-empty {
+          margin: 8px 0 0;
+          color: #475569;
+          font-size: 13px;
+          font-weight: 800;
+        }
+
+        /* Category cards */
+        .equipment-category-grid {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+
+        .equipment-category-card {
+          position: relative;
+          min-height: 148px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 9px;
+          overflow: hidden;
+          border-radius: 22px;
+          border: 1px solid rgba(255,255,255,0.12);
+          background:
+            radial-gradient(circle at 50% 12%, rgba(34,211,238,0.1), transparent 38%),
+            linear-gradient(145deg, rgba(15,23,42,0.92), rgba(7,12,24,0.97));
+          color: #e5e7eb;
+          padding: 12px 12px 14px;
           font-weight: 900;
           cursor: pointer;
-          transition: all 0.18s ease;
+          font-family: inherit;
+          box-shadow:
+            0 14px 34px rgba(0,0,0,0.24),
+            inset 0 1px 0 rgba(255,255,255,0.05);
+          transition:
+            transform 0.18s ease,
+            border-color 0.18s ease,
+            background 0.18s ease,
+            box-shadow 0.18s ease;
         }
 
-        .shop-tab:hover {
-          border-color: rgba(250,204,21,0.3);
-          color: #fde68a;
-          background: rgba(250,204,21,0.06);
+        .equipment-category-card::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background:
+            linear-gradient(125deg, transparent 0 36%, rgba(255,255,255,0.1) 46%, transparent 58%),
+            radial-gradient(circle at 82% 12%, rgba(250,204,21,0.11), transparent 28%);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.18s ease;
+        }
+
+        .equipment-category-card:hover {
           transform: translateY(-2px);
+          border-color: rgba(250,204,21,0.34);
+          background:
+            radial-gradient(circle at 50% 12%, rgba(250,204,21,0.12), transparent 38%),
+            linear-gradient(145deg, rgba(20,28,52,0.95), rgba(8,13,26,0.98));
+          box-shadow:
+            0 18px 42px rgba(0,0,0,0.32),
+            0 0 0 1px rgba(250,204,21,0.12),
+            inset 0 1px 0 rgba(255,255,255,0.08);
         }
 
-        .shop-tab.active {
-          border-color: rgba(250,204,21,0.55);
-          background: linear-gradient(135deg, rgba(250,204,21,0.16), rgba(251,146,60,0.1));
-          color: #fde047;
-          box-shadow: 0 0 24px rgba(250,204,21,0.1), inset 0 1px 0 rgba(255,255,255,0.08);
+        .equipment-category-card:hover::before,
+        .equipment-category-card.is-active::before {
+          opacity: 1;
         }
 
+        .equipment-category-card.is-active {
+          transform: translateY(-2px);
+          border-color: rgba(250,204,21,0.68);
+          background:
+            radial-gradient(circle at 50% 16%, rgba(250,204,21,0.22), transparent 42%),
+            linear-gradient(145deg, rgba(48,36,13,0.9), rgba(12,18,38,0.98));
+          color: #fef3c7;
+          box-shadow:
+            0 20px 48px rgba(0,0,0,0.34),
+            0 0 32px rgba(250,204,21,0.18),
+            inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+
+        .equipment-category-image-frame {
+          position: relative;
+          z-index: 1;
+          width: min(100%, 100px);
+          aspect-ratio: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 18px;
+          background:
+            radial-gradient(circle at 50% 52%, rgba(255,255,255,0.08), transparent 58%);
+        }
+
+        .equipment-category-image {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          filter:
+            drop-shadow(0 14px 16px rgba(0,0,0,0.42))
+            drop-shadow(0 0 16px rgba(34,211,238,0.1));
+        }
+
+        .equipment-category-card.is-active .equipment-category-image {
+          filter:
+            drop-shadow(0 16px 18px rgba(0,0,0,0.42))
+            drop-shadow(0 0 20px rgba(250,204,21,0.24));
+        }
+
+        .equipment-category-label {
+          position: relative;
+          z-index: 1;
+          color: inherit;
+          font-size: 16px;
+          font-weight: 900;
+          line-height: 1.15;
+          text-align: center;
+          white-space: normal;
+          overflow-wrap: anywhere;
+        }
+
+        /* Item grid */
         .shop-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -573,7 +689,7 @@ export default function ShopPage() {
 
         .shop-card-preview {
           position: relative;
-          height: 120px;
+          height: 110px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -582,101 +698,12 @@ export default function ShopPage() {
           border-bottom: 1px solid rgba(255,255,255,0.06);
         }
 
-        .shop-card-preview.bg-preview {
-          position: relative;
-        }
-
-        .shop-card-preview.bg-preview::after {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: rgba(0,0,0,0.15);
-          pointer-events: none;
-        }
-
         .shop-card-emoji {
-          font-size: 58px;
+          font-size: 56px;
           filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45));
           position: relative;
           z-index: 1;
           line-height: 1;
-        }
-
-        .shop-frame-sample {
-          width: 84px;
-          height: 104px;
-          display: grid;
-          place-items: center;
-          border-radius: 22px;
-          padding: 4px;
-          box-shadow: 0 14px 28px rgba(0,0,0,0.28);
-        }
-
-        .shop-frame-sample span {
-          width: 100%;
-          height: 100%;
-          display: grid;
-          place-items: center;
-          border-radius: 18px;
-          background: #050816;
-          font-size: 42px;
-        }
-
-        .shop-avatar-effect {
-          position: absolute;
-          inset: 0;
-          z-index: 1;
-          pointer-events: none;
-        }
-
-        .effect-spark {
-          background:
-            radial-gradient(circle at 28% 32%, rgba(254,243,199,0.95) 0 3px, transparent 4px),
-            radial-gradient(circle at 70% 24%, rgba(103,232,249,0.9) 0 2px, transparent 3px),
-            radial-gradient(circle at 62% 76%, rgba(250,204,21,0.8) 0 3px, transparent 4px);
-          animation: shopAuraFloat 2.8s ease-in-out infinite alternate;
-        }
-
-        .effect-flame {
-          background:
-            radial-gradient(circle at 50% 78%, rgba(248,113,113,0.42), transparent 28%),
-            conic-gradient(from 180deg at 50% 82%, transparent, rgba(251,146,60,0.32), transparent 38%, rgba(239,68,68,0.26), transparent);
-          animation: shopAuraSpin 5.5s linear infinite;
-        }
-
-        .effect-aqua {
-          background:
-            radial-gradient(circle at 50% 50%, transparent 0 38%, rgba(34,211,238,0.34) 39% 40%, transparent 42%),
-            radial-gradient(circle at 50% 50%, transparent 0 56%, rgba(103,232,249,0.22) 57% 58%, transparent 60%);
-          animation: shopAuraPulse 2.4s ease-in-out infinite;
-        }
-
-        .effect-shadow {
-          background:
-            radial-gradient(circle at 50% 50%, rgba(168,85,247,0.2), transparent 44%),
-            conic-gradient(from 20deg, transparent, rgba(168,85,247,0.28), transparent, rgba(34,211,238,0.18), transparent);
-          animation: shopAuraSpin 8s linear infinite;
-        }
-
-        .effect-crown {
-          background:
-            linear-gradient(180deg, rgba(254,243,199,0.36), transparent 38%),
-            radial-gradient(circle at 50% 16%, rgba(250,204,21,0.42), transparent 22%);
-          animation: shopAuraFloat 2.2s ease-in-out infinite alternate;
-        }
-
-        @keyframes shopAuraSpin {
-          to { transform: rotate(360deg); }
-        }
-
-        @keyframes shopAuraPulse {
-          0%, 100% { opacity: 0.45; transform: scale(0.95); }
-          50% { opacity: 0.9; transform: scale(1.08); }
-        }
-
-        @keyframes shopAuraFloat {
-          from { opacity: 0.56; transform: translateY(2px); }
-          to { opacity: 1; transform: translateY(-5px); }
         }
 
         .shop-card-body {
@@ -697,6 +724,34 @@ export default function ShopPage() {
           font-size: 12px;
           font-weight: 800;
           line-height: 1.55;
+        }
+
+        .shop-card-rec {
+          margin: 6px 0 0;
+          color: #475569;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .shop-stat-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          margin-top: 10px;
+        }
+
+        .shop-stat-row span {
+          display: inline-flex;
+          align-items: center;
+          min-height: 24px;
+          border: 1px solid rgba(34,211,238,0.24);
+          border-radius: 999px;
+          background: rgba(34,211,238,0.08);
+          padding: 4px 8px;
+          color: #bae6fd;
+          font-size: 11px;
+          font-weight: 900;
+          line-height: 1;
         }
 
         .shop-card-footer {
@@ -725,6 +780,7 @@ export default function ShopPage() {
           transition: all 0.15s ease;
           white-space: nowrap;
           flex-shrink: 0;
+          font-family: inherit;
         }
 
         .buy-btn {
@@ -768,6 +824,7 @@ export default function ShopPage() {
           border-color: rgba(239,68,68,0.35);
         }
 
+        /* Guide panel */
         .shop-guide-panel {
           margin-bottom: 48px;
         }
@@ -776,7 +833,6 @@ export default function ShopPage() {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 12px;
-          margin-bottom: 18px;
         }
 
         .shop-guide-item {
@@ -802,18 +858,8 @@ export default function ShopPage() {
           line-height: 1.5;
         }
 
-        .shop-hero-link {
-          display: flex;
-          min-height: 50px;
-          font-size: 15px;
-        }
-
         @media (max-width: 900px) {
           .shop-header {
-            grid-template-columns: 1fr;
-          }
-
-          .shop-loadout-panel {
             grid-template-columns: 1fr;
           }
 
@@ -836,8 +882,16 @@ export default function ShopPage() {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
-          .shop-tabs {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+          .equipment-category-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+          }
+
+          .equipment-category-card {
+            min-height: 138px;
+          }
+
+          .shop-equipped-strip {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
           }
 
           .shop-guide-grid {
@@ -850,13 +904,52 @@ export default function ShopPage() {
             grid-template-columns: 1fr;
           }
 
-          .shop-tabs {
-            grid-template-columns: 1fr;
+          .equipment-category-grid {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            max-width: 100%;
+            padding-bottom: 4px;
+            scroll-snap-type: x proximity;
+            scrollbar-width: none;
+          }
+
+          .equipment-category-card {
+            flex: 0 0 132px;
+            min-height: 128px;
+            border-radius: 20px;
+            padding: 10px;
+            scroll-snap-align: start;
+          }
+
+          .equipment-category-image-frame {
+            width: 82px;
+          }
+
+          .equipment-category-label {
+            font-size: 14px;
+          }
+
+          .shop-equipped-strip {
+            display: flex;
+            overflow-x: auto;
+            max-width: 100%;
+            padding-bottom: 4px;
+            scroll-snap-type: x proximity;
+            scrollbar-width: none;
+          }
+
+          .equipment-category-grid::-webkit-scrollbar,
+          .shop-equipped-strip::-webkit-scrollbar {
+            display: none;
+          }
+
+          .strip-slot {
+            flex: 0 0 124px;
+            scroll-snap-align: start;
           }
         }
       `}</style>
     </main>
   );
 }
-
-type ShopItemCategory = ShopItem["category"];

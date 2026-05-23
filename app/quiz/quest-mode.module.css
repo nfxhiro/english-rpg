@@ -3,11 +3,16 @@
   position: relative;
   overflow-x: hidden;
   padding: 28px;
-  background:
-    radial-gradient(circle at 18% 8%, rgba(34, 211, 238, 0.18), transparent 28%),
-    radial-gradient(circle at 88% 12%, rgba(168, 85, 247, 0.2), transparent 30%),
-    radial-gradient(circle at 50% 100%, rgba(251, 191, 36, 0.12), transparent 32%),
-    linear-gradient(180deg, #050816 0%, #0b1028 56%, #120817 100%);
+  background-color: var(--eq-bg);
+  background-image:
+    linear-gradient(180deg, rgba(5, 8, 22, 0.5) 0%, rgba(5, 8, 22, 0.72) 48%, rgba(5, 8, 22, 0.88) 100%),
+    radial-gradient(circle at 18% 12%, rgba(45, 212, 191, 0.18), transparent 34%),
+    radial-gradient(circle at 86% 10%, rgba(168, 85, 247, 0.18), transparent 30%),
+    url("/home-background.png");
+  background-position: center, center, center, center;
+  background-size: cover, cover, cover, cover;
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-attachment: fixed, fixed, fixed, fixed;
   color: white;
 }
 
@@ -2155,6 +2160,69 @@
   font-weight: 700;
 }
 
+.questModeButton .questRecordLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+  line-height: 1;
+}
+
+.questModeButton .questRecordLine span {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(250, 204, 21, 0.18);
+  border-radius: 999px;
+  background: rgba(250, 204, 21, 0.08);
+  padding: 4px 6px;
+  color: #fde68a;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.questModeButton .questInfoPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.questModeButton .questInfoPills span {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.48);
+  padding: 3px 8px;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.questModeButton .questEstimateLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 2px;
+  line-height: 1;
+}
+
+.questModeButton .questEstimateLine span {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  border-radius: 999px;
+  background: rgba(8, 145, 178, 0.14);
+  padding: 4px 6px;
+  color: #a5f3fc;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .questModeButton em {
   color: #94a3b8;
   font-size: 10px;
@@ -2187,10 +2255,13 @@
 }
 
 .questModeCleared {
-  border-color: rgba(250, 204, 21, 0.62);
+  border-color: rgba(34, 197, 94, 0.55);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(34, 197, 94, 0.15), transparent 40%),
+    linear-gradient(160deg, rgba(20, 83, 45, 0.6) 0%, rgba(15, 23, 42, 0.85) 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(250, 204, 21, 0.12),
-    0 0 22px rgba(250, 204, 21, 0.14);
+    inset 0 0 0 1px rgba(34, 197, 94, 0.2),
+    0 0 24px rgba(34, 197, 94, 0.12);
 }
 
 .questModeCleared em {
@@ -2301,27 +2372,27 @@
 
 .hpMeter {
   border: 1px solid rgba(250, 204, 21, 0.18);
-  border-radius: 16px;
+  border-radius: 14px;
   background: rgba(2, 6, 23, 0.6);
-  padding: 10px 12px;
+  padding: 7px 12px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .hpLabel span {
   color: #fef3c7;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .hpLabel strong {
   color: #fff;
-  font-size: 18px;
+  font-size: 14px;
 }
 
 .hpTrack {
-  height: 14px;
+  height: 10px;
   border-color: rgba(250, 204, 21, 0.18);
   background: rgba(2, 6, 23, 0.92);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
 }
 
 .hpFill {
@@ -2330,15 +2401,25 @@
   transition: width 0.42s ease;
 }
 
+.hpMeterDefeated {
+  opacity: 0.45;
+  border-color: rgba(100, 116, 139, 0.25);
+}
+
+.hpFillDefeated {
+  background: #475569;
+  box-shadow: none;
+}
+
 .battleQuizGrid {
   display: grid;
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
   gap: 16px;
 }
 
 .battleArea {
   position: relative;
-  min-height: 420px;
+  min-height: 560px;
   overflow: hidden;
   --quest-bg-accent: #22d3ee;
   --quest-bg-overlay: linear-gradient(180deg, rgba(2, 6, 23, 0.22), rgba(2, 6, 23, 0.7) 58%, rgba(2, 6, 23, 0.86));
@@ -2392,15 +2473,16 @@
   right: 8%;
   bottom: 108px;
   height: 118px;
-  opacity: 0.65;
+  opacity: 0.42;
 }
 
 .castleBack span {
   position: absolute;
   bottom: 0;
   width: 28%;
-  background: linear-gradient(180deg, #312e81, #111827);
-  border: 1px solid rgba(250, 204, 21, 0.12);
+  background: linear-gradient(180deg, #312e81, #0f172a);
+  border: 1px solid rgba(250, 204, 21, 0.1);
+  border-radius: 3px 3px 0 0;
 }
 
 .castleBack span:nth-child(1) {
@@ -2424,6 +2506,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 10px;
+  margin-bottom: 44px;
 }
 
 .hpMeter {
@@ -2434,12 +2517,42 @@
   background: linear-gradient(90deg, #22c55e, #facc15, #ef4444);
 }
 
+.completeChallengeBanner {
+  position: absolute;
+  z-index: 3;
+  top: 88px;
+  left: 18px;
+  right: 18px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(250, 204, 21, 0.36);
+  border-radius: 14px;
+  background: rgba(69, 26, 3, 0.72);
+  padding: 8px 10px;
+  text-align: center;
+  box-shadow: 0 0 24px rgba(250, 204, 21, 0.16);
+}
+
+.completeChallengeBanner strong {
+  color: #fef3c7;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.completeChallengeBanner span {
+  color: #fde68a;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
 .combatants {
   position: absolute;
   z-index: 2;
-  left: 18px;
-  right: 18px;
-  bottom: 38px;
+  left: 36px;
+  right: 36px;
+  bottom: 46px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -2470,7 +2583,7 @@
 .unitNameBlock strong {
   display: block;
   color: white;
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 900;
   line-height: 1.2;
   max-width: 150px;
@@ -2481,7 +2594,7 @@
 .unitNameBlock span {
   display: block;
   color: #94a3b8;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.2;
   max-width: 150px;
@@ -2495,11 +2608,30 @@
   width: 84px;
   height: 112px;
   filter: drop-shadow(0 14px 14px rgba(0, 0, 0, 0.45));
-  animation: qm-hero-idle 3.2s ease-in-out infinite;
+  animation: qm-hero-idle 2.6s ease-in-out infinite;
   --hero-main: #dc2626;
   --hero-light: #f87171;
   --hero-dark: #991b1b;
   --hero-darkest: #7f1d1d;
+}
+
+.heroSpriteWrapper {
+  position: relative;
+  z-index: 2;
+  width: 122px;
+  height: 152px;
+  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.55));
+  flex-shrink: 0;
+  animation: qm-hero-idle 2.6s ease-in-out 0s infinite;
+}
+
+.heroSpriteImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  display: block;
+  transition: transform 80ms linear;
 }
 
 .playerSpriteGroup {
@@ -2507,16 +2639,18 @@
   align-items: flex-end;
   gap: 0;
   width: max-content;
+  margin-bottom: 8px;
 }
 
 .playerCompanionEmoji {
   font-size: 38px;
   line-height: 1;
   margin-right: -14px;
+  margin-bottom: 28px;
   transform: rotate(-4deg);
   filter: drop-shadow(0 12px 12px rgba(0, 0, 0, 0.45));
   pointer-events: none;
-  animation: qm-hero-idle 3.6s ease-in-out -1.2s infinite;
+  animation: qm-hero-idle 2.6s ease-in-out -1.3s infinite;
 }
 
 .playerCompanionCheer {
@@ -2685,6 +2819,12 @@
   height: 7px;
   border-radius: 3px;
   background: linear-gradient(90deg, #92400e, #fde68a, #f59e0b, #fde68a, #92400e);
+}
+
+.bossSpriteScaler {
+  position: relative;
+  transform: scale(1.25);
+  transform-origin: bottom center;
 }
 
 .bossSprite {
@@ -3278,6 +3418,31 @@
   animation: unit-hit 0.36s ease both;
 }
 
+.enemySlashHit {
+  animation: unit-hit 0.36s ease both;
+}
+
+.enemySlashHit .bossSpriteScaler::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  background: rgba(239, 68, 68, 0.45);
+  animation: qm-hit-flash 0.28s ease both;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.enemySlashHit .bossSprite {
+  animation-play-state: paused;
+}
+
+@keyframes qm-hit-flash {
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 .unitDefeated {
   animation: boss-fall 0.72s ease both;
 }
@@ -3354,18 +3519,86 @@
   background: rgba(69, 10, 10, 0.94);
 }
 
+.damageCalloutCritical {
+  border-color: rgba(250, 204, 21, 0.78);
+  background: rgba(113, 63, 18, 0.92);
+  box-shadow: 0 0 34px rgba(250, 204, 21, 0.3);
+}
+
+.healNotice {
+  color: #bbf7d0 !important;
+}
+
+.battleLog {
+  position: absolute;
+  z-index: 2;
+  left: 18px;
+  right: 18px;
+  bottom: 42px;
+  display: grid;
+  gap: 3px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.battleLog p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.62);
+}
+
+.battleLogLatest {
+  color: #fef3c7 !important;
+}
+
+.battleLogOld {
+  opacity: 0.68;
+}
+
 .bossNameplate {
   position: absolute;
   z-index: 2;
   left: 16px;
   right: 16px;
   bottom: 10px;
-  color: #7dd3fc;
-  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: #93c5fd;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1.25;
   text-align: center;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+}
+
+.battleObjective,
+.streakBadge,
+.equippedBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.54);
+  padding: 3px 8px;
+  color: #bae6fd;
+  line-height: 1.15;
+}
+
+.streakBadge {
+  border-color: rgba(250, 204, 21, 0.34);
+  color: #fef3c7;
+}
+
+.equippedBadge {
+  border-color: rgba(196, 181, 253, 0.28);
+  color: #ddd6fe;
 }
 
 .questionPanel {
@@ -3395,26 +3628,10 @@
     radial-gradient(circle at 50% 20%, rgba(34, 211, 238, 0.12), transparent 42%),
     rgba(2, 6, 23, 0.56);
   color: #fff7ed;
-  padding: 26px 18px;
+  padding: 16px 18px;
   text-align: center;
 }
 
-.questionText::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    110deg,
-    transparent 22%,
-    rgba(255, 255, 255, 0.07) 48%,
-    rgba(34, 211, 238, 0.05) 54%,
-    transparent 78%
-  );
-  background-size: 200% 100%;
-  animation: qm-question-shimmer 4.5s ease-in-out infinite;
-  pointer-events: none;
-}
 
 .questionText h2,
 .questionText p {
@@ -3441,14 +3658,14 @@
 .answerGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: minmax(82px, auto);
-  gap: 10px;
-  margin-top: 12px;
+  grid-auto-rows: minmax(72px, auto);
+  gap: 8px;
+  margin-top: 10px;
 }
 
 .answerButton {
   width: 100%;
-  min-height: 82px;
+  min-height: 72px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.08);
@@ -3873,7 +4090,7 @@
   }
 
   .battleArea {
-    min-height: 330px;
+    min-height: 500px;
   }
 
   .hpLayer {
@@ -4041,7 +4258,7 @@
   }
 
   .battleArea {
-    min-height: 360px;
+    min-height: 460px;
     padding: 12px;
   }
 
@@ -4083,27 +4300,31 @@
   }
 
   .playerUnit {
-    justify-self: start;
+    justify-self: center;
+    margin-left: 0;
   }
 
   .bossUnit {
-    justify-self: end;
+    justify-self: center;
   }
 
   .playerSprite {
     width: 70px;
     transform: scale(0.9);
-    transform-origin: bottom left;
+    transform-origin: bottom center;
+  }
+
+  .heroSpriteWrapper {
+    width: 100px;
+    height: 128px;
   }
 
   .playerCompanionEmoji {
     font-size: 30px;
   }
 
-  .bossSprite {
-    width: 108px;
-    transform: scale(0.9);
-    transform-origin: bottom right;
+  .bossSpriteScaler {
+    transform: scale(1.0);
   }
 
   .questionText {
@@ -4130,7 +4351,7 @@
   }
 
   .battleArea {
-    min-height: 380px;
+    min-height: 480px;
   }
 
   .hpLayer {
@@ -4679,6 +4900,23 @@
     rgba(8, 37, 61, 0.48);
 }
 
+.resultExpTrack {
+  margin-top: 10px;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.7);
+  border: 1px solid rgba(125, 211, 252, 0.18);
+  overflow: hidden;
+}
+
+.resultExpFill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #38bdf8, #818cf8, #a78bfa);
+  box-shadow: 0 0 10px rgba(129, 140, 248, 0.5);
+  transition: width 0.6s ease;
+}
+
 .resultBuddyCard {
   border-color: rgba(94, 234, 212, 0.38);
   background:
@@ -5059,7 +5297,7 @@
   }
 
   .battleArea {
-    min-height: 330px;
+    min-height: 420px;
   }
 
   .hpLayer {
@@ -5085,7 +5323,7 @@
 
 @media (max-width: 420px) {
   .battleArea {
-    min-height: 360px;
+    min-height: 460px;
   }
 
   .hpLayer {
@@ -5145,8 +5383,8 @@
 .questBoardProgressFill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #22c55e, #facc15, #fb923c);
-  box-shadow: 0 0 14px rgba(250, 204, 21, 0.28);
+  background: linear-gradient(90deg, #2dd4bf, #818cf8, #a855f7);
+  box-shadow: 0 0 14px rgba(129, 140, 248, 0.32);
   transition: width 0.32s ease;
 }
 
@@ -5197,5 +5435,494 @@
   .questBoardProgressStats {
     flex-wrap: wrap;
     justify-content: flex-start;
+  }
+}
+
+/* ===================================================
+   Quiz UX refresh — align /quiz with the app shell
+=================================================== */
+
+.root,
+.root:has(.levelSection5),
+.root:has(.levelSection4),
+.root:has(.levelSection3),
+.root:has(.levelSectionpre2) {
+  padding: clamp(16px, 3vw, 28px);
+  background:
+    radial-gradient(circle at 18% 8%, rgba(34, 211, 238, 0.18), transparent 28%),
+    radial-gradient(circle at 88% 12%, rgba(168, 85, 247, 0.2), transparent 30%),
+    radial-gradient(circle at 50% 100%, rgba(251, 191, 36, 0.12), transparent 32%),
+    #050816;
+}
+
+.screen,
+.selectScreen {
+  max-width: 1240px;
+}
+
+.screen {
+  justify-content: flex-start;
+  min-height: auto;
+}
+
+.selectTopbar,
+.battleTopbar {
+  margin-bottom: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 10px;
+  backdrop-filter: blur(10px);
+}
+
+.backLink,
+.backButton,
+.furiganaToggle {
+  min-height: 36px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 0 13px;
+}
+
+.frontierHero,
+.frontierHero5,
+.frontierHero4,
+.frontierHero3,
+.frontierHeropre2 {
+  grid-template-columns: minmax(0, 1fr) 292px;
+  gap: 26px;
+  align-items: stretch;
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 30px;
+  background:
+    linear-gradient(135deg, rgba(24, 31, 68, 0.78), rgba(8, 13, 32, 0.9)),
+    #0b1028;
+  padding: clamp(22px, 3.2vw, 38px);
+  animation: none;
+  box-shadow:
+    0 34px 90px rgba(0, 0, 0, 0.38),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.frontierEmblem,
+.frontierSky,
+.frontierMapLines {
+  display: none;
+}
+
+.frontierTitleBlock h1,
+.frontierHero5 .frontierTitleBlock h1,
+.frontierHero4 .frontierTitleBlock h1,
+.frontierHero3 .frontierTitleBlock h1,
+.frontierHeropre2 .frontierTitleBlock h1 {
+  max-width: 760px;
+  margin-top: 12px;
+  color: #ffffff;
+  font-size: clamp(34px, 5vw, 58px);
+  line-height: 1.04;
+  text-shadow: 0 0 28px rgba(34, 211, 238, 0.12);
+}
+
+.frontierSubtitle {
+  max-width: 760px;
+  color: #cbd5e1;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.frontierStatRow {
+  margin-top: 18px;
+}
+
+.frontierStatRow span {
+  min-height: 34px;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+}
+
+.frontierCommandPanel {
+  align-content: stretch;
+}
+
+.frontierLevelSeal,
+.frontierHero5 .frontierLevelSeal,
+.frontierHero4 .frontierLevelSeal,
+.frontierHero3 .frontierLevelSeal,
+.frontierHeropre2 .frontierLevelSeal {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  justify-content: center;
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 96% 0%, rgba(34, 211, 238, 0.14), transparent 34%),
+    rgba(2, 6, 23, 0.42);
+  padding: 18px;
+  text-align: left;
+}
+
+.frontierLevelSeal strong {
+  color: #fff7ed;
+  font-size: 24px;
+}
+
+.frontierRoundButtons {
+  justify-content: stretch;
+}
+
+.frontierRoundButtons button {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 16px;
+}
+
+.levelRuneTabs {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.levelRuneTab,
+.levelRuneTab5,
+.levelRuneTab4,
+.levelRuneTab3,
+.levelRuneTabpre2 {
+  min-height: 68px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.08), transparent 34%),
+    rgba(255, 255, 255, 0.055);
+}
+
+.levelRuneTab:hover,
+.levelRuneTabActive {
+  transform: translateY(-1px);
+}
+
+.levelRuneTab strong {
+  font-size: 16px;
+}
+
+.questBoardShell,
+.levelSection5,
+.levelSection4,
+.levelSection3,
+.levelSectionpre2 {
+  border-color: rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.74), rgba(8, 12, 22, 0.88)),
+    rgba(2, 6, 23, 0.66);
+  padding: 18px;
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.questBoardHeader {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.questBoardHeader h2 {
+  font-size: clamp(24px, 3vw, 34px);
+}
+
+.questBoardCrownHint {
+  color: #fde68a;
+  opacity: 0.9;
+}
+
+.questBoardGrid {
+  gap: 12px;
+}
+
+.questRangePanel,
+.levelSection5 .questRangePanel,
+.levelSection4 .questRangePanel,
+.levelSection3 .questRangePanel,
+.levelSectionpre2 .questRangePanel,
+.levelSection5 .questRangePanel:nth-child(3n+2),
+.levelSection5 .questRangePanel:nth-child(3n),
+.levelSection4 .questRangePanel:nth-child(3n+2),
+.levelSection4 .questRangePanel:nth-child(3n),
+.levelSection3 .questRangePanel:nth-child(3n+2),
+.levelSection3 .questRangePanel:nth-child(3n),
+.levelSectionpre2 .questRangePanel:nth-child(3n+2),
+.levelSectionpre2 .questRangePanel:nth-child(3n) {
+  border-color: rgba(255, 255, 255, 0.11);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--quest-bg-accent) 16%, transparent), transparent 30%),
+    rgba(255, 255, 255, 0.045);
+  padding: 14px;
+}
+
+.rangePanelHead {
+  grid-template-columns: 52px minmax(0, 1fr) 150px;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.rangeVisual,
+.rangeMapIcon {
+  width: 52px;
+  height: 52px;
+}
+
+.rangeMapIcon {
+  border-radius: 16px;
+  font-size: 25px;
+}
+
+.rangeTitle p {
+  color: #94a3b8;
+}
+
+.rangeTitle h3,
+.levelSection5 .rangeTitle h3,
+.levelSection4 .rangeTitle h3,
+.levelSection3 .rangeTitle h3,
+.levelSectionpre2 .rangeTitle h3 {
+  color: #f8fafc;
+  font-size: 19px;
+}
+
+.rangeTitle span {
+  color: #cbd5e1;
+}
+
+.blockProgress {
+  min-width: 140px;
+}
+
+.questModeGrid {
+  grid-template-columns: repeat(4, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.questModeButton,
+.frontierQuestCard {
+  min-height: 164px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.08), transparent 36%),
+    rgba(15, 23, 42, 0.78);
+  padding: 12px;
+}
+
+.questModeButton:hover {
+  transform: translateY(-2px);
+}
+
+.questModeButton strong,
+.frontierQuestCard strong {
+  margin-top: 6px;
+  margin-bottom: 0;
+  font-size: 18px;
+  line-height: 1.18;
+}
+
+.questModeButton .questCardName {
+  margin-top: 1px;
+  color: #fde68a;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.frontierQuestCard small {
+  color: #cbd5e1;
+  font-size: 10.5px;
+}
+
+.questModeButton .questEstimateLine,
+.questModeButton .questRecordLine {
+  margin-top: 6px;
+}
+
+.questModeButton .questEstimateLine span,
+.questModeButton .questRecordLine span {
+  min-height: 22px;
+}
+
+.battleQuizGrid {
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 16px;
+}
+
+.battleArea,
+.questionPanel {
+  border-radius: 22px;
+}
+
+.questionPanel {
+  background:
+    linear-gradient(145deg, rgba(15, 23, 42, 0.86), rgba(8, 12, 22, 0.94));
+}
+
+.answerButton {
+  border-radius: 14px;
+}
+
+.resultPanel {
+  max-width: 1120px;
+  margin: 0 auto;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.9), rgba(8, 12, 22, 0.96));
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.resultHeroArea {
+  max-width: none;
+  margin: 0;
+  text-align: left;
+}
+
+.resultHeroArea .resultKicker {
+  margin: 0;
+}
+
+.resultTitle {
+  font-size: clamp(34px, 4vw, 48px);
+}
+
+.resultMessage {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.resultQuestMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resultSummaryCard,
+.resultDetailCard,
+.partClearStory {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.resultSummaryItem {
+  border-radius: 15px;
+  padding: 13px;
+}
+
+.resultSummaryItem strong {
+  font-size: clamp(23px, 3vw, 31px);
+}
+
+@media (max-width: 980px) {
+  .frontierHero,
+  .frontierHero5,
+  .frontierHero4,
+  .frontierHero3,
+  .frontierHeropre2,
+  .questBoardHeader,
+  .battleQuizGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .frontierLevelSeal {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .root {
+    padding: 14px;
+  }
+
+  .selectTopbar,
+  .battleTopbar {
+    align-items: stretch;
+  }
+
+  .questBoardShell {
+    padding: 14px;
+  }
+
+  .rangePanelHead {
+    grid-template-columns: 52px minmax(0, 1fr);
+    justify-items: stretch;
+    text-align: left;
+  }
+
+  .blockProgress {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .questModeGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .questModeGrid,
+  .questBoardProgressStats {
+    grid-template-columns: 1fr;
+  }
+
+  .questBoardProgressStats {
+    display: grid;
+  }
+
+  .questModeButton,
+  .frontierQuestCard {
+    min-height: 148px;
+  }
+}
+
+.root,
+.root:has(.levelSection5),
+.root:has(.levelSection4),
+.root:has(.levelSection3),
+.root:has(.levelSectionpre2) {
+  --quest-world-bg-image: url("/images/backgrounds/bg_eiken5_forest.png");
+  min-height: 100svh;
+  position: relative;
+  isolation: isolate;
+  background-color: var(--eq-bg);
+  background-image:
+    linear-gradient(
+      90deg,
+      rgba(4, 8, 24, 0.86) 0%,
+      rgba(4, 8, 24, 0.64) 42%,
+      rgba(4, 8, 24, 0.42) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(4, 8, 24, 0.38) 0%,
+      rgba(4, 8, 24, 0.8) 100%
+    ),
+    var(--quest-world-bg-image);
+  background-position: center, center, center;
+  background-size: cover, cover, cover;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-attachment: fixed, fixed, fixed;
+}
+
+.root::before,
+.root::after {
+  content: none;
+}
+
+@media (max-width: 720px) {
+  .root,
+  .root:has(.levelSection5),
+  .root:has(.levelSection4),
+  .root:has(.levelSection3),
+  .root:has(.levelSectionpre2) {
+    background-position: center top, center top, center top;
+    background-attachment: scroll, scroll, scroll;
   }
 }

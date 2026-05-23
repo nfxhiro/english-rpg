@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   EarnedCard,
   gachaRarityRates,
@@ -719,7 +720,19 @@ export default function PackPage() {
                     renderPrizeRays(currentTenPackItem.card.rarity)}
                   {!tenPackCardFlipped ? (
                     <>
-                      <div className="pack-gift">？</div>
+                      <div className="pack-gift">
+                        <Image
+                          src="/home-icons/pack.png"
+                          alt=""
+                          width={709}
+                          height={1179}
+                          className="pack-gift-image"
+                          sizes="130px"
+                          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                          aria-hidden="true"
+                          unoptimized
+                        />
+                      </div>
                       <p>10 PACK SUMMON</p>
                       <h2>開封中...</h2>
                       <span>自動でカードを呼び出しています</span>
@@ -821,7 +834,19 @@ export default function PackPage() {
                   </>
                 ) : (
                   <>
-                    <div className="pack-gift">🎁</div>
+                    <div className="pack-gift">
+                        <Image
+                          src="/home-icons/pack.png"
+                          alt=""
+                          width={709}
+                          height={1179}
+                          className="pack-gift-image"
+                          sizes="130px"
+                          style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                          aria-hidden="true"
+                          unoptimized
+                        />
+                    </div>
                     <p>{isOpening ? "SUMMONING" : "MAGIC PACK"}</p>
                     <h2>{isOpening ? "開封中..." : `${packTickets}枚`}</h2>
                     <span>
@@ -2060,9 +2085,20 @@ export default function PackPage() {
         }
 
         .pack-gift {
-          margin-top: 58px;
-          font-size: 100px;
+          width: 180px;
+          height: 210px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 20px auto 0;
           filter: drop-shadow(0 20px 28px rgba(0, 0, 0, 0.42));
+        }
+
+        .pack-gift-image {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .pack-display.tenpack-suspense .pack-gift {
@@ -3407,8 +3443,9 @@ export default function PackPage() {
           }
 
           .pack-gift {
-            margin-top: 50px;
-            font-size: 78px;
+            width: 150px;
+            height: 175px;
+            margin-top: 18px;
           }
 
           .pack-result-emoji {

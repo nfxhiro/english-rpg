@@ -12,7 +12,7 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "Eiken Quest Frontier",
+  title: "英検クエスト フロンティア",
   description: "英検単語で冒険する、カード学習RPG",
 };
 

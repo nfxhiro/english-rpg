@@ -17,7 +17,7 @@ export const MAX_HERO_LEVEL = 99;
 
 export function getHeroTitle(level: number) {
   if (level >= 99) return "伝説の英語勇者";
-  if (level >= 90) return "Eiken Quest Frontier マスター";
+  if (level >= 90) return "英検クエスト フロンティア マスター";
   if (level >= 70) return "伝説の冒険者";
   if (level >= 50) return "英語王";
   if (level >= 40) return "英語マスター";

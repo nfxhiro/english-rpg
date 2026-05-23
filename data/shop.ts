@@ -1,310 +1,14 @@
 import { getMonsterCardById } from "./cards";
 
-export type ShopItemCategory =
-  | "avatar"
-  | "title"
-  | "background"
-  | "frame"
-  | "effect";
-
-export type ShopItem = {
-  id: string;
-  name: string;
-  emoji: string;
-  price: number;
-  category: ShopItemCategory;
-  description: string;
-  backgroundCss?: string;
-  frameCss?: string;
-  effectClass?: string;
-};
-
-export const SHOP_AVATARS: ShopItem[] = [
-  {
-    id: "avatar_novice",
-    name: "勇者見習い",
-    emoji: "⚔️",
-    price: 500,
-    category: "avatar",
-    description: "冒険を始めたばかりの見習い勇者",
-  },
-  {
-    id: "avatar_fire",
-    name: "炎の勇者",
-    emoji: "🔥",
-    price: 1200,
-    category: "avatar",
-    description: "炎を操る情熱の勇者",
-  },
-  {
-    id: "avatar_water",
-    name: "水の魔導士",
-    emoji: "🌊",
-    price: 1200,
-    category: "avatar",
-    description: "水の魔法を操る知恵者",
-  },
-  {
-    id: "avatar_ranger",
-    name: "森のレンジャー",
-    emoji: "🏹",
-    price: 1500,
-    category: "avatar",
-    description: "森を疾走する弓の達人",
-  },
-  {
-    id: "avatar_knight",
-    name: "光の騎士",
-    emoji: "✨",
-    price: 2500,
-    category: "avatar",
-    description: "光に輝く誇り高き騎士",
-  },
-  {
-    id: "avatar_sage",
-    name: "闇の賢者",
-    emoji: "🔮",
-    price: 3000,
-    category: "avatar",
-    description: "闇の知識を持つ神秘の賢者",
-  },
-];
-
-export const SHOP_TITLES: ShopItem[] = [
-  {
-    id: "title_gold_hunter",
-    name: "ゴールドハンター",
-    emoji: "💰",
-    price: 500,
-    category: "title",
-    description: "ゴールドを稼ぐ猛者に贈られる称号",
-  },
-  {
-    id: "title_treasure",
-    name: "宝箱コレクター",
-    emoji: "🏆",
-    price: 800,
-    category: "title",
-    description: "あらゆる宝を集め続ける称号",
-  },
-  {
-    id: "title_word_collector",
-    name: "単語コレクター",
-    emoji: "📖",
-    price: 1200,
-    category: "title",
-    description: "英単語の収集に情熱を燃やす称号",
-  },
-  {
-    id: "title_library",
-    name: "魔法図書館の常連",
-    emoji: "📚",
-    price: 2000,
-    category: "title",
-    description: "知識の宝庫に通い続ける賢者の称号",
-  },
-  {
-    id: "title_vip",
-    name: "Frontier VIP",
-    emoji: "👑",
-    price: 3000,
-    category: "title",
-    description: "フロンティアの特別な称号",
-  },
-  {
-    id: "title_shop_master",
-    name: "冒険ショップの達人",
-    emoji: "🪙",
-    price: 5000,
-    category: "title",
-    description: "ショップを極めた究極の称号",
-  },
-];
-
-export const SHOP_BACKGROUNDS: ShopItem[] = [
-  {
-    id: "bg_grassland",
-    name: "草原のはじまり",
-    emoji: "🌿",
-    price: 800,
-    category: "background",
-    description: "穏やかな緑の草原が広がる世界",
-    backgroundCss:
-      "radial-gradient(circle at 20% 20%, rgba(34,197,94,0.28), transparent 40%), radial-gradient(circle at 80% 80%, rgba(21,128,61,0.36), transparent 40%), linear-gradient(145deg, #052e16 0%, #14532d 50%, #052e16 100%)",
-  },
-  {
-    id: "bg_magic_forest",
-    name: "魔法の森",
-    emoji: "🌲",
-    price: 1500,
-    category: "background",
-    description: "魔法が宿る神秘の深い森",
-    backgroundCss:
-      "radial-gradient(circle at 30% 20%, rgba(134,239,172,0.18), transparent 35%), radial-gradient(circle at 70% 80%, rgba(168,85,247,0.28), transparent 40%), linear-gradient(145deg, #0a1a0a 0%, #0f2d1a 40%, #1a0a2f 100%)",
-  },
-  {
-    id: "bg_library",
-    name: "古代図書館",
-    emoji: "📜",
-    price: 2500,
-    category: "background",
-    description: "無数の知識が眠る古代の図書館",
-    backgroundCss:
-      "radial-gradient(circle at 50% 0%, rgba(251,191,36,0.22), transparent 40%), radial-gradient(circle at 20% 100%, rgba(180,83,9,0.28), transparent 40%), linear-gradient(145deg, #1c1108 0%, #2d1f0a 50%, #1c1108 100%)",
-  },
-  {
-    id: "bg_startemple",
-    name: "星空の神殿",
-    emoji: "⭐",
-    price: 3500,
-    category: "background",
-    description: "無数の星が降り注ぐ神秘の神殿",
-    backgroundCss:
-      "radial-gradient(circle at 20% 20%, rgba(34,211,238,0.18), transparent 35%), radial-gradient(circle at 80% 60%, rgba(168,85,247,0.26), transparent 40%), radial-gradient(circle at 50% 100%, rgba(251,191,36,0.14), transparent 35%), linear-gradient(145deg, #030614 0%, #080a28 50%, #0a0322 100%)",
-  },
-  {
-    id: "bg_dragon_castle",
-    name: "ドラゴンの城",
-    emoji: "🏰",
-    price: 5000,
-    category: "background",
-    description: "伝説のドラゴンが守護する古城",
-    backgroundCss:
-      "radial-gradient(circle at 20% 30%, rgba(239,68,68,0.28), transparent 40%), radial-gradient(circle at 80% 70%, rgba(180,9,9,0.28), transparent 40%), linear-gradient(145deg, #1a0505 0%, #2d0a0a 50%, #1a0505 100%)",
-  },
-  {
-    id: "bg_frontier",
-    name: "Frontier Castle",
-    emoji: "✨",
-    price: 8000,
-    category: "background",
-    description: "フロンティアの伝説を刻む壮大な城",
-    backgroundCss:
-      "radial-gradient(circle at 10% 4%, rgba(34,211,238,0.24), transparent 30%), radial-gradient(circle at 86% 6%, rgba(168,85,247,0.34), transparent 34%), radial-gradient(circle at 50% 100%, rgba(250,204,21,0.2), transparent 34%), linear-gradient(145deg, #050714 0%, #09102a 42%, #1b123f 72%, #060816 100%)",
-  },
-];
-
-export const SHOP_FRAMES: ShopItem[] = [
-  {
-    id: "frame_starlight",
-    name: "星光の額縁",
-    emoji: "✦",
-    price: 900,
-    category: "frame",
-    description: "金と星の光でカードを縁取る基本フレーム",
-    frameCss: "linear-gradient(135deg, #fde68a 0%, #facc15 20%, #7c3aed 58%, #22d3ee 100%)",
-  },
-  {
-    id: "frame_emerald",
-    name: "深緑の紋章",
-    emoji: "🛡️",
-    price: 1500,
-    category: "frame",
-    description: "森と守護の力をまとったエメラルドの縁取り",
-    frameCss: "linear-gradient(135deg, #bbf7d0 0%, #22c55e 32%, #0f766e 62%, #67e8f9 100%)",
-  },
-  {
-    id: "frame_ruby",
-    name: "紅蓮の戦紋",
-    emoji: "🔥",
-    price: 2200,
-    category: "frame",
-    description: "炎のクエストに似合う赤と金の豪華フレーム",
-    frameCss: "linear-gradient(135deg, #fef3c7 0%, #f59e0b 24%, #ef4444 58%, #7f1d1d 100%)",
-  },
-  {
-    id: "frame_moon",
-    name: "月影の魔導枠",
-    emoji: "🌙",
-    price: 3200,
-    category: "frame",
-    description: "闇と月光が混ざる賢者向けの神秘フレーム",
-    frameCss: "linear-gradient(135deg, #f5d0fe 0%, #a855f7 34%, #312e81 64%, #22d3ee 100%)",
-  },
-  {
-    id: "frame_frontier",
-    name: "Frontier Crown",
-    emoji: "👑",
-    price: 6500,
-    category: "frame",
-    description: "王冠の輝きをまとった最高級フロンティアフレーム",
-    frameCss: "conic-gradient(from 15deg, #fff7ad, #facc15, #fb7185, #a855f7, #22d3ee, #86efac, #fff7ad)",
-  },
-];
-
-export const SHOP_EFFECTS: ShopItem[] = [
-  {
-    id: "effect_spark",
-    name: "星屑オーラ",
-    emoji: "✨",
-    price: 1000,
-    category: "effect",
-    description: "アバターの周囲に星の粒子がきらめく演出",
-    effectClass: "effect-spark",
-  },
-  {
-    id: "effect_flame",
-    name: "紅蓮オーラ",
-    emoji: "🔥",
-    price: 1800,
-    category: "effect",
-    description: "炎のゆらめきでアバターを力強く演出",
-    effectClass: "effect-flame",
-  },
-  {
-    id: "effect_aqua",
-    name: "蒼波オーラ",
-    emoji: "💧",
-    price: 1800,
-    category: "effect",
-    description: "水と光の波紋が静かに広がる演出",
-    effectClass: "effect-aqua",
-  },
-  {
-    id: "effect_shadow",
-    name: "闇星の結界",
-    emoji: "🔮",
-    price: 2800,
-    category: "effect",
-    description: "紫の魔法陣と闇の星が浮かぶ賢者の演出",
-    effectClass: "effect-shadow",
-  },
-  {
-    id: "effect_crown",
-    name: "王冠の祝福",
-    emoji: "👑",
-    price: 5200,
-    category: "effect",
-    description: "金色の光が降り注ぐレジェンド級エフェクト",
-    effectClass: "effect-crown",
-  },
-];
-
 export type ShopState = {
-  ownedAvatars: string[];
-  ownedTitles: string[];
-  ownedBackgrounds: string[];
-  ownedFrames: string[];
-  ownedEffects: string[];
-  selectedAvatar: string | null;
   selectedTitle: string | null;
   selectedBackground: string | null;
-  selectedFrame: string | null;
-  selectedEffect: string | null;
   selectedMonsterCardId: string | null;
 };
 
 const DEFAULT_SHOP_STATE: ShopState = {
-  ownedAvatars: [],
-  ownedTitles: [],
-  ownedBackgrounds: [],
-  ownedFrames: [],
-  ownedEffects: [],
-  selectedAvatar: null,
   selectedTitle: null,
   selectedBackground: null,
-  selectedFrame: null,
-  selectedEffect: null,
   selectedMonsterCardId: null,
 };
 
@@ -315,16 +19,8 @@ export function loadShopState(): ShopState {
     if (!raw) return { ...DEFAULT_SHOP_STATE };
     const parsed = JSON.parse(raw) as Partial<ShopState>;
     return {
-      ownedAvatars: Array.isArray(parsed.ownedAvatars) ? parsed.ownedAvatars : [],
-      ownedTitles: Array.isArray(parsed.ownedTitles) ? parsed.ownedTitles : [],
-      ownedBackgrounds: Array.isArray(parsed.ownedBackgrounds) ? parsed.ownedBackgrounds : [],
-      ownedFrames: Array.isArray(parsed.ownedFrames) ? parsed.ownedFrames : [],
-      ownedEffects: Array.isArray(parsed.ownedEffects) ? parsed.ownedEffects : [],
-      selectedAvatar: typeof parsed.selectedAvatar === "string" ? parsed.selectedAvatar : null,
       selectedTitle: typeof parsed.selectedTitle === "string" ? parsed.selectedTitle : null,
       selectedBackground: typeof parsed.selectedBackground === "string" ? parsed.selectedBackground : null,
-      selectedFrame: typeof parsed.selectedFrame === "string" ? parsed.selectedFrame : null,
-      selectedEffect: typeof parsed.selectedEffect === "string" ? parsed.selectedEffect : null,
       selectedMonsterCardId: typeof parsed.selectedMonsterCardId === "string" ? parsed.selectedMonsterCardId : null,
     };
   } catch {
@@ -337,56 +33,153 @@ export function saveShopState(state: ShopState): void {
   localStorage.setItem("shopState", JSON.stringify(state));
 }
 
-export function getSelectedAvatarEmoji(shopState: ShopState): string {
-  if (shopState.selectedMonsterCardId) {
-    const card = getMonsterCardById(shopState.selectedMonsterCardId);
-    if (card) return card.monsterEmoji;
-  }
-  const item = getSelectedAvatarItem(shopState);
-  return item?.emoji ?? "🐉";
-}
-
 export function getSelectedMonsterCard(shopState: ShopState) {
   if (!shopState.selectedMonsterCardId) return null;
   return getMonsterCardById(shopState.selectedMonsterCardId) ?? null;
-}
-
-export function getSelectedAvatarItem(shopState: ShopState): ShopItem | null {
-  if (!shopState.selectedAvatar) return null;
-  return SHOP_AVATARS.find((a) => a.id === shopState.selectedAvatar) ?? null;
-}
-
-export function getSelectedBackgroundItem(shopState: ShopState): ShopItem | null {
-  if (!shopState.selectedBackground) return null;
-  return SHOP_BACKGROUNDS.find((b) => b.id === shopState.selectedBackground) ?? null;
-}
-
-export function getSelectedBackgroundCss(shopState: ShopState): string | null {
-  const item = getSelectedBackgroundItem(shopState);
-  return item?.backgroundCss ?? null;
-}
-
-export function getSelectedFrameItem(shopState: ShopState): ShopItem | null {
-  if (!shopState.selectedFrame) return null;
-  return SHOP_FRAMES.find((f) => f.id === shopState.selectedFrame) ?? null;
-}
-
-export function getSelectedFrameCss(shopState: ShopState): string | null {
-  const item = getSelectedFrameItem(shopState);
-  return item?.frameCss ?? null;
-}
-
-export function getSelectedEffectItem(shopState: ShopState): ShopItem | null {
-  if (!shopState.selectedEffect) return null;
-  return SHOP_EFFECTS.find((e) => e.id === shopState.selectedEffect) ?? null;
-}
-
-export function getSelectedEffectClass(shopState: ShopState): string | null {
-  const item = getSelectedEffectItem(shopState);
-  return item?.effectClass ?? null;
 }
 
 export function getDisplayTitle(shopState: ShopState, heroTitle: string): string {
   if (!shopState.selectedTitle) return heroTitle;
   return shopState.selectedTitle;
 }
+
+// =============================================================
+// EQUIPMENT SHOP — 装備システム (将来 /quiz バトルへ反映予定)
+// =============================================================
+
+export type EquipCategory = "weapon" | "shield" | "armor" | "helmet" | "accessory";
+
+export type EquipEffects = {
+  attack?: number;
+  hp?: number;
+  damageReduction?: number;
+  criticalRate?: number;
+  healBonus?: number;
+  goldBonus?: number;
+  expBonus?: number;
+  partnerExpBonus?: number;
+};
+
+export type EquipItem = {
+  id: string;
+  name: string;
+  category: EquipCategory;
+  icon: string;
+  description: string;
+  price: number;
+  effects: EquipEffects;
+  recommendedFor: string;
+};
+
+export type EquipState = {
+  ownedItems: string[];
+  equippedItems: Record<EquipCategory, string | null>;
+};
+
+const DEFAULT_EQUIP_STATE: EquipState = {
+  ownedItems: [],
+  equippedItems: { weapon: null, shield: null, armor: null, helmet: null, accessory: null },
+};
+
+const EQUIP_PROGRESS_KEY = "eikenQuestFrontierProgress";
+
+export function loadEquipState(): EquipState {
+  if (typeof window === "undefined") return JSON.parse(JSON.stringify(DEFAULT_EQUIP_STATE));
+  try {
+    const raw = localStorage.getItem(EQUIP_PROGRESS_KEY);
+    const parsed = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    const owned = Array.isArray(parsed.ownedItems) ? (parsed.ownedItems as string[]) : [];
+    const eq = (parsed.equippedItems ?? {}) as Record<string, unknown>;
+    return {
+      ownedItems: owned,
+      equippedItems: {
+        weapon:    typeof eq.weapon    === "string" ? eq.weapon    : null,
+        shield:    typeof eq.shield    === "string" ? eq.shield    : null,
+        armor:     typeof eq.armor     === "string" ? eq.armor     : null,
+        helmet:    typeof eq.helmet    === "string" ? eq.helmet    : null,
+        accessory: typeof eq.accessory === "string" ? eq.accessory : null,
+      },
+    };
+  } catch {
+    return JSON.parse(JSON.stringify(DEFAULT_EQUIP_STATE));
+  }
+}
+
+export function saveEquipState(state: EquipState): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(EQUIP_PROGRESS_KEY);
+    const existing = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    localStorage.setItem(EQUIP_PROGRESS_KEY, JSON.stringify({
+      ...existing,
+      ownedItems: state.ownedItems,
+      equippedItems: state.equippedItems,
+    }));
+  } catch { /* ignore */ }
+}
+
+export function calcTotalEffects(state: EquipState): EquipEffects {
+  const t = { attack: 0, hp: 0, damageReduction: 0, criticalRate: 0, healBonus: 0, goldBonus: 0, expBonus: 0, partnerExpBonus: 0 };
+  for (const itemId of Object.values(state.equippedItems)) {
+    if (!itemId) continue;
+    const item = EQUIP_ITEMS.find(i => i.id === itemId);
+    if (!item) continue;
+    for (const [k, v] of Object.entries(item.effects) as [keyof typeof t, number][]) {
+      t[k] += v;
+    }
+  }
+  return Object.fromEntries(Object.entries(t).filter(([, v]) => v > 0));
+}
+
+export const EQUIP_ITEMS: EquipItem[] = [
+  // ⚔️ 武器
+  { id: "wood_sword",         name: "木の剣",         category: "weapon", icon: "⚔️",  price: 500,   description: "初心者でも扱いやすい、軽い木の剣。",             effects: { attack: 6 },                    recommendedFor: "最初の強化" },
+  { id: "traveler_sword",     name: "旅人の剣",       category: "weapon", icon: "🗡️",  price: 900,   description: "旅を始めた勇者にぴったりの剣。",                 effects: { attack: 10 },                   recommendedFor: "序盤のボス対策" },
+  { id: "wind_dagger",        name: "風切りの短剣",   category: "weapon", icon: "🗡️",  price: 1500,  description: "風のように素早く切りこむ短剣。",                 effects: { attack: 12, criticalRate: 1 },  recommendedFor: "早く倒したい人向け" },
+  { id: "iron_sword",         name: "鉄の剣",         category: "weapon", icon: "⚔️",  price: 2400,  description: "しっかりした重みのある定番の剣。",               effects: { attack: 18 },                   recommendedFor: "通常クエスト安定" },
+  { id: "flame_sword",        name: "炎の剣",         category: "weapon", icon: "🔥",  price: 3800,  description: "炎の力を宿した攻撃的な剣。",                     effects: { attack: 24 },                   recommendedFor: "ボスを早く倒したい人向け" },
+  { id: "moon_rapier",        name: "月光のレイピア", category: "weapon", icon: "🌙",  price: 5500,  description: "月の光のように鋭く美しい細剣。",                 effects: { attack: 28, criticalRate: 2 },  recommendedFor: "連続正解が得意な人向け" },
+  { id: "thunder_greatsword", name: "雷鳴の大剣",     category: "weapon", icon: "⚡",  price: 7800,  description: "雷のような一撃を放つ大剣。",                     effects: { attack: 38 },                   recommendedFor: "高HPボス対策" },
+  { id: "star_reader_sword",  name: "星詠みの剣",     category: "weapon", icon: "🌟",  price: 10000, description: "星の導きで学びも戦いも支える剣。",               effects: { attack: 42, expBonus: 5 },      recommendedFor: "攻略と育成を両立" },
+  { id: "hero_holy_sword",    name: "勇者の聖剣",     category: "weapon", icon: "✨",  price: 15000, description: "真の勇者にふさわしい光の聖剣。",                 effects: { attack: 55, criticalRate: 3 },  recommendedFor: "終盤・完全制覇向け" },
+  // 🛡️ 盾
+  { id: "wood_shield",         name: "木の盾",       category: "shield", icon: "🛡️", price: 500,   description: "軽くて扱いやすい木の盾。",                       effects: { damageReduction: 3 },                    recommendedFor: "ミスが不安な人向け" },
+  { id: "traveler_shield",     name: "旅人の盾",     category: "shield", icon: "🛡️", price: 900,   description: "旅の安全を守る小さな盾。",                       effects: { hp: 20, damageReduction: 3 },            recommendedFor: "序盤の安定" },
+  { id: "iron_shield",         name: "鉄の盾",       category: "shield", icon: "🛡️", price: 1800,  description: "しっかり守れる定番の盾。",                       effects: { damageReduction: 6 },                    recommendedFor: "通常クエスト安定" },
+  { id: "guard_shield",        name: "まもりの盾",   category: "shield", icon: "🛡️", price: 2800,  description: "守りを重視した安心感のある盾。",                 effects: { hp: 35, damageReduction: 6 },            recommendedFor: "ミスが多い人向け" },
+  { id: "water_mirror_shield", name: "水鏡の盾",     category: "shield", icon: "💧", price: 4200,  description: "水面のように攻撃を受け流す盾。",                 effects: { damageReduction: 8, healBonus: 1 },      recommendedFor: "長期戦向け" },
+  { id: "moon_shadow_shield",  name: "月影の盾",     category: "shield", icon: "🌙", price: 5800,  description: "月影の力で身を守る静かな盾。",                   effects: { hp: 50, damageReduction: 9 },            recommendedFor: "ボス戦向け" },
+  { id: "thunder_guard_shield",name: "雷よけの盾",   category: "shield", icon: "⚡", price: 7500,  description: "強い衝撃にも耐える守りの盾。",                   effects: { damageReduction: 11 },                   recommendedFor: "高難易度対策" },
+  { id: "star_guard_shield",   name: "星守りの盾",   category: "shield", icon: "🌟", price: 10000, description: "星の加護で勇者を守る盾。",                       effects: { hp: 70, damageReduction: 12 },           recommendedFor: "complete向け" },
+  { id: "holy_great_shield",   name: "聖なる大盾",   category: "shield", icon: "✨", price: 14000, description: "強敵の一撃にも耐える大きな聖盾。",               effects: { hp: 90, damageReduction: 15 },           recommendedFor: "終盤の安定装備" },
+  // 🥋 よろい
+  { id: "cloth_armor",       name: "布のよろい",     category: "armor", icon: "🥋", price: 500,   description: "動きやすさを重視した軽いよろい。",               effects: { hp: 25 },                       recommendedFor: "最初のHP強化" },
+  { id: "leather_armor",     name: "皮のよろい",     category: "armor", icon: "🥋", price: 1000,  description: "序盤の冒険に向いた丈夫なよろい。",               effects: { hp: 40 },                       recommendedFor: "序盤安定" },
+  { id: "traveler_coat",     name: "旅人のコート",   category: "armor", icon: "🧥", price: 1800,  description: "旅をしながら学ぶ人のためのコート。",             effects: { hp: 50, expBonus: 3 },          recommendedFor: "育成しながら進めたい人向け" },
+  { id: "iron_armor",        name: "鉄のよろい",     category: "armor", icon: "🥋", price: 2800,  description: "守りをしっかり固める鉄のよろい。",               effects: { hp: 75 },                       recommendedFor: "通常クエスト安定" },
+  { id: "flame_guard_armor", name: "炎よけのよろい", category: "armor", icon: "🔥", price: 4200,  description: "熱い戦いにも耐えられるよろい。",                 effects: { hp: 90, damageReduction: 3 },   recommendedFor: "ボス戦向け" },
+  { id: "water_robe",        name: "水のローブ",     category: "armor", icon: "💧", price: 5800,  description: "水の力で体力を保ちやすくするローブ。",           effects: { hp: 100, healBonus: 1 },        recommendedFor: "長期戦向け" },
+  { id: "moonlight_armor",   name: "月光のよろい",   category: "armor", icon: "🌙", price: 7800,  description: "月の光に守られた美しいよろい。",                 effects: { hp: 130 },                      recommendedFor: "complete向け" },
+  { id: "star_guide_robe",   name: "星導のローブ",   category: "armor", icon: "🌟", price: 10500, description: "星の導きで学びを助けるローブ。",                 effects: { hp: 145, expBonus: 5 },         recommendedFor: "育成と耐久を両立" },
+  { id: "hero_armor",        name: "勇者のよろい",   category: "armor", icon: "✨", price: 15000, description: "勇者のために作られた最高級のよろい。",           effects: { hp: 180, damageReduction: 5 },  recommendedFor: "終盤の主力装備" },
+  // 🪖 かぶと
+  { id: "leather_cap",       name: "皮のぼうし",       category: "helmet", icon: "🪖", price: 500,   description: "軽くてかぶりやすい基本のぼうし。",               effects: { hp: 10, healBonus: 1 },                    recommendedFor: "序盤の安定" },
+  { id: "traveler_bandana",  name: "旅人のバンダナ",   category: "helmet", icon: "🎗️", price: 900,   description: "冒険心を高める旅人のバンダナ。",                 effects: { criticalRate: 1 },                         recommendedFor: "攻撃寄り" },
+  { id: "iron_helmet",       name: "鉄のかぶと",       category: "helmet", icon: "🪖", price: 1800,  description: "頭をしっかり守る鉄のかぶと。",                   effects: { hp: 25 },                                  recommendedFor: "通常クエスト向け" },
+  { id: "focus_headband",    name: "集中のはちまき",   category: "helmet", icon: "🎗️", price: 2800,  description: "集中力を高めて会心の一撃を狙うはちまき。",       effects: { criticalRate: 2 },                         recommendedFor: "連続正解が得意な人向け" },
+  { id: "guard_helmet",      name: "まもりのかぶと",   category: "helmet", icon: "🪖", price: 4000,  description: "守りと回復を助ける安定型のかぶと。",             effects: { hp: 40, healBonus: 1 },                    recommendedFor: "ミス対策" },
+  { id: "moon_reader_hood",  name: "月読みのフード",   category: "helmet", icon: "🌙", price: 5500,  description: "月の流れを読み、学びを助けるフード。",           effects: { criticalRate: 2, expBonus: 3 },            recommendedFor: "育成向け" },
+  { id: "star_helmet",       name: "星のかぶと",       category: "helmet", icon: "🌟", price: 7500,  description: "星の力で勇者を支えるかぶと。",                   effects: { hp: 55, criticalRate: 2 },                 recommendedFor: "ボス戦向け" },
+  { id: "sage_hood",         name: "賢者のフード",     category: "helmet", icon: "🧙", price: 10000, description: "知恵と回復力を高める賢者のフード。",             effects: { healBonus: 3, expBonus: 5 },               recommendedFor: "complete向け" },
+  { id: "hero_helmet",       name: "勇者のかぶと",     category: "helmet", icon: "✨", price: 14000, description: "攻守のバランスに優れた勇者のかぶと。",           effects: { hp: 75, criticalRate: 3, healBonus: 2 },   recommendedFor: "終盤の万能装備" },
+  // 💍 アクセサリー
+  { id: "traveler_charm",   name: "旅人のお守り",   category: "accessory", icon: "💍", price: 500,   description: "旅の幸運を少しだけ高めるお守り。",               effects: { goldBonus: 5 },                              recommendedFor: "金策の最初" },
+  { id: "small_star_charm", name: "小さな星飾り",   category: "accessory", icon: "🌟", price: 900,   description: "学びの成長をそっと助ける星飾り。",               effects: { expBonus: 5 },                               recommendedFor: "主人公育成向け" },
+  { id: "partner_bell",     name: "相棒のすず",     category: "accessory", icon: "🔔", price: 1500,  description: "相棒との絆を深める小さなすず。",                 effects: { partnerExpBonus: 10 },                       recommendedFor: "相棒育成向け" },
+  { id: "lucky_ring",       name: "幸運のリング",   category: "accessory", icon: "💍", price: 2800,  description: "クエスト報酬を少し増やす幸運のリング。",         effects: { goldBonus: 10 },                             recommendedFor: "金策向け" },
+  { id: "learning_pendant", name: "学びのペンダント",category: "accessory", icon: "📘", price: 4000, description: "英語の学びを後押しするペンダント。",             effects: { expBonus: 10 },                              recommendedFor: "レベル上げ向け" },
+  { id: "bond_brooch",      name: "絆のブローチ",   category: "accessory", icon: "🔷", price: 5500,  description: "相棒との成長を助けるブローチ。",                 effects: { partnerExpBonus: 20 },                       recommendedFor: "相棒を育てたい人向け" },
+  { id: "golden_coin",      name: "金色のコイン",   category: "accessory", icon: "🪙", price: 7500,  description: "周回するほど効果を感じる金色のコイン。",         effects: { goldBonus: 15, expBonus: 5 },                recommendedFor: "周回向け" },
+  { id: "star_guide_mark",  name: "星導のしるし",   category: "accessory", icon: "🌟", price: 10000, description: "星の導きで成長を早めるしるし。",                 effects: { expBonus: 15, partnerExpBonus: 20 },         recommendedFor: "育成特化" },
+  { id: "courage_orb",      name: "勇気のオーブ",   category: "accessory", icon: "🔮", price: 15000, description: "勇気と成長を引き出す特別なオーブ。",             effects: { goldBonus: 20, expBonus: 15, partnerExpBonus: 30 }, recommendedFor: "終盤の育成装備" },
+];

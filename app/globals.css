@@ -54,7 +54,7 @@ html {
 
 body {
   margin: 0;
-  background: var(--eq-bg);
+  background: transparent;
   color: var(--eq-white);
   font-family: var(--font-noto-sans-jp), 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -731,6 +731,23 @@ a {
   filter: drop-shadow(0 20px 28px rgba(0, 0, 0, 0.42));
 }
 
+.eq-display-image-frame {
+  width: 150px;
+  height: 132px;
+  margin: 56px auto 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0;
+}
+
+.eq-display-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .showcase-card p,
 .book-card p,
 .pack-card p {
@@ -1167,8 +1184,7 @@ a {
   background:
     radial-gradient(circle at 10% 4%, rgba(34, 211, 238, 0.16), transparent 30%),
     radial-gradient(circle at 86% 6%, rgba(168, 85, 247, 0.24), transparent 34%),
-    radial-gradient(circle at 50% 104%, rgba(250, 204, 21, 0.14), transparent 34%),
-    linear-gradient(145deg, #050714 0%, #09102a 42%, #1b123f 72%, #060816 100%);
+    radial-gradient(circle at 50% 104%, rgba(250, 204, 21, 0.14), transparent 34%);
 }
 
 :where(
@@ -1996,8 +2012,7 @@ a {
   background:
     radial-gradient(circle at 14% 8%, rgba(45, 212, 191, 0.11), transparent 30%),
     radial-gradient(circle at 86% 4%, rgba(251, 113, 133, 0.09), transparent 28%),
-    radial-gradient(circle at 50% 100%, rgba(250, 204, 21, 0.08), transparent 34%),
-    linear-gradient(160deg, #070a12 0%, #101827 44%, #0b161b 100%) !important;
+    radial-gradient(circle at 50% 100%, rgba(250, 204, 21, 0.08), transparent 34%) !important;
 }
 
 :where(.eq-page, .card-detail-page, .app-loading-page)::before,
@@ -2020,6 +2035,78 @@ a {
 
 :where(.eq-bg-orb-three, .orb-three, .loading-orb-three) {
   background: rgba(250, 204, 21, 0.09) !important;
+}
+
+:where(
+  .eq-page,
+  .home-page,
+  .hero-page,
+  .cards-page,
+  .card-detail-page,
+  .pack-page,
+  .quest-page,
+  .shop-page,
+  .settings-page,
+  .wordbook-page,
+  .written-page,
+  .fb-page,
+  .app-loading-page
+) {
+  background-color: var(--eq-bg) !important;
+  background-image:
+    linear-gradient(180deg, rgba(5, 8, 22, 0.5) 0%, rgba(5, 8, 22, 0.72) 48%, rgba(5, 8, 22, 0.88) 100%),
+    radial-gradient(circle at 18% 12%, rgba(45, 212, 191, 0.18), transparent 34%),
+    radial-gradient(circle at 86% 10%, rgba(168, 85, 247, 0.18), transparent 30%),
+    url("/home-background.png") !important;
+  background-position:
+    center,
+    center,
+    center,
+    center !important;
+  background-size:
+    cover,
+    cover,
+    cover,
+    cover !important;
+  background-repeat:
+    no-repeat,
+    no-repeat,
+    no-repeat,
+    no-repeat !important;
+  background-attachment:
+    fixed,
+    fixed,
+    fixed,
+    fixed !important;
+}
+
+@media (max-width: 720px) {
+  :where(
+    .eq-page,
+    .home-page,
+    .hero-page,
+    .cards-page,
+    .card-detail-page,
+    .pack-page,
+    .quest-page,
+    .shop-page,
+    .settings-page,
+    .wordbook-page,
+    .written-page,
+    .fb-page,
+    .app-loading-page
+  ) {
+    background-position:
+      center top,
+      center top,
+      center top,
+      center top !important;
+    background-attachment:
+      scroll,
+      scroll,
+      scroll,
+      scroll !important;
+  }
 }
 
 :where(.eq-shell, .detail-shell, .cards-shell, .hero-shell, .pack-shell, .wordbook-shell) {
@@ -2594,7 +2681,7 @@ body {
 
   :where(
     .shop-gold-box,
-    .shop-loadout-chips,
+    .shop-loadout-slots,
     .pack-gold-bar,
     .pack-tickets-bar,
     .hero-loadout-row,

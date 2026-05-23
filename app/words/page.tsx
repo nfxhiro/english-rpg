@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   addGold,
   addHeroExp,
@@ -18,33 +19,28 @@ import {
 import { learningWords, type LearningWord } from "../../data/words";
 import SpeechButton from "../components/SpeechButton";
 
-const DISPLAY_STEP = 100;
+const ALL_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
 type StudyMode = "list" | "memory";
-type KindFilter = "all" | "word" | "phrase";
 type StudyExpNotice = Pick<
   HeroExpResult,
   "gainedExp" | "leveledUp" | "before" | "after"
 >;
 
-const kindFilterOptions: {
-  value: KindFilter;
-  label: string;
-}[] = [
-  { value: "all", label: "すべて" },
-  { value: "word", label: "単語" },
-  { value: "phrase", label: "熟語" },
-];
-
 const DEFAULT_MEMORY_PERFECT_XP = 3;
 
-function getFilteredWords(
-  searchText: string,
-  levelFilter: string,
-  kindFilter: KindFilter
-) {
+function searchWords(searchText: string) {
   const keyword = searchText.trim().toLowerCase();
+  if (!keyword) return learningWords;
+  return learningWords.filter(
+    (w) =>
+      w.word.toLowerCase().includes(keyword) ||
+      w.meaning.includes(searchText)
+  );
+}
 
+function getFilteredWords(searchText: string, levelFilter: string) {
+  const keyword = searchText.trim().toLowerCase();
   return learningWords.filter((word) => {
     const matchesSearch =
       keyword === "" ||
@@ -52,15 +48,8 @@ function getFilteredWords(
       word.meaning.includes(searchText) ||
       word.example.toLowerCase().includes(keyword) ||
       word.exampleMeaning.includes(searchText);
-
     const matchesLevel = levelFilter === "all" || word.level === levelFilter;
-
-    const matchesKind =
-      kindFilter === "all" ||
-      (kindFilter === "phrase" && word.type === "熟語") ||
-      (kindFilter === "word" && word.type !== "熟語");
-
-    return matchesSearch && matchesLevel && matchesKind;
+    return matchesSearch && matchesLevel;
   });
 }
 
@@ -166,10 +155,13 @@ function createMemoryAnswerChoices(
 
 export default function WordsPage() {
   const [searchText, setSearchText] = useState("");
-  const [levelFilter, setLevelFilter] = useState("all");
-  const [kindFilter, setKindFilter] = useState<KindFilter>("all");
-  const [displayCount, setDisplayCount] = useState(DISPLAY_STEP);
   const [studyMode, setStudyMode] = useState<StudyMode>("list");
+  const [activeLetter, setActiveLetter] = useState("A");
+  const [levelFilter, setLevelFilter] = useState("all");
+  const [rangeIndex, setRangeIndex] = useState<number | null>(null);
+  const [sessionWords, setSessionWords] = useState<LearningWord[]>(() => [...learningWords]);
+  const [clearedNos, setClearedNos] = useState<Set<string>>(new Set());
+  const [wrongNos, setWrongNos] = useState<Set<string>>(new Set());
   const [memoryQueue, setMemoryQueue] = useState<LearningWord[]>(() => [
     ...learningWords,
   ]);
@@ -179,13 +171,10 @@ export default function WordsPage() {
   );
   const [memoryDoneCount, setMemoryDoneCount] = useState(0);
   const [memoryHistory, setMemoryHistory] = useState<LearningWord[]>([]);
-  const [sessionWords, setSessionWords] = useState<LearningWord[]>(() => [...learningWords]);
-  const [clearedNos, setClearedNos] = useState<Set<string>>(new Set());
-  const [wrongNos, setWrongNos] = useState<Set<string>>(new Set());
   const [studyExpNotice, setStudyExpNotice] =
     useState<StudyExpNotice | null>(null);
   const [studyGoldNotice, setStudyGoldNotice] = useState<number | null>(null);
-  const [rangeIndex, setRangeIndex] = useState<number | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const furiganaEnabled = useSyncExternalStore(
     subscribeToFuriganaEnabledChange,
     getStoredFuriganaEnabled,
@@ -204,6 +193,37 @@ export default function WordsPage() {
     return () => clearTimeout(t);
   }, [studyGoldNotice]);
 
+  const filteredWords = useMemo(() => searchWords(searchText), [searchText]);
+
+  const suggestions = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+    if (!keyword) return [];
+    return learningWords
+      .filter((w) => w.word.toLowerCase().includes(keyword))
+      .sort((a, b) => {
+        const aStarts = a.word.toLowerCase().startsWith(keyword);
+        const bStarts = b.word.toLowerCase().startsWith(keyword);
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+        return a.word.localeCompare(b.word);
+      })
+      .slice(0, 8);
+  }, [searchText]);
+
+  const dictGroups = useMemo(() => {
+    const sorted = [...filteredWords].sort((a, b) =>
+      a.word.toLowerCase().localeCompare(b.word.toLowerCase())
+    );
+    const groups = new Map<string, LearningWord[]>();
+    for (const word of sorted) {
+      const first = word.word[0]?.toUpperCase() ?? "#";
+      const key = /^[A-Z]$/.test(first) ? first : "#";
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(word);
+    }
+    return groups;
+  }, [filteredWords]);
+
   const levels = useMemo(() => {
     return Array.from(new Set(learningWords.map((word) => word.level)));
   }, []);
@@ -215,16 +235,11 @@ export default function WordsPage() {
 
   const rangeCount = Math.ceil(levelOnlyWords.length / 100);
 
-  const filteredWords = useMemo(() => {
-    const base = getFilteredWords(searchText, levelFilter, kindFilter);
+  const memoryFilteredWords = useMemo(() => {
+    const base = getFilteredWords(searchText, levelFilter);
     return applyRangeFilter(base, levelFilter, rangeIndex, levelOnlyWords);
-  }, [searchText, levelFilter, kindFilter, rangeIndex, levelOnlyWords]);
+  }, [searchText, levelFilter, rangeIndex, levelOnlyWords]);
 
-  const visibleWords = useMemo(() => {
-    return filteredWords.slice(0, displayCount);
-  }, [filteredWords, displayCount]);
-
-  const hasMore = displayCount < filteredWords.length;
   const currentMemoryWord = memoryQueue[0];
   const memorySessionTotal = memoryDoneCount + memoryQueue.length;
   const memoryCurrentNumber = currentMemoryWord
@@ -238,9 +253,9 @@ export default function WordsPage() {
     if (!currentMemoryWord) return [];
     return createMemoryAnswerChoices(
       currentMemoryWord,
-      filteredWords.length > 1 ? filteredWords : learningWords
+      memoryFilteredWords.length > 1 ? memoryFilteredWords : learningWords
     );
-  }, [currentMemoryWord, filteredWords]);
+  }, [currentMemoryWord, memoryFilteredWords]);
   const selectedMemoryAnswer =
     memorySelectedIndex === null
       ? undefined
@@ -252,10 +267,6 @@ export default function WordsPage() {
     if (studyMode !== "memory") return;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [studyMode]);
-
-  const resetDisplayCount = () => {
-    setDisplayCount(DISPLAY_STEP);
-  };
 
   const resetMemorySessionForWords = (words: LearningWord[]) => {
     setSessionWords(words);
@@ -271,7 +282,41 @@ export default function WordsPage() {
   };
 
   const resetMemorySession = () => {
-    resetMemorySessionForWords(filteredWords);
+    resetMemorySessionForWords(sessionWords);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchText(value);
+    const base = getFilteredWords(value, levelFilter);
+    resetMemorySessionForWords(applyRangeFilter(base, levelFilter, rangeIndex, levelOnlyWords));
+  };
+
+  const handleSuggestionSelect = (word: LearningWord) => {
+    handleSearchChange(word.word);
+    setShowSuggestions(false);
+    const first = word.word[0]?.toUpperCase() ?? "A";
+    setActiveLetter(/^[A-Z]$/.test(first) ? first : "A");
+  };
+
+  const handleLevelChange = (level: string) => {
+    setLevelFilter(level);
+    setRangeIndex(null);
+    resetMemorySessionForWords(getFilteredWords(searchText, level));
+  };
+
+  const handleRangeChange = (idx: number | null) => {
+    setRangeIndex(idx);
+    const base = getFilteredWords(searchText, levelFilter);
+    resetMemorySessionForWords(applyRangeFilter(base, levelFilter, idx, levelOnlyWords));
+  };
+
+  const handleModeChange = (mode: StudyMode) => {
+    setStudyMode(mode);
+    setMemoryAnswered(false);
+    setMemorySelectedIndex(null);
+    setStudyExpNotice(null);
+    setStudyGoldNotice(null);
+    if (mode === "list") setRangeIndex(null);
   };
 
   const handleMemoryJump = (index: number) => {
@@ -285,42 +330,6 @@ export default function WordsPage() {
     setMemorySelectedIndex(null);
     setStudyExpNotice(null);
     setStudyGoldNotice(null);
-  };
-
-  const handleSearchChange = (value: string) => {
-    setSearchText(value);
-    resetDisplayCount();
-    const base = getFilteredWords(value, levelFilter, kindFilter);
-    resetMemorySessionForWords(applyRangeFilter(base, levelFilter, rangeIndex, levelOnlyWords));
-  };
-
-  const handleLevelChange = (level: string) => {
-    setLevelFilter(level);
-    setRangeIndex(null);
-    resetDisplayCount();
-    resetMemorySessionForWords(getFilteredWords(searchText, level, kindFilter));
-  };
-
-  const handleKindChange = (kind: KindFilter) => {
-    setKindFilter(kind);
-    resetDisplayCount();
-    const base = getFilteredWords(searchText, levelFilter, kind);
-    resetMemorySessionForWords(applyRangeFilter(base, levelFilter, rangeIndex, levelOnlyWords));
-  };
-
-  const handleRangeChange = (idx: number | null) => {
-    setRangeIndex(idx);
-    const base = getFilteredWords(searchText, levelFilter, kindFilter);
-    resetMemorySessionForWords(applyRangeFilter(base, levelFilter, idx, levelOnlyWords));
-  };
-
-  const handleModeChange = (mode: StudyMode) => {
-    setStudyMode(mode);
-    setMemoryAnswered(false);
-    setMemorySelectedIndex(null);
-    setStudyExpNotice(null);
-    setStudyGoldNotice(null);
-    if (mode === "list") setRangeIndex(null);
   };
 
   const toggleFurigana = () => {
@@ -417,7 +426,7 @@ export default function WordsPage() {
                 <span>WORD BOOK</span>
               </div>
 
-              <h1 className="eq-page-title">単語の魔導書</h1>
+              <h1 className="eq-page-title">単語帳</h1>
 
               <p className="eq-lead">
                 登録されている英単語・熟語の意味・例文を確認できます。
@@ -434,8 +443,8 @@ export default function WordsPage() {
                   aria-pressed="true"
                   className="eq-button eq-button-primary wordbook-mode-action active"
                 >
-                  <span>📋</span>
-                  一覧モード
+                  <span>📖</span>
+                  辞書モード
                 </button>
 
                 <button
@@ -448,32 +457,37 @@ export default function WordsPage() {
                   暗記モード
                 </button>
               </div>
+
+              <div className="wordbook-stats-row">
+                <span className="wordbook-stat-item">
+                  <em>登録語数</em>
+                  <strong>{learningWords.length}</strong>
+                </span>
+                <span className="wordbook-stat-item">
+                  <em>検索結果</em>
+                  <strong>{filteredWords.length}</strong>
+                </span>
+              </div>
             </div>
 
             <div className="wordbook-stage">
               <div className="eq-display-card">
                 <div className="eq-display-shine" />
-                <div className="eq-display-icon">📖</div>
+                <div className="eq-display-icon eq-display-image-frame">
+                  <Image
+                    src="/home-icons/book.png"
+                    alt=""
+                    width={1229}
+                    height={1042}
+                    className="eq-display-image"
+                    sizes="150px"
+                    aria-hidden="true"
+                    unoptimized
+                  />
+                </div>
                 <p>WORD BOOK</p>
                 <h2>{learningWords.length}</h2>
                 <span>registered words</span>
-              </div>
-            </div>
-
-            <div className="eq-status-strip">
-              <div className="eq-status-card">
-                <span>登録語数</span>
-                <strong>{learningWords.length}</strong>
-              </div>
-
-              <div className="eq-status-card">
-                <span>検索結果</span>
-                <strong>{filteredWords.length}</strong>
-              </div>
-
-              <div className="eq-status-card is-highlight">
-                <span>表示中</span>
-                <strong>{visibleWords.length}</strong>
               </div>
             </div>
           </div>
@@ -497,11 +511,7 @@ export default function WordsPage() {
                 <button
                   type="button"
                   onClick={() => handleLevelChange("all")}
-                  className={
-                    levelFilter === "all"
-                      ? "memory-level-tab active"
-                      : "memory-level-tab"
-                  }
+                  className={levelFilter === "all" ? "memory-level-tab active" : "memory-level-tab"}
                 >
                   すべて
                 </button>
@@ -511,11 +521,7 @@ export default function WordsPage() {
                     key={level}
                     type="button"
                     onClick={() => handleLevelChange(level)}
-                    className={
-                      levelFilter === level
-                        ? "memory-level-tab active"
-                        : "memory-level-tab"
-                    }
+                    className={levelFilter === level ? "memory-level-tab active" : "memory-level-tab"}
                   >
                     {level}
                   </button>
@@ -549,7 +555,7 @@ export default function WordsPage() {
                 onClick={() => handleModeChange("list")}
                 className="wordbook-memory-back-button"
               >
-                一覧モードへ
+                辞書モードへ
               </button>
             </div>
           </div>
@@ -562,71 +568,30 @@ export default function WordsPage() {
               <input
                 type="text"
                 value={searchText}
-                onChange={(event) => handleSearchChange(event.target.value)}
+                onChange={(event) => { handleSearchChange(event.target.value); setShowSuggestions(true); }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
                 placeholder="英単語・意味・例文で検索"
                 className="wordbook-search"
               />
             </div>
+          </div>
+        )}
 
-            <div className="words-filter-block">
-              <div className="words-filter-head">
-                <span>LEVEL</span>
-                <strong>レベルで絞り込み</strong>
+        {studyMode === "list" && showSuggestions && suggestions.length > 0 && (
+          <div style={{ marginTop: "4px", background: "rgba(10, 18, 36, 0.97)", border: "1px solid rgba(45, 212, 191, 0.32)", borderRadius: "12px", padding: "4px", boxShadow: "0 8px 28px rgba(0, 0, 0, 0.48)", zIndex: 100, position: "relative" }}>
+            {suggestions.map((word) => (
+              <div
+                key={word.no}
+                onMouseDown={() => handleSuggestionSelect(word)}
+                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 12px", borderRadius: "8px", cursor: "pointer" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(45, 212, 191, 0.12)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <span style={{ fontWeight: 700, color: "#e2e8f0", fontSize: "14px", minWidth: "110px", flexShrink: 0 }}>{word.word}</span>
+                <span style={{ color: "#94a3b8", fontSize: "12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{word.meaning}</span>
               </div>
-
-              <div className="words-level-tabs">
-                <button
-                  type="button"
-                  onClick={() => handleLevelChange("all")}
-                  className={
-                    levelFilter === "all"
-                      ? "wordbook-level-tab active"
-                      : "wordbook-level-tab"
-                  }
-                >
-                  すべて
-                </button>
-
-                {levels.map((level) => (
-                  <button
-                    key={level}
-                    type="button"
-                    onClick={() => handleLevelChange(level)}
-                    className={
-                      levelFilter === level
-                        ? "wordbook-level-tab active"
-                        : "wordbook-level-tab"
-                    }
-                  >
-                    {level}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="words-filter-block">
-              <div className="words-filter-head">
-                <span>KIND</span>
-                <strong>種類</strong>
-              </div>
-
-              <div className="words-kind-tabs">
-                {kindFilterOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => handleKindChange(option.value)}
-                    className={
-                      kindFilter === option.value
-                        ? "wordbook-kind-chip active"
-                        : "wordbook-kind-chip"
-                    }
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
         )}
 
@@ -853,67 +818,81 @@ export default function WordsPage() {
           </div>
         ) : (
           <>
-            <div className="words-list">
-              {visibleWords.map((word, index) => {
-                const reading = getReadingForLevel(word.level, word.meaning);
-
-                return (
-                  <article key={`${word.word}-${index}`} className="words-card">
-                    <div className="words-card-top">
-                      <div className="words-word-area">
-                        <div className="words-word-title">
-                          <h2>{word.word}</h2>
-                          <SpeechButton
-                            text={word.word}
-                            label="単語を聞く"
-                            title={`${word.word} を読み上げる`}
-                          />
-                        </div>
-                        <p className="words-meaning">{word.meaning}</p>
-                        {furiganaEnabled && reading && (
-                          <p className="words-reading">({reading})</p>
-                        )}
-                      </div>
-
-                      <div className="words-badges">
-                        <span>{word.level}</span>
-                        <span>{word.type}</span>
-                      </div>
-                    </div>
-
-                    <div className="words-example">
-                      <div className="words-example-head">
-                        <span>例文</span>
-                        <SpeechButton
-                          text={word.example}
-                          label="例文を聞く"
-                          title="例文を読み上げる"
-                        />
-                      </div>
-                      <p className="words-example-en">{word.example}</p>
-                      <p className="words-example-ja">{word.exampleMeaning}</p>
-                    </div>
-                  </article>
+            <nav className="dict-index-bar" aria-label="アルファベット索引">
+              {ALL_LETTERS.map((letter) => {
+                const hasLetter = dictGroups.has(letter);
+                return hasLetter ? (
+                  <button
+                    key={letter}
+                    type="button"
+                    className={`dict-index-btn${activeLetter === letter ? " is-active" : ""}`}
+                    onClick={() => setActiveLetter(letter)}
+                  >
+                    {letter}
+                  </button>
+                ) : (
+                  <span key={letter} className="dict-index-btn is-empty" aria-hidden="true">
+                    {letter}
+                  </span>
                 );
               })}
-            </div>
+            </nav>
 
-            {hasMore && (
-              <div className="words-more-area">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setDisplayCount((current) => current + DISPLAY_STEP)
-                  }
-                  className="eq-button eq-button-primary words-more-button"
-                >
-                  もっと見る
-                  <span>
-                    {visibleWords.length} / {filteredWords.length}
-                  </span>
-                </button>
-              </div>
-            )}
+            <div className="dict-sections">
+              {(() => {
+                const words = dictGroups.get(activeLetter);
+                if (!words) return null;
+                return (
+                  <section className="dict-group">
+                    <div className="dict-letter-head">
+                      <span>{activeLetter}</span>
+                      <small>{words.length}語</small>
+                    </div>
+                    <div className="dict-words-grid">
+                      {words.map((word, index) => {
+                        const reading = getReadingForLevel(word.level, word.meaning);
+                        return (
+                          <article key={`${word.word}-${index}`} className="words-card">
+                            <div className="words-card-top">
+                              <div className="words-word-area">
+                                <div className="words-word-title">
+                                  <h2>{word.word}</h2>
+                                  <SpeechButton
+                                    text={word.word}
+                                    label="単語を聞く"
+                                    title={`${word.word} を読み上げる`}
+                                  />
+                                </div>
+                                <p className="words-meaning">{word.meaning}</p>
+                                {furiganaEnabled && reading && (
+                                  <p className="words-reading">({reading})</p>
+                                )}
+                              </div>
+                              <div className="words-badges">
+                                <span>{word.level}</span>
+                                <span>{word.type}</span>
+                              </div>
+                            </div>
+                            <div className="words-example">
+                              <div className="words-example-head">
+                                <span>例文</span>
+                                <SpeechButton
+                                  text={word.example}
+                                  label="例文を聞く"
+                                  title="例文を読み上げる"
+                                />
+                              </div>
+                              <p className="words-example-en">{word.example}</p>
+                              <p className="words-example-ja">{word.exampleMeaning}</p>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  </section>
+                );
+              })()}
+            </div>
           </>
         )}
       </section>
@@ -950,6 +929,7 @@ export default function WordsPage() {
 
         .wordbook-mode-actions {
           max-width: 600px;
+          margin-top: 16px;
         }
 
         .wordbook-mode-action {
@@ -1142,6 +1122,7 @@ export default function WordsPage() {
           display: grid;
           gap: 18px;
           margin-top: 24px;
+          overflow: visible;
         }
 
         .words-search-wrap {
@@ -1156,6 +1137,77 @@ export default function WordsPage() {
           opacity: 0.72;
           font-size: 15px;
           pointer-events: none;
+        }
+
+        .search-suggestions {
+          position: absolute;
+          top: calc(100% + 4px);
+          left: 0;
+          right: 0;
+          z-index: 100;
+          padding: 4px;
+          background: rgba(10, 18, 36, 0.97);
+          border: 1px solid rgba(45, 212, 191, 0.32);
+          border-radius: 12px;
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.48);
+        }
+
+        .search-suggestion-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 8px 12px;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background 0.12s ease;
+        }
+
+        .search-suggestion-item:hover {
+          background: rgba(45, 212, 191, 0.12);
+        }
+
+        .search-suggestion-item .suggestion-word {
+          font-weight: 700;
+          color: #e2e8f0;
+          font-size: 14px;
+          min-width: 110px;
+          flex-shrink: 0;
+        }
+
+        .search-suggestion-item .suggestion-meaning {
+          color: #94a3b8;
+          font-size: 12px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .wordbook-stats-row {
+          display: flex;
+          gap: 16px;
+          margin-top: 18px;
+        }
+
+        .wordbook-stat-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 10px;
+          padding: 5px 12px;
+        }
+
+        .wordbook-stat-item em {
+          font-style: normal;
+          font-size: 11px;
+          color: #94a3b8;
+        }
+
+        .wordbook-stat-item strong {
+          font-size: 14px;
+          font-weight: 800;
+          color: #e2e8f0;
         }
 
         .words-filter-block {
@@ -1744,11 +1796,99 @@ export default function WordsPage() {
           font-weight: 800;
         }
 
-        .words-list {
+        .dict-index-bar {
+          position: sticky;
+          top: 0;
+          z-index: 10;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 5px;
+          padding: 10px 14px;
+          margin-top: 18px;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 20px;
+          background: rgba(8, 12, 22, 0.88);
+          backdrop-filter: blur(14px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+        }
+
+        .dict-index-btn {
+          width: 32px;
+          height: 32px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 9px;
+          border: 1px solid rgba(45, 212, 191, 0.32);
+          background: rgba(20, 184, 166, 0.08);
+          color: #99f6e4;
+          font-size: 13px;
+          font-weight: 1000;
+          text-decoration: none;
+          cursor: pointer;
+          transition:
+            transform 0.13s ease,
+            background 0.13s ease,
+            border-color 0.13s ease;
+        }
+
+        .dict-index-btn:hover {
+          transform: translateY(-2px);
+          background: rgba(45, 212, 191, 0.2);
+          border-color: rgba(45, 212, 191, 0.6);
+        }
+
+        .dict-index-btn.is-active {
+          background: rgba(45, 212, 191, 0.45) !important;
+          border: 2px solid rgba(45, 212, 191, 1) !important;
+          color: #ffffff !important;
+          box-shadow: 0 0 16px rgba(45, 212, 191, 0.55), inset 0 0 6px rgba(45, 212, 191, 0.2) !important;
+          transform: translateY(-2px) !important;
+        }
+
+        .dict-index-btn.is-empty {
+          border-color: rgba(255, 255, 255, 0.06);
+          background: transparent;
+          color: rgba(255, 255, 255, 0.16);
+          cursor: default;
+        }
+
+        .dict-sections {
+          margin-top: 22px;
+          display: grid;
+          gap: 32px;
+        }
+
+        .dict-group {
+          scroll-margin-top: 72px;
+        }
+
+        .dict-letter-head {
+          display: flex;
+          align-items: baseline;
+          gap: 10px;
+          padding-bottom: 10px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          margin-bottom: 14px;
+        }
+
+        .dict-letter-head > span {
+          font-size: 38px;
+          font-weight: 1000;
+          line-height: 1;
+          color: #fef3c7;
+        }
+
+        .dict-letter-head small {
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 900;
+        }
+
+        .dict-words-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 14px;
-          margin-top: 24px;
         }
 
         .words-card {
@@ -1876,23 +2016,6 @@ export default function WordsPage() {
           font-weight: 700;
         }
 
-        .words-more-area {
-          display: flex;
-          justify-content: center;
-          margin: 24px 0 10px;
-        }
-
-        .words-more-button {
-          min-width: 240px;
-        }
-
-        .words-more-button span {
-          display: block;
-          margin-left: 4px;
-          font-size: 12px;
-          opacity: 0.8;
-        }
-
         .words-empty {
           min-height: 300px;
           margin-top: 24px;
@@ -1945,7 +2068,7 @@ export default function WordsPage() {
         }
 
         @media (max-width: 960px) {
-          .words-list {
+          .dict-words-grid {
             grid-template-columns: 1fr;
           }
         }
@@ -2161,9 +2284,12 @@ export default function WordsPage() {
             border-radius: 999px;
           }
 
-          .words-list {
+          .dict-words-grid {
             gap: 10px;
-            margin-top: 12px;
+          }
+
+          .dict-letter-head > span {
+            font-size: 30px;
           }
 
           .words-card {

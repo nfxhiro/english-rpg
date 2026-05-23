@@ -1,13 +1,21 @@
 "use client";
 
+import Image from "next/image";
+
 export default function AppLoading({
   title = "読み込み中...",
   message = "冒険データを確認しています。",
   icon = "✨",
+  iconSrc,
+  iconWidth = 256,
+  iconHeight = 256,
 }: {
   title?: string;
   message?: string;
   icon?: string;
+  iconSrc?: string;
+  iconWidth?: number;
+  iconHeight?: number;
 }) {
   return (
     <main className="app-loading-page">
@@ -17,7 +25,22 @@ export default function AppLoading({
 
       <section className="loading-shell">
         <div className="loading-card">
-          <div className="loading-icon">{icon}</div>
+          <div className="loading-icon">
+            {iconSrc ? (
+              <Image
+                src={iconSrc}
+                alt=""
+                width={iconWidth}
+                height={iconHeight}
+                className="loading-icon-image"
+                sizes="96px"
+                aria-hidden="true"
+                unoptimized
+              />
+            ) : (
+              icon
+            )}
+          </div>
           <h1>{title}</h1>
           <p>{message}</p>
         </div>
@@ -107,9 +130,21 @@ export default function AppLoading({
         }
 
         .loading-icon {
+          width: 96px;
+          height: 96px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           font-size: 78px;
           animation: loadingFloat 0.9s ease-in-out infinite alternate;
           filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.42));
+        }
+
+        .loading-icon-image {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .loading-card h1 {

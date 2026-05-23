@@ -158,6 +158,7 @@ export type QuestWorldConfig = {
   id: EikenLevelId;
   level: string;
   worldName: string;
+  backgroundImage?: string;
   part: 1 | 2;
   order: number;
   status: WorldStatus;
@@ -306,7 +307,7 @@ export const questModeConfigs = {
       icon: "🧭",
       reward: "宝石 + コイン",
       short: "地図を少し進める",
-      detail: "8問正解でクリア",
+      detail: "ボス撃破で即クリア",
     },
     rewards: [
       { kind: "gold", label: "探索コイン" },
@@ -324,7 +325,7 @@ export const questModeConfigs = {
       icon: "📜",
       reward: "宝箱 + メダル",
       short: "通常ルート攻略",
-      detail: "24問正解でクリア",
+      detail: "HPバトルで攻略",
     },
     rewards: [
       { kind: "medal", label: "冒険メダル" },
@@ -333,7 +334,7 @@ export const questModeConfigs = {
   },
   boss: {
     mode: "boss",
-    label: "ボス戦",
+    label: "強敵クエスト",
     questionCount: 50,
     clearCorrectCount: 45,
     maxMissCount: 6,
@@ -341,7 +342,7 @@ export const questModeConfigs = {
     copy: {
       icon: "🐉",
       reward: "赤宝石 + 大コイン",
-      short: "ボスに挑む",
+      short: "強敵に挑む",
       detail: "高難度チェック",
     },
     rewards: [
@@ -360,7 +361,7 @@ export const questModeConfigs = {
       icon: "👑",
       reward: "王冠 + 金宝箱",
       short: "完全制覇を狙う",
-      detail: "90問正解でクリア",
+      detail: "撃破後も最後まで挑戦",
     },
     rewards: [
       { kind: "title", label: "ブロック制覇者" },
@@ -381,6 +382,24 @@ const ruinsPattern =
   "radial-gradient(circle at 18% 20%, rgba(253,230,138,0.15), transparent 20%), linear-gradient(90deg, transparent 0 48%, rgba(253,230,138,0.1) 49% 50%, transparent 51%), repeating-linear-gradient(0deg, transparent 0 38px, rgba(255,255,255,0.04) 39px 40px)";
 const skyPattern =
   "radial-gradient(circle at 24% 18%, rgba(255,255,255,0.22), transparent 16%), radial-gradient(circle at 78% 24%, rgba(250,204,21,0.16), transparent 18%), repeating-linear-gradient(125deg, transparent 0 34px, rgba(255,255,255,0.06) 35px 36px)";
+
+export const DEFAULT_QUEST_WORLD_BACKGROUND_IMAGE =
+  "/images/backgrounds/bg_eiken5_forest.png";
+
+export const questWorldBackgroundImages: Record<EikenLevelId, string> = {
+  eiken5: DEFAULT_QUEST_WORLD_BACKGROUND_IMAGE,
+  eiken4: "/images/backgrounds/bg_eiken4_wind_harbor.png",
+  eiken3: "/images/backgrounds/bg_eiken3_ancient_ruins.png",
+  eiken_pre2: "/images/backgrounds/bg_eiken_pre2_sky_city.png",
+  eiken2: DEFAULT_QUEST_WORLD_BACKGROUND_IMAGE,
+  eiken_pre1: DEFAULT_QUEST_WORLD_BACKGROUND_IMAGE,
+  eiken1: DEFAULT_QUEST_WORLD_BACKGROUND_IMAGE,
+};
+
+export function getQuestWorldBackgroundImage(worldId?: EikenLevelId | null) {
+  if (!worldId) return DEFAULT_QUEST_WORLD_BACKGROUND_IMAGE;
+  return questWorldBackgroundImages[worldId] ?? DEFAULT_QUEST_WORLD_BACKGROUND_IMAGE;
+}
 
 function createQuestBackground({
   key,
@@ -1352,7 +1371,8 @@ export const questWorlds: QuestWorldConfig[] = [
   {
     id: "eiken5",
     level: "英検5級",
-    worldName: "はじまりの森",
+    worldName: "星夜のはじまりの森",
+    backgroundImage: questWorldBackgroundImages.eiken5,
     part: 1,
     order: 10,
     status: "available",
@@ -1397,7 +1417,8 @@ export const questWorlds: QuestWorldConfig[] = [
   {
     id: "eiken4",
     level: "英検4級",
-    worldName: "風の港町",
+    worldName: "月明かりの風の港町",
+    backgroundImage: questWorldBackgroundImages.eiken4,
     part: 1,
     order: 20,
     status: "available",
@@ -1443,7 +1464,8 @@ export const questWorlds: QuestWorldConfig[] = [
   {
     id: "eiken3",
     level: "英検3級",
-    worldName: "古代遺跡",
+    worldName: "紫光の古代遺跡",
+    backgroundImage: questWorldBackgroundImages.eiken3,
     part: 1,
     order: 30,
     status: "available",
@@ -1517,7 +1539,8 @@ export const questWorlds: QuestWorldConfig[] = [
   {
     id: "eiken_pre2",
     level: "英検準2級",
-    worldName: "天空都市",
+    worldName: "暁光の天空都市",
+    backgroundImage: questWorldBackgroundImages.eiken_pre2,
     part: 1,
     order: 40,
     status: "available",

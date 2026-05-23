@@ -2,19 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   getHeroExpProgress,
   HeroStatus,
   loadHeroStatus,
 } from "../data/hero";
 import {
-  getDisplayTitle,
-  getSelectedAvatarEmoji,
-  getSelectedAvatarItem,
-  getSelectedBackgroundCss,
-  getSelectedEffectClass,
-  getSelectedEffectItem,
-  getSelectedFrameCss,
   loadShopState,
   ShopState,
 } from "../data/shop";
@@ -30,6 +24,69 @@ type OwnedMonsterCard = {
   card: MonsterCard;
   earnedCard: EarnedCard;
 };
+
+const HOME_ICON_ASSETS = {
+  quest: {
+    src: "/home-icons/quest.png",
+    width: 918,
+    height: 1060,
+  },
+  pack: {
+    src: "/home-icons/pack.png",
+    width: 709,
+    height: 1179,
+  },
+  book: {
+    src: "/home-icons/book.png",
+    width: 1229,
+    height: 1042,
+  },
+  equip: {
+    src: "/home-icons/equip.png",
+    width: 1015,
+    height: 1034,
+  },
+  hero: {
+    src: "/home-icons/hero.png",
+    width: 896,
+    height: 1163,
+  },
+  cards: {
+    src: "/home-icons/cards.png",
+    width: 1254,
+    height: 787,
+  },
+  written: {
+    src: "/home-icons/written.png",
+    width: 1254,
+    height: 1254,
+  },
+} as const;
+
+type HomeIconName = keyof typeof HOME_ICON_ASSETS;
+
+function HomeIcon({
+  name,
+  className,
+}: {
+  name: HomeIconName;
+  className: string;
+}) {
+  const icon = HOME_ICON_ASSETS[name];
+
+  return (
+    <Image
+      src={icon.src}
+      alt=""
+      width={icon.width}
+      height={icon.height}
+      className={className}
+      sizes="96px"
+      aria-hidden="true"
+      unoptimized
+    />
+  );
+}
 
 function getCollectionRate(ownedCount: number, totalCount: number) {
   if (totalCount <= 0) return 0;
@@ -68,16 +125,8 @@ export default function Home() {
   const [earnedCards, setEarnedCards] = useState<EarnedCard[]>([]);
   const [packTickets, setPackTickets] = useState(0);
   const [shopState, setShopState] = useState<ShopState>({
-    ownedAvatars: [],
-    ownedTitles: [],
-    ownedBackgrounds: [],
-    ownedFrames: [],
-    ownedEffects: [],
-    selectedAvatar: null,
     selectedTitle: null,
     selectedBackground: null,
-    selectedFrame: null,
-    selectedEffect: null,
     selectedMonsterCardId: null,
   });
   useEffect(() => {
@@ -130,35 +179,7 @@ export default function Home() {
     }, 0);
   }, [earnedCards]);
 
-  const featuredMonsters = useMemo(() => {
-    const ownedCards = ownedMonsterCards.map((item) => item.card);
-
-    if (ownedCards.length > 0) {
-      return ownedCards.slice(0, 6);
-    }
-
-    return monsterCards.slice(0, 6);
-  }, [ownedMonsterCards]);
-
-  const displayTitle = getDisplayTitle(shopState, hero?.title ?? "はじまりの勇者");
-  const selectedAvatarEmoji = getSelectedAvatarEmoji(shopState);
-  const selectedAvatarItem = getSelectedAvatarItem(shopState);
-  const selectedMonsterCard = shopState.selectedMonsterCardId
-    ? getMonsterCardById(shopState.selectedMonsterCardId)
-    : null;
-  const selectedBgCss = getSelectedBackgroundCss(shopState);
-  const selectedFrameCss = getSelectedFrameCss(shopState);
-  const selectedEffectItem = getSelectedEffectItem(shopState);
-  const selectedEffectClass = getSelectedEffectClass(shopState);
-
-  const showcaseName =
-    selectedAvatarItem?.name ?? selectedMonsterCard?.name ?? "ブレイズドラゴン";
-  const showcaseDescription = selectedEffectItem
-    ? `${selectedEffectItem.name}をまとっています`
-    : selectedAvatarItem?.description ??
-      (selectedMonsterCard
-        ? `${selectedMonsterCard.emoji} ${selectedMonsterCard.attribute}属性の${selectedMonsterCard.species}`
-        : "クエストで出会う仲間をここに飾れます");
+  const displayTitle = shopState.selectedTitle ?? hero?.title ?? "はじまりの勇者";
 
   return (
     <main className="home-page">
@@ -166,13 +187,16 @@ export default function Home() {
         <div className="hero-panel">
           <div className="hero-copy">
             <div className="eyebrow">
-              <span>EIKEN QUEST RPG</span>
+              <span>ENGLISH RPG</span>
             </div>
 
-            <h1>Eiken Quest Frontier</h1>
+            <h1>
+              <span>英検クエスト</span>
+              <span>フロンティア</span>
+            </h1>
 
             <p className="lead">
-              英単語のクエストで主人公を育て、出会ったモンスターを仲間にする学習RPG。
+              英単語のクエストで主人公を育て、強敵に挑む学習RPG。
               迷ったら、まずはクエストへ。
             </p>
 
@@ -187,10 +211,6 @@ export default function Home() {
                 単語帳を見る
               </Link>
 
-              <Link href="/written" className="secondary-action">
-                <span>📄</span>
-                筆記トレーニング
-              </Link>
             </div>
 
             <div className="home-stats" aria-label="冒険の概要">
@@ -211,54 +231,66 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="monster-showcase" aria-label="現在のアバター">
-            <div
-              className="showcase-card"
-              style={selectedFrameCss ? { background: selectedFrameCss } : undefined}
-            >
-              <div
-                className="showcase-backdrop"
-                style={selectedBgCss ? { background: selectedBgCss } : undefined}
+          <div className="home-monster-showcase" aria-label="英検クエスト フロンティア キービジュアル">
+            <div className="home-showcase-card">
+              <Image
+                src="/english-rpg-home-cutout.png"
+                alt="英検クエスト フロンティア 英単語で冒険する学習RPG"
+                width={978}
+                height={1378}
+                className="home-showcase-image"
+                sizes="(max-width: 1040px) 216px, 288px"
+                preload
+                unoptimized
               />
-              <div className="showcase-shine" />
-              {selectedEffectClass && (
-                <div className={`avatar-effect-layer ${selectedEffectClass}`} />
-              )}
-              <div className="monster-main">{selectedAvatarEmoji}</div>
-              <p>ACTIVE AVATAR</p>
-              <h2>{showcaseName}</h2>
-              <span>{showcaseDescription}</span>
             </div>
           </div>
         </div>
 
         <nav className="home-action-grid" aria-label="メインメニュー">
           <Link href="/quiz" className="home-action-card is-primary">
-            <span className="action-icon">⚔️</span>
+            <span className="action-icon">
+              <HomeIcon name="quest" className="home-action-icon-image" />
+            </span>
             <span className="action-label">Quest</span>
             <strong>クエスト</strong>
             <small>問題に挑戦して経験値を獲得</small>
           </Link>
 
           <Link href="/pack" className="home-action-card">
-            <span className="action-icon">🎁</span>
+            <span className="action-icon">
+              <HomeIcon name="pack" className="home-action-icon-image" />
+            </span>
             <span className="action-label">{packTickets > 0 ? `${packTickets}枚` : "Pack"}</span>
             <strong>パック</strong>
             <small>チケットでカードを仲間にする</small>
           </Link>
 
           <Link href="/cards" className="home-action-card">
-            <span className="action-icon">🃏</span>
+            <span className="action-icon">
+              <HomeIcon name="book" className="home-action-icon-image" />
+            </span>
             <span className="action-label">{collectionRate}%</span>
             <strong>カード図鑑</strong>
             <small>仲間にしたカードを確認</small>
           </Link>
 
           <Link href="/shop" className="home-action-card">
-            <span className="action-icon">🛒</span>
-            <span className="action-label">Style</span>
-            <strong>ショップ</strong>
-            <small>アバターや称号を整える</small>
+            <span className="action-icon">
+              <HomeIcon name="equip" className="home-action-icon-image" />
+            </span>
+            <span className="action-label">Equip</span>
+            <strong>装備ショップ</strong>
+            <small>装備を整えてバトルを有利に</small>
+          </Link>
+
+          <Link href="/written" className="home-action-card written-card">
+            <span className="action-icon written-icon">
+              <HomeIcon name="written" className="home-action-icon-image" />
+            </span>
+            <span className="action-label">Written</span>
+            <strong>筆記トレーニング</strong>
+            <small>4択問題で文法・語彙を確認</small>
           </Link>
         </nav>
 
@@ -269,7 +301,9 @@ export default function Home() {
                 <p>HERO STATUS</p>
                 <h2>冒険者の記録</h2>
               </div>
-              <span className="panel-icon">🛡️</span>
+              <span className="panel-icon">
+                <HomeIcon name="hero" className="panel-icon-image" />
+              </span>
             </div>
 
             <div className="hero-level-row">
@@ -314,7 +348,9 @@ export default function Home() {
                 <p>COLLECTION</p>
                 <h2>仲間カード</h2>
               </div>
-              <span className="panel-icon">✨</span>
+              <span className="panel-icon">
+                <HomeIcon name="cards" className="panel-icon-image" />
+              </span>
             </div>
 
             <div className="collection-meter">
@@ -340,29 +376,6 @@ export default function Home() {
             </Link>
           </section>
 
-          <section className="panel featured-panel">
-            <div className="panel-head">
-              <div>
-                <p>{ownedCount > 0 ? "YOUR MONSTERS" : "FIRST MONSTERS"}</p>
-                <h2>{ownedCount > 0 ? "仲間になったカード" : "出会えるカード"}</h2>
-              </div>
-              <span className="panel-icon">🔥</span>
-            </div>
-
-            <div className="monster-row">
-              {featuredMonsters.map((card) => (
-                <Link
-                  key={card.id}
-                  href={`/cards/${encodeURIComponent(card.id)}`}
-                  className={`mini-monster rarity-${card.rarity.toLowerCase()}`}
-                >
-                  <span>{card.monsterEmoji}</span>
-                  <strong>{card.name}</strong>
-                  <small>{card.rarity}</small>
-                </Link>
-              ))}
-            </div>
-          </section>
         </div>
 
         <div className="settings-footer">
@@ -378,8 +391,6 @@ export default function Home() {
           min-height: 100vh;
           position: relative;
           overflow-x: hidden;
-          background:
-            linear-gradient(160deg, #070a12 0%, #101827 44%, #0b161b 100%);
           color: white;
           padding: 28px;
         }
@@ -464,6 +475,14 @@ export default function Home() {
           overflow-wrap: anywhere;
         }
 
+        .hero-copy h1 span {
+          display: inline;
+        }
+
+        .hero-copy h1 span + span::before {
+          content: " ";
+        }
+
         .lead {
           margin: 20px 0 0;
           max-width: 650px;
@@ -471,6 +490,7 @@ export default function Home() {
           font-size: 16px;
           font-weight: 800;
           line-height: 1.85;
+          overflow-wrap: anywhere;
         }
 
         .main-actions {
@@ -478,6 +498,7 @@ export default function Home() {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 14px;
+          width: 100%;
           max-width: 620px;
         }
 
@@ -495,6 +516,8 @@ export default function Home() {
           font-size: 17px;
           font-weight: 900;
           line-height: 1.25;
+          width: 100%;
+          max-width: 100%;
           transition:
             transform 0.18s ease,
             border-color 0.18s ease,
@@ -519,8 +542,7 @@ export default function Home() {
         .primary-action:hover,
         .secondary-action:hover,
         .panel-link:hover,
-        .home-action-card:hover,
-        .mini-monster:hover {
+        .home-action-card:hover {
           transform: translateY(-4px);
         }
 
@@ -531,6 +553,23 @@ export default function Home() {
         .secondary-action:hover {
           border-color: rgba(45, 212, 191, 0.36);
           background: rgba(45, 212, 191, 0.08);
+        }
+
+        .main-action-icon {
+          flex: 0 0 auto;
+          width: 26px;
+          height: 26px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.3));
+        }
+
+        .main-action-icon-image {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .panel-link:hover {
@@ -594,148 +633,60 @@ export default function Home() {
           font-weight: 900;
         }
 
-        .monster-showcase {
+        .home-monster-showcase {
           display: flex;
           justify-content: center;
         }
 
-        .showcase-card {
+        .home-showcase-card {
           position: relative;
-          width: min(100%, 306px);
-          aspect-ratio: 0.72;
+          width: min(100%, 288px);
+          aspect-ratio: 978 / 1378;
           overflow: hidden;
-          border-radius: 28px;
-          padding: 5px;
-          background: linear-gradient(135deg, #fde68a 0%, #14b8a6 42%, #fb7185 100%);
-          box-shadow:
-            0 24px 58px rgba(0, 0, 0, 0.36),
-            0 0 46px rgba(20, 184, 166, 0.16);
+          border-radius: 30px;
+          background: #071019;
+          filter:
+            drop-shadow(0 28px 50px rgba(0, 0, 0, 0.42))
+            drop-shadow(0 0 34px rgba(34, 211, 238, 0.16));
         }
 
-        .showcase-card::before {
-          content: "";
-          position: absolute;
-          inset: 5px;
-          z-index: 0;
-          border-radius: 23px;
-          background:
-            linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 36%),
-            #071019;
+        .home-showcase-card::before {
+          content: none;
         }
 
-        .showcase-backdrop {
-          position: absolute;
-          inset: 5px;
-          z-index: 0;
-          border-radius: 23px;
-          opacity: 0.82;
-        }
-
-        .showcase-shine {
-          position: absolute;
-          inset: -88px;
-          z-index: 1;
-          background: linear-gradient(
-            115deg,
-            transparent 35%,
-            rgba(255, 255, 255, 0.24),
-            transparent 64%
-          );
-          animation: shine 3.8s ease-in-out infinite;
-        }
-
-        .avatar-effect-layer {
-          position: absolute;
-          inset: 5px;
-          z-index: 1;
-          border-radius: 23px;
-          pointer-events: none;
-        }
-
-        .avatar-effect-layer.effect-spark {
-          background:
-            radial-gradient(circle at 28% 32%, rgba(254, 243, 199, 0.95) 0 4px, transparent 5px),
-            radial-gradient(circle at 70% 24%, rgba(103, 232, 249, 0.86) 0 3px, transparent 4px),
-            radial-gradient(circle at 62% 76%, rgba(250, 204, 21, 0.8) 0 4px, transparent 5px);
-          animation: avatarAuraFloat 2.8s ease-in-out infinite alternate;
-        }
-
-        .avatar-effect-layer.effect-flame {
-          background:
-            radial-gradient(circle at 50% 78%, rgba(248, 113, 113, 0.42), transparent 28%),
-            conic-gradient(from 180deg at 50% 82%, transparent, rgba(251, 146, 60, 0.32), transparent 38%, rgba(239, 68, 68, 0.26), transparent);
-          animation: avatarAuraSpin 5.5s linear infinite;
-        }
-
-        .avatar-effect-layer.effect-aqua {
-          background:
-            radial-gradient(circle at 50% 50%, transparent 0 38%, rgba(34, 211, 238, 0.34) 39% 40%, transparent 42%),
-            radial-gradient(circle at 50% 50%, transparent 0 56%, rgba(103, 232, 249, 0.22) 57% 58%, transparent 60%);
-          animation: avatarAuraPulse 2.4s ease-in-out infinite;
-        }
-
-        .avatar-effect-layer.effect-shadow {
-          background:
-            radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.2), transparent 44%),
-            conic-gradient(from 20deg, transparent, rgba(168, 85, 247, 0.28), transparent, rgba(34, 211, 238, 0.18), transparent);
-          animation: avatarAuraSpin 8s linear infinite;
-        }
-
-        .avatar-effect-layer.effect-crown {
-          background:
-            linear-gradient(180deg, rgba(254, 243, 199, 0.36), transparent 38%),
-            radial-gradient(circle at 50% 16%, rgba(250, 204, 21, 0.42), transparent 22%);
-          animation: avatarAuraFloat 2.2s ease-in-out infinite alternate;
-        }
-
-        .monster-main,
-        .showcase-card p,
-        .showcase-card h2,
-        .showcase-card span {
-          position: relative;
-          z-index: 2;
-          text-align: center;
-        }
-
-        .monster-main {
-          margin-top: 54px;
-          font-size: 104px;
-          filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.42));
-        }
-
-        .showcase-card p {
-          margin: 24px 0 0;
-          color: #fef3c7;
-          font-size: 11px;
-          font-weight: 900;
-        }
-
-        .showcase-card h2 {
-          margin: 9px auto 0;
-          max-width: 240px;
-          color: white;
-          font-size: 25px;
-          line-height: 1.18;
-          font-weight: 900;
-          overflow-wrap: anywhere;
-        }
-
-        .showcase-card span {
+        .home-showcase-image {
           display: block;
-          max-width: 230px;
-          margin: 8px auto 0;
-          color: #dbeafe;
-          font-size: 13px;
-          font-weight: 800;
-          line-height: 1.55;
+          width: 100%;
+          height: auto;
+          border-radius: 30px;
         }
 
         .home-action-grid {
           display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(5, minmax(0, 1fr));
           gap: 14px;
           margin-top: 18px;
           animation: homeIn 0.55s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .action-icon.written-icon {
+          top: 8px;
+          right: 8px;
+          width: 86px;
+          height: 86px;
+          filter:
+            drop-shadow(0 14px 18px rgba(0, 0, 0, 0.42))
+            drop-shadow(0 0 18px rgba(45, 212, 191, 0.22));
+        }
+
+        .written-card {
+          background:
+            radial-gradient(circle at 80% 20%, rgba(45, 212, 191, 0.12), transparent 50%),
+            linear-gradient(145deg, rgba(16, 24, 40, 0.92), rgba(9, 14, 24, 0.95)) !important;
+        }
+
+        .written-card:hover {
+          border-color: rgba(45, 212, 191, 0.4) !important;
         }
 
         .home-action-card {
@@ -850,10 +801,25 @@ export default function Home() {
 
         .action-icon {
           position: absolute;
-          top: 18px;
-          right: 18px;
-          font-size: 38px;
-          filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.38));
+          top: 10px;
+          right: 12px;
+          width: 78px;
+          height: 78px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0.96;
+          filter:
+            drop-shadow(0 14px 18px rgba(0, 0, 0, 0.42))
+            drop-shadow(0 0 18px rgba(168, 85, 247, 0.18));
+          pointer-events: none;
+        }
+
+        .home-action-icon-image {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .action-label {
@@ -914,24 +880,12 @@ export default function Home() {
             linear-gradient(145deg, rgba(38, 30, 16, 0.82), rgba(8, 12, 22, 0.95)) !important;
         }
 
-        .featured-panel {
-          border-color: rgba(251, 113, 133, 0.2) !important;
-          background:
-            radial-gradient(circle at 96% 4%, rgba(251, 113, 133, 0.13), transparent 28%),
-            radial-gradient(circle at 12% 100%, rgba(129, 140, 248, 0.12), transparent 36%),
-            linear-gradient(145deg, rgba(31, 22, 43, 0.82), rgba(8, 12, 22, 0.95)) !important;
-        }
-
         .hero-status-panel .panel-head p {
           color: #67e8f9;
         }
 
         .collection-panel .panel-head p {
           color: #fde68a;
-        }
-
-        .featured-panel .panel-head p {
-          color: #fda4af;
         }
 
         .hero-status-panel .panel-link {
@@ -967,8 +921,21 @@ export default function Home() {
 
         .panel-icon {
           flex: 0 0 auto;
-          font-size: 34px;
-          line-height: 1;
+          width: 64px;
+          height: 64px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          filter:
+            drop-shadow(0 16px 18px rgba(0, 0, 0, 0.36))
+            drop-shadow(0 0 16px rgba(168, 85, 247, 0.16));
+        }
+
+        .panel-icon-image {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .hero-level-row {
@@ -1069,82 +1036,6 @@ export default function Home() {
           font-weight: 900;
         }
 
-        .featured-panel {
-          grid-column: 1 / -1;
-        }
-
-        .monster-row {
-          display: grid;
-          grid-template-columns: repeat(6, minmax(0, 1fr));
-          gap: 12px;
-        }
-
-        .mini-monster {
-          min-height: 132px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 18px;
-          padding: 12px;
-          color: white;
-          text-align: center;
-          text-decoration: none;
-          background: rgba(255, 255, 255, 0.055);
-          transition:
-            transform 0.18s ease,
-            border-color 0.18s ease,
-            background 0.18s ease;
-        }
-
-        .mini-monster:hover {
-          border-color: rgba(45, 212, 191, 0.36);
-          background: rgba(45, 212, 191, 0.08);
-        }
-
-        .mini-monster span {
-          font-size: 34px;
-          line-height: 1;
-        }
-
-        .mini-monster strong {
-          max-width: 100%;
-          font-size: 13px;
-          line-height: 1.28;
-          font-weight: 900;
-          overflow: hidden;
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-        }
-
-        .mini-monster small {
-          color: #fef3c7;
-          font-size: 11px;
-          font-weight: 900;
-        }
-
-        .rarity-ur {
-          border-color: rgba(255, 255, 255, 0.72);
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
-        }
-
-        .rarity-ssr {
-          border-color: rgba(251, 191, 36, 0.54);
-          background: linear-gradient(145deg, rgba(251, 191, 36, 0.16), rgba(255, 255, 255, 0.05));
-        }
-
-        .rarity-sr {
-          border-color: rgba(251, 113, 133, 0.42);
-          background: linear-gradient(145deg, rgba(251, 113, 133, 0.14), rgba(255, 255, 255, 0.05));
-        }
-
-        .rarity-r {
-          border-color: rgba(45, 212, 191, 0.42);
-        }
-
         @keyframes shine {
           0% {
             transform: translateX(-75%) rotate(8deg);
@@ -1153,37 +1044,6 @@ export default function Home() {
           45%,
           100% {
             transform: translateX(75%) rotate(8deg);
-          }
-        }
-
-        @keyframes avatarAuraSpin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes avatarAuraPulse {
-          0%,
-          100% {
-            opacity: 0.45;
-            transform: scale(0.95);
-          }
-
-          50% {
-            opacity: 0.9;
-            transform: scale(1.08);
-          }
-        }
-
-        @keyframes avatarAuraFloat {
-          from {
-            opacity: 0.56;
-            transform: translateY(2px);
-          }
-
-          to {
-            opacity: 1;
-            transform: translateY(-5px);
           }
         }
 
@@ -1222,21 +1082,19 @@ export default function Home() {
             grid-template-columns: 1fr;
           }
 
-          .monster-showcase {
+          .home-monster-showcase {
             order: -1;
           }
 
           .home-action-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
-          .monster-row {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
         }
 
         @media (max-width: 760px) {
           .home-page {
+            background-attachment: scroll, scroll;
+            background-position: center top, 58% top;
             padding: 18px;
           }
 
@@ -1248,28 +1106,34 @@ export default function Home() {
 
           .hero-copy h1 {
             font-size: clamp(34px, 10vw, 48px);
+            line-break: anywhere;
+          }
+
+          .hero-copy h1 span {
+            display: block;
+          }
+
+          .hero-copy h1 span + span::before {
+            content: "";
           }
 
           .lead {
+            max-width: 100%;
             font-size: 14px;
+            line-break: anywhere;
+            word-break: break-word;
           }
 
           .main-actions,
           .home-stats,
           .home-action-grid,
           .dashboard-grid,
-          .hero-level-row,
-          .monster-row {
+          .hero-level-row {
             grid-template-columns: 1fr;
           }
 
-          .showcase-card {
-            max-width: 248px;
-          }
-
-          .monster-main {
-            margin-top: 44px;
-            font-size: 86px;
+          .home-showcase-card {
+            max-width: 216px;
           }
 
           .panel {
@@ -1280,7 +1144,9 @@ export default function Home() {
 
         @media (max-width: 430px) {
           .hero-copy h1 {
-            font-size: 32px;
+            font-size: 30px;
+            line-height: 1.12;
+            word-break: break-word;
           }
 
           .primary-action,
