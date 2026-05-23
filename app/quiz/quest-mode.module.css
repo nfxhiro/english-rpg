@@ -2635,6 +2635,8 @@
 }
 
 .playerSpriteGroup {
+  position: relative;
+  top: 14px;
   display: flex;
   align-items: flex-end;
   gap: 0;
@@ -2823,6 +2825,7 @@
 
 .bossSpriteScaler {
   position: relative;
+  top: 8px;
   transform: scale(1.25);
   transform-origin: bottom center;
 }
