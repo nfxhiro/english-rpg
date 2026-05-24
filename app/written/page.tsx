@@ -842,34 +842,42 @@ export default function WrittenPage() {
         .written-result {
           margin-top: 10px;
           border-radius: 14px;
-          padding: 12px 14px;
+          padding: 12px 16px;
           border: 1px solid rgba(255, 255, 255, 0.12);
           background: rgba(255, 255, 255, 0.06);
           animation: writtenResultIn 0.24s ease both;
         }
 
         .written-result.correct {
-          border-color: rgba(52, 211, 153, 0.52);
+          border-color: rgba(52, 211, 153, 0.4);
           background: rgba(52, 211, 153, 0.08);
-          box-shadow: 0 0 24px rgba(52, 211, 153, 0.08);
+          box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.65);
         }
 
         .written-result.wrong {
-          border-color: rgba(248, 113, 113, 0.52);
+          border-color: rgba(248, 113, 113, 0.4);
           background: rgba(248, 113, 113, 0.08);
-          box-shadow: 0 0 24px rgba(248, 113, 113, 0.08);
+          box-shadow: inset 3px 0 0 rgba(248, 113, 113, 0.65);
         }
 
         .written-result strong {
           display: block;
-          color: #fef3c7;
-          font-size: 14px;
+          font-size: 13px;
           font-weight: 900;
+          letter-spacing: 0.02em;
+        }
+
+        .written-result.correct strong {
+          color: #6ee7b7;
+        }
+
+        .written-result.wrong strong {
+          color: #fca5a5;
         }
 
         .written-result p {
           margin: 5px 0 0;
-          color: #e2e8f0;
+          color: #cbd5e1;
           font-size: 13px;
           line-height: 1.5;
           font-weight: 800;

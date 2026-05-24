@@ -1117,7 +1117,6 @@ export default function WordsPage() {
               </div>
             ) : (
               <div className={`eq-panel memory-complete${memorySource === "review" && sessionWords.length === 0 ? " memory-complete-clear" : " memory-complete-done"}`}>
-                <div className="memory-complete-bg" aria-hidden="true" />
                 <div className="memory-complete-stars" aria-hidden="true">
                   <span /><span /><span /><span /><span />
                 </div>
@@ -2171,21 +2170,21 @@ export default function WordsPage() {
           margin-top: 10px;
           border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 14px;
-          padding: 12px 14px;
+          padding: 12px 16px;
           margin-bottom: 0;
           background: rgba(255, 255, 255, 0.06);
         }
 
         .memory-result.correct {
-          border-color: rgba(52, 211, 153, 0.52);
-          background: rgba(52, 211, 153, 0.09);
-          box-shadow: 0 0 20px rgba(52, 211, 153, 0.08);
+          border-color: rgba(52, 211, 153, 0.4);
+          background: rgba(52, 211, 153, 0.08);
+          box-shadow: inset 3px 0 0 rgba(52, 211, 153, 0.65);
         }
 
         .memory-result.wrong {
-          border-color: rgba(248, 113, 113, 0.52);
-          background: rgba(248, 113, 113, 0.09);
-          box-shadow: 0 0 20px rgba(248, 113, 113, 0.08);
+          border-color: rgba(248, 113, 113, 0.4);
+          background: rgba(248, 113, 113, 0.08);
+          box-shadow: inset 3px 0 0 rgba(248, 113, 113, 0.65);
         }
 
         .memory-actions {
@@ -2240,16 +2239,25 @@ export default function WordsPage() {
         }
 
         .memory-result strong {
-          color: #fef3c7;
-          font-size: 14px;
+          display: block;
+          font-size: 13px;
           line-height: 1.35;
-          font-weight: 1000;
+          font-weight: 900;
+          letter-spacing: 0.02em;
+        }
+
+        .memory-result.correct strong {
+          color: #6ee7b7;
+        }
+
+        .memory-result.wrong strong {
+          color: #fca5a5;
         }
 
         .memory-result p {
           margin: 5px 0 0;
           color: #cbd5e1;
-          font-size: 15px;
+          font-size: 14px;
           line-height: 1.6;
           font-weight: 800;
         }
@@ -2290,16 +2298,6 @@ export default function WordsPage() {
             0 24px 70px rgba(0, 0, 0, 0.3);
         }
 
-        .memory-complete-bg {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          opacity: 0.07;
-          background:
-            linear-gradient(32deg, transparent 0 38%, rgba(255, 255, 255, 0.6) 38.2% 38.6%, transparent 39% 100%),
-            radial-gradient(circle at 18% 78%, transparent 0 54px, rgba(255, 255, 255, 0.5) 55px 56px, transparent 57px),
-            radial-gradient(circle at 82% 22%, transparent 0 42px, rgba(255, 255, 255, 0.5) 43px 44px, transparent 45px);
-        }
 
         .memory-complete-stars {
           position: absolute;
