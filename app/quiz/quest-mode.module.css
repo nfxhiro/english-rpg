@@ -148,12 +148,12 @@
 .resultPanel,
 .questCard,
 .levelSection {
-  border: 1px solid rgba(255, 255, 255, 0.11);
+  border: 1px solid rgba(255, 255, 255, 0.13);
   border-radius: 28px;
-  background:
-    linear-gradient(135deg, rgba(24, 31, 68, 0.92), rgba(8, 13, 32, 0.98)),
-    #0b1021;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(135deg, rgba(24, 31, 68, 0.42), rgba(8, 13, 32, 0.52));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
 }
 
 .selectHero {
@@ -371,9 +371,10 @@
 .levelActions button:hover,
 .groupActions button:hover,
 .cardLink:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   border-color: rgba(250, 204, 21, 0.72);
   background: rgba(250, 204, 21, 0.18);
+  box-shadow: 0 12px 32px rgba(250, 204, 21, 0.14);
 }
 
 .actionGridThree button:disabled,
@@ -746,7 +747,7 @@
   color: #fde68a;
   padding: 7px 12px;
   font-size: 11px;
-  font-weight: 1000;
+  font-weight: 900;
   line-height: 1;
   letter-spacing: 0;
 }
@@ -856,7 +857,7 @@
   color: #fef3c7;
   font: inherit;
   font-size: 13px;
-  font-weight: 1000;
+  font-weight: 900;
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 0 24px rgba(250, 204, 21, 0.12);
@@ -938,7 +939,7 @@
 
 .levelRuneTab span {
   font-size: 14px;
-  font-weight: 1000;
+  font-weight: 900;
 }
 
 .levelRuneTab strong {
@@ -1030,13 +1031,13 @@
 
 .questBoardShell {
   position: relative;
-  overflow: hidden;
+  overflow: clip;
   margin-top: 16px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 30px;
-  background:
-    linear-gradient(135deg, rgba(9, 14, 34, 0.96), rgba(23, 14, 45, 0.95)),
-    #070b1d;
+  background: linear-gradient(135deg, rgba(9, 14, 34, 0.48), rgba(23, 14, 45, 0.44));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   padding: 20px;
   box-shadow:
     0 26px 70px rgba(0, 0, 0, 0.34),
@@ -1194,8 +1195,8 @@
 .rangeTitle p {
   color: #64748b;
   font-size: 9px;
-  font-weight: 1000;
-  letter-spacing: 0.1em;
+  font-weight: 800;
+  letter-spacing: 0.08em;
 }
 
 .rangeTitle h3 {
@@ -1270,18 +1271,19 @@
 
 .questModeButton .questCardState {
   width: auto;
-  border: 1px solid rgba(148, 163, 184, 0.24);
+  border: 1px solid rgba(71, 85, 105, 0.3);
   border-radius: 999px;
   background: rgba(2, 6, 23, 0.44);
-  color: #cbd5e1;
+  color: #475569;
   padding: 3px 7px;
   font-size: 9px;
-  font-weight: 1000;
+  font-weight: 900;
 }
 
 .questModeButton .questCardStateClear {
-  border-color: rgba(34, 197, 94, 0.5);
-  color: #bbf7d0;
+  border-color: rgba(34, 197, 94, 0.55);
+  background: rgba(34, 197, 94, 0.1);
+  color: #4ade80;
 }
 
 .questModeButton .questCardName {
@@ -1290,7 +1292,7 @@
   margin-top: 4px;
   color: #fde68a;
   font-size: 11px;
-  font-weight: 1000;
+  font-weight: 900;
 }
 
 .frontierQuestCard strong,
@@ -2034,6 +2036,7 @@
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.84);
   margin-top: 8px;
+  pointer-events: none;
 }
 
 .blockProgressFill {
@@ -2349,6 +2352,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;
   background: rgba(2, 6, 23, 0.85);
+  pointer-events: none;
 }
 
 .progressFill,
@@ -2419,7 +2423,7 @@
 
 .battleArea {
   position: relative;
-  min-height: 560px;
+  min-height: 520px;
   overflow: hidden;
   --quest-bg-accent: #22d3ee;
   --quest-bg-overlay: linear-gradient(180deg, rgba(2, 6, 23, 0.22), rgba(2, 6, 23, 0.7) 58%, rgba(2, 6, 23, 0.86));
@@ -2469,11 +2473,11 @@
 .castleBack {
   position: absolute;
   z-index: 1;
-  left: 8%;
-  right: 8%;
-  bottom: 108px;
-  height: 118px;
-  opacity: 0.42;
+  left: 7%;
+  right: 7%;
+  bottom: 104px;
+  height: 132px;
+  opacity: 0.38;
 }
 
 .castleBack span {
@@ -2486,18 +2490,22 @@
 }
 
 .castleBack span:nth-child(1) {
-  left: 0;
-  height: 74px;
+  left: 5%;
+  width: 26%;
+  height: 92px;
 }
 
 .castleBack span:nth-child(2) {
-  left: 34%;
-  height: 118px;
+  left: 36%;
+  width: 28%;
+  height: 132px;
+  opacity: 0.68;
 }
 
 .castleBack span:nth-child(3) {
-  right: 0;
-  height: 90px;
+  right: 5%;
+  width: 26%;
+  height: 104px;
 }
 
 .hpLayer {
@@ -2552,7 +2560,7 @@
   z-index: 2;
   left: 36px;
   right: 36px;
-  bottom: 46px;
+  bottom: 64px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -2572,7 +2580,7 @@
 }
 
 .unitNameBlock {
-  margin-top: 7px;
+  margin-top: 3px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2636,7 +2644,7 @@
 
 .playerSpriteGroup {
   position: relative;
-  top: 14px;
+  top: 8px;
   display: flex;
   align-items: flex-end;
   gap: 0;
@@ -3666,6 +3674,26 @@
   margin-top: 10px;
 }
 
+.answerLabel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #a5f3fc;
+  font-size: 11px;
+  font-weight: 1000;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@media (hover: none) {
+  .answerLabel { display: none; }
+}
+
 .answerButton {
   width: 100%;
   min-height: 72px;
@@ -3696,6 +3724,13 @@
 
 .answerButton:disabled {
   cursor: default;
+}
+
+.answerButton:disabled:not(.answerCorrect):not(.answerWrong) {
+  opacity: 0.4;
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  color: #475569;
 }
 
 .answerCorrect {
@@ -4840,7 +4875,7 @@
 
 .resultDetailGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-top: 14px;
 }
@@ -4881,6 +4916,33 @@
   border: 1px solid rgba(125, 211, 252, 0.28);
   background: rgba(125, 211, 252, 0.09);
   color: #bae6fd;
+}
+
+.resultCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 80px;
+}
+
+.resultHeroSprite {
+  display: block;
+  width: auto;
+  height: 78px;
+  object-fit: contain;
+  object-position: bottom center;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+  flex-shrink: 0;
+  margin-top: -4px;
+}
+
+.resultBuddyEmoji {
+  font-size: 52px;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.45));
+  margin-top: -4px;
 }
 
 .resultGoldCard {
@@ -4933,10 +4995,23 @@
   color: #ccfbf1;
 }
 
+.resultBuddyCard .resultExpTrack {
+  border-color: rgba(45, 212, 191, 0.22);
+}
+
+.resultBuddyCard .resultExpFill {
+  background: linear-gradient(90deg, #2dd4bf, #34d399, #86efac);
+  box-shadow: 0 0 10px rgba(45, 212, 191, 0.5);
+}
+
 .resultBuddyCard > strong,
 .resultBuddyCard p,
 .resultBuddyStatus {
   color: #5eead4;
+}
+
+.resultHeroStatus {
+  color: #bae6fd;
 }
 
 .resultMistakeCard {
@@ -4994,6 +5069,7 @@
 
 .resultLevelNotice,
 .resultGoldBonusNotice,
+.resultHeroStatus,
 .resultBuddyStatus {
   margin-top: 10px;
   border-radius: 18px;
@@ -5013,6 +5089,11 @@
   border: 1px solid rgba(246, 196, 83, 0.34);
   background: rgba(246, 196, 83, 0.12);
   color: #ffe08a;
+}
+
+.resultHeroStatus {
+  border: 1px solid rgba(125, 211, 252, 0.26);
+  background: rgba(125, 211, 252, 0.1);
 }
 
 .resultBuddyStatus {
@@ -5110,6 +5191,7 @@
 }
 
 .resultPrimaryAction {
+  grid-column: 1 / -1;
   border-color: rgba(255, 224, 138, 0.72);
   background: linear-gradient(135deg, #ffe08a 0%, #f6c453 45%, #fb923c 100%);
   color: #071b2e;
@@ -5139,10 +5221,17 @@
   }
 
   .resultSummaryGrid,
-  .resultDetailGrid,
   .resultMistakeCard .reviewList,
   .resultActions {
     grid-template-columns: 1fr;
+  }
+
+  .resultDetailGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .resultBuddyCard {
+    grid-column: 1 / -1;
   }
 }
 
@@ -5158,6 +5247,14 @@
   .resultSummaryItem strong,
   .resultDetailCard > strong {
     font-size: 23px;
+  }
+
+  .resultDetailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .resultBuddyCard {
+    grid-column: auto;
   }
 }
 
@@ -5416,7 +5513,7 @@
 .questBoardProgressStats strong {
   color: #fff7ed;
   font-size: 12px;
-  font-weight: 1000;
+  font-weight: 900;
 }
 
 .questBoardCrownHint {
@@ -5614,9 +5711,9 @@
 .levelSectionpre2 {
   border-color: rgba(255, 255, 255, 0.12);
   border-radius: 24px;
-  background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.74), rgba(8, 12, 22, 0.88)),
-    rgba(2, 6, 23, 0.66);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.38), rgba(8, 12, 22, 0.44));
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   padding: 18px;
   box-shadow:
     0 24px 70px rgba(0, 0, 0, 0.3),
@@ -5927,5 +6024,477 @@
   .root:has(.levelSectionpre2) {
     background-position: center top, center top, center top;
     background-attachment: scroll, scroll, scroll;
+  }
+}
+
+/* Quest battle readability pass */
+
+.questionColumn {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.questLocation {
+  min-width: 0;
+  width: auto;
+  max-width: 100%;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  flex: 1 1 auto;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.56);
+  color: #bae6fd;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+}
+
+.questionTopline {
+  flex-direction: row;
+  align-items: center;
+}
+
+.questionTopline button {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.hpLayer {
+  position: absolute;
+  z-index: 6;
+  top: max(14px, env(safe-area-inset-top));
+  left: 16px;
+  right: 16px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 10px;
+  margin-bottom: 0;
+  pointer-events: none;
+}
+
+.playerHpSlot,
+.enemyHpSlot {
+  min-width: 0;
+}
+
+.enemyHpSlot {
+  justify-self: end;
+  width: 100%;
+}
+
+.hpMeter {
+  padding: 8px 11px;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.hpLabel {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.hpLabel span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.hpLabel strong {
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combatants {
+  left: 54px;
+  right: 54px;
+  bottom: 68px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(96px, 0.6fr) minmax(0, 1fr);
+  align-items: end;
+  justify-content: initial;
+  gap: 10px;
+}
+
+.playerUnit {
+  grid-column: 1;
+  justify-self: center;
+  transform: translateX(-8px);
+}
+
+.bossUnit {
+  grid-column: 3;
+  justify-self: center;
+  transform: translateX(6px);
+}
+
+.unitNameBlock {
+  max-width: 132px;
+}
+
+.unitNameBlock strong,
+.unitNameBlock span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.damageCallout {
+  z-index: 7;
+  top: clamp(92px, 21%, 122px);
+  width: min(62%, 320px);
+  max-width: calc(100% - 44px);
+  border-color: rgba(253, 230, 138, 0.34);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.62);
+  padding: 9px 12px;
+  color: #fff7cc;
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.9),
+    0 0 18px rgba(250, 204, 21, 0.18);
+  box-shadow: none;
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+  animation: latest-damage-callout 1.18s ease both;
+}
+
+.damageCallout strong {
+  color: #fff7cc;
+  font-size: 14px;
+  line-height: 1.32;
+}
+
+.damageCallout span {
+  margin-top: 3px;
+  color: #bbf7d0;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.damageCalloutWrong {
+  border-color: rgba(254, 202, 202, 0.34);
+  background: rgba(69, 10, 10, 0.62);
+}
+
+.damageCalloutCritical {
+  border-color: rgba(250, 204, 21, 0.54);
+  background: rgba(69, 26, 3, 0.68);
+}
+
+.battleLog {
+  display: none;
+}
+
+@keyframes latest-damage-callout {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(7px) scale(0.98);
+  }
+  13% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  72% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px) scale(0.99);
+  }
+}
+
+@media (max-width: 980px) {
+  .battleQuizGrid {
+    gap: 10px;
+  }
+
+  .battleArea {
+    min-height: clamp(320px, 46svh, 410px);
+  }
+
+  .questionPanel {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 720px) {
+  .root {
+    padding: max(10px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  }
+
+  .screen {
+    min-height: calc(100svh - max(22px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom)));
+    justify-content: flex-start;
+    gap: 9px;
+  }
+
+  .battleTopbar {
+    margin-bottom: 6px;
+  }
+
+  .battleQuizGrid {
+    gap: 8px;
+  }
+
+  .battleArea,
+  .questionPanel {
+    border-radius: 20px;
+  }
+
+  .battleArea {
+    min-height: clamp(304px, 47svh, 374px);
+    padding: 12px;
+  }
+
+  .hpLayer {
+    top: max(10px, env(safe-area-inset-top));
+    left: 12px;
+    right: 12px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .hpMeter {
+    border-radius: 12px;
+    padding: 6px 8px;
+  }
+
+  .hpLabel {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .hpLabel span {
+    font-size: 11px;
+  }
+
+  .hpLabel strong {
+    font-size: 13px;
+  }
+
+  .hpTrack {
+    height: 8px;
+    margin-top: 4px;
+  }
+
+  .combatants {
+    left: 12px;
+    right: 12px;
+    bottom: 52px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .playerUnit {
+    grid-column: 1;
+    transform: none;
+  }
+
+  .bossUnit {
+    grid-column: 2;
+    transform: none;
+  }
+
+  .heroSpriteWrapper {
+    width: 92px;
+    height: 118px;
+  }
+
+  .playerSpriteGroup {
+    top: 4px;
+    margin-bottom: 2px;
+  }
+
+  .playerCompanionEmoji {
+    font-size: 27px;
+    margin-right: -12px;
+    margin-bottom: 25px;
+  }
+
+  .bossSpriteScaler {
+    transform: scale(0.9);
+    transform-origin: bottom center;
+  }
+
+  .unitNameBlock {
+    margin-top: 2px;
+    gap: 2px;
+    max-width: 116px;
+  }
+
+  .unitNameBlock strong {
+    font-size: 13px;
+  }
+
+  .unitNameBlock span {
+    font-size: 10px;
+  }
+
+  .unitDamageTag {
+    display: none;
+  }
+
+  .damageCallout {
+    top: clamp(76px, 23%, 92px);
+    width: min(70%, 300px);
+    max-width: calc(100% - 28px);
+    padding: 8px 10px;
+  }
+
+  .damageCallout strong {
+    font-size: 14px;
+  }
+
+  .bossNameplate {
+    bottom: 9px;
+    left: 10px;
+    right: 10px;
+    font-size: 11px;
+  }
+
+  .questLocation {
+    min-height: 24px;
+    padding: 3px 9px;
+    font-size: 11px;
+  }
+
+  .questionPanel {
+    padding: 12px 14px 14px;
+  }
+
+  .questionTopline {
+    flex-direction: row;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .questionMeta {
+    gap: 6px;
+  }
+
+  .questionMeta span {
+    font-size: 11px;
+  }
+
+  .questionTopline button {
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .questionText {
+    margin-top: 10px;
+    border-radius: 18px;
+    padding: 13px 14px;
+  }
+
+  .questionText h2 {
+    font-size: clamp(22px, 7vw, 30px);
+    line-height: 1.12;
+  }
+
+  .questionText p {
+    margin-top: 6px;
+    font-size: 13px;
+  }
+
+  .answerGrid {
+    grid-auto-rows: minmax(62px, auto);
+    gap: 7px;
+    margin-top: 8px;
+  }
+
+  .answerButton {
+    min-height: 62px;
+    border-radius: 14px;
+    padding: 8px;
+    font-size: 14px;
+    line-height: 1.22;
+  }
+
+  .choiceReading {
+    margin-top: 3px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 420px) {
+  .root {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .battleArea {
+    min-height: clamp(300px, 47svh, 356px);
+  }
+
+  .hpLayer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .enemyHpSlot {
+    width: 100%;
+  }
+
+  .enemyHpSlot .hpLabel {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .enemyHpSlot .hpLabel strong {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .combatants {
+    left: 8px;
+    right: 8px;
+    bottom: 46px;
+  }
+
+  .heroSpriteWrapper {
+    width: 86px;
+    height: 110px;
+  }
+
+  .bossSpriteScaler {
+    transform: scale(0.82);
+  }
+
+  .unitNameBlock {
+    max-width: 102px;
+  }
+
+  .questionPanel {
+    padding: 11px 12px 13px;
+  }
+
+  .questionText {
+    padding: 12px 12px;
+  }
+
+  .answerGrid {
+    grid-auto-rows: minmax(58px, auto);
+    gap: 7px;
+  }
+
+  .answerButton {
+    min-height: 58px;
+    font-size: 13px;
   }
 }

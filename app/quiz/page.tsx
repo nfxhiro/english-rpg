@@ -878,7 +878,7 @@ export default function QuizPage() {
   const [heroAttackPower, setHeroAttackPower] = useState(25);
   const [enemyAttackPower, setEnemyAttackPower] = useState(18);
   const [currentStreak, setCurrentStreak] = useState(0);
-  const [battleLog, setBattleLog] = useState<string[]>([]);
+  const [, setBattleLog] = useState<string[]>([]);
   const [activeEquipEffects, setActiveEquipEffects] = useState<EquipEffects>({});
   const [bossDefeatedQuestionNumber, setBossDefeatedQuestionNumber] =
     useState<number | null>(null);
@@ -1241,9 +1241,7 @@ export default function QuizPage() {
     } else {
       logEntry = `ミス！勇者が${damageToHero}ダメージを受けた…`;
     }
-    const nextBattleLog = logEntry
-      ? [...battleLog, logEntry].slice(-3)
-      : battleLog;
+    const nextBattleLog = logEntry ? [logEntry] : [];
 
     const answerRecord: AnswerRecord = {
       word: currentQuestion.word,
@@ -1425,8 +1423,29 @@ export default function QuizPage() {
       setSelectedAnswer(null);
       setChoices(nextChoices);
       setLastCorrectPosition(nextChoices.indexOf(nextQuestion.meaning));
-    }, 850);
+    }, 1200);
   };
+
+  const questHandlersRef = useRef({ handleAnswer, choices, selectedAnswer, gameStatus, isStarted });
+
+  useEffect(() => {
+    questHandlersRef.current = { handleAnswer, choices, selectedAnswer, gameStatus, isStarted };
+  });
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === "INPUT") return;
+      const { handleAnswer, choices, selectedAnswer, gameStatus, isStarted } = questHandlersRef.current;
+      if (!isStarted || selectedAnswer !== null || gameStatus !== "playing") return;
+      const keyMap: Record<string, number> = { a: 0, b: 1, c: 2, d: 3, "1": 0, "2": 1, "3": 2, "4": 3 };
+      const choiceIndex = keyMap[e.key.toLowerCase()];
+      if (choiceIndex !== undefined && choiceIndex < choices.length) {
+        handleAnswer(choices[choiceIndex]);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   if (!isReady) {
     return <QuestLoadingScreen />;
@@ -1488,7 +1507,6 @@ export default function QuizPage() {
       key={questId}
       answerEffect={answerEffect}
       background={activeQuestBackground}
-      battleLog={battleLog}
       boss={currentBoss}
       bossDefeatedQuestionNumber={bossDefeatedQuestionNumber}
       bossHp={bossHp}
@@ -1870,7 +1888,6 @@ function QuestBlockCard({
 function QuestBattleMode({
   answerEffect,
   background,
-  battleLog,
   boss,
   bossDefeatedQuestionNumber,
   bossHp,
@@ -1894,7 +1911,6 @@ function QuestBattleMode({
 }: {
   answerEffect: AnswerEffect | null;
   background: QuestBackgroundConfig;
-  battleLog: string[];
   boss: Boss;
   bossDefeatedQuestionNumber: number | null;
   bossHp: number;
@@ -1938,7 +1954,6 @@ function QuestBattleMode({
         <BattleQuizScreen
           answerEffect={answerEffect}
           background={background}
-          battleLog={battleLog}
           boss={boss}
           bossDefeatedQuestionNumber={bossDefeatedQuestionNumber}
           bossHp={bossHp}
@@ -1946,7 +1961,6 @@ function QuestBattleMode({
           buddyCard={buddyCard}
           choices={choices}
           currentQuestion={currentQuestion}
-          currentQuestionNumber={currentQuestionNumber}
           currentStreak={currentStreak}
           furiganaEnabled={furiganaEnabled}
           heroLevel={heroLevel}
@@ -1955,7 +1969,6 @@ function QuestBattleMode({
           playerHp={playerHp}
           questMode={questMode}
           selectedAnswer={selectedAnswer}
-          totalQuestions={totalQuestions}
         />
       </section>
     </main>
@@ -1993,7 +2006,6 @@ function FuriganaToggle({
 function BattleQuizScreen({
   answerEffect,
   background,
-  battleLog,
   boss,
   bossDefeatedQuestionNumber,
   bossHp,
@@ -2001,7 +2013,6 @@ function BattleQuizScreen({
   buddyCard,
   choices,
   currentQuestion,
-  currentQuestionNumber,
   currentStreak,
   furiganaEnabled,
   heroLevel,
@@ -2010,11 +2021,9 @@ function BattleQuizScreen({
   playerHp,
   questMode,
   selectedAnswer,
-  totalQuestions,
 }: {
   answerEffect: AnswerEffect | null;
   background: QuestBackgroundConfig;
-  battleLog: string[];
   boss: Boss;
   bossDefeatedQuestionNumber: number | null;
   bossHp: number;
@@ -2022,7 +2031,6 @@ function BattleQuizScreen({
   buddyCard: MonsterCard | null;
   choices: string[];
   currentQuestion: LearningWord;
-  currentQuestionNumber: number;
   currentStreak: number;
   furiganaEnabled: boolean;
   heroLevel: number;
@@ -2031,14 +2039,12 @@ function BattleQuizScreen({
   playerHp: number;
   questMode: QuestMode;
   selectedAnswer: string | null;
-  totalQuestions: number;
 }) {
   return (
     <div className={styles.battleQuizGrid}>
       <BattleArea
         answerEffect={answerEffect}
         background={background}
-        battleLog={battleLog}
         boss={boss}
         bossDefeatedQuestionNumber={bossDefeatedQuestionNumber}
         bossHp={bossHp}
@@ -2053,12 +2059,10 @@ function BattleQuizScreen({
       <QuestionArea
         choices={choices}
         currentQuestion={currentQuestion}
-        currentQuestionNumber={currentQuestionNumber}
         furiganaEnabled={furiganaEnabled}
+        locationLabel={boss.stage}
         onAnswer={onAnswer}
-        questMode={questMode}
         selectedAnswer={selectedAnswer}
-        totalQuestions={totalQuestions}
       />
     </div>
   );
@@ -2260,7 +2264,6 @@ const HERO_ATTACK_SEQUENCE: Array<{ sprite: HeroSprite; duration: number; x: num
 function BattleArea({
   answerEffect,
   background,
-  battleLog,
   boss,
   bossDefeatedQuestionNumber,
   bossHp,
@@ -2274,7 +2277,6 @@ function BattleArea({
 }: {
   answerEffect: AnswerEffect | null;
   background: QuestBackgroundConfig;
-  battleLog: string[];
   boss: Boss;
   bossDefeatedQuestionNumber: number | null;
   bossHp: number;
@@ -2356,13 +2358,17 @@ function BattleArea({
       </div>
 
       <div className={styles.hpLayer}>
-        <HpMeter label="勇者HP" current={playerHp} max={heroMaxHp} />
-        <HpMeter
-          label="ボスHP"
-          current={bossHp}
-          max={bossMaxHp}
-          defeated={completeChallengeActive}
-        />
+        <div className={styles.playerHpSlot}>
+          <HpMeter label="勇者HP" current={playerHp} max={heroMaxHp} />
+        </div>
+        <div className={styles.enemyHpSlot}>
+          <HpMeter
+            label="敵HP"
+            current={bossHp}
+            max={bossMaxHp}
+            defeated={completeChallengeActive}
+          />
+        </div>
       </div>
 
       {completeChallengeActive && (
@@ -2454,6 +2460,7 @@ function BattleArea({
 
       {answerEffect && (
         <div
+          key={`${answerEffect.type}-${answerEffect.word}-${answerEffect.damageAmount}`}
           className={cx(
             styles.damageCallout,
             answerEffect.type === "wrong" && styles.damageCalloutWrong,
@@ -2461,60 +2468,44 @@ function BattleArea({
           )}
           aria-live="polite"
         >
-          <strong>{getAnswerEffectTitle(answerEffect)}</strong>
-          <span>{getAnswerEffectMessage(answerEffect)}</span>
+          <strong>{getDamageCalloutMessage(answerEffect)}</strong>
           {answerEffect.healAmount && (
             <span className={styles.healNotice}>HP +{answerEffect.healAmount} 回復！</span>
           )}
         </div>
       )}
 
-      {battleLog.length > 0 && !answerEffect && (
-        <div className={styles.battleLog} aria-live="polite">
-          {battleLog.map((entry, i) => (
-            <p key={i} className={i === battleLog.length - 1 ? styles.battleLogLatest : styles.battleLogOld}>
-              {entry}
-            </p>
-          ))}
-        </div>
-      )}
-
-      <div className={styles.bossNameplate}>
+      {currentStreak >= 3 && (
+        <div className={styles.bossNameplate}>
         {currentStreak >= 3 && (
           <span className={styles.streakBadge}>
             {currentStreak >= 5 ? `⚡${currentStreak}連続！クリティカル！` : `🔥${currentStreak}連続！`}
           </span>
         )}
-        現在地：{boss.stage}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
 
-function getCorrectFeedback(answerEffect: AnswerEffect) {
-  return answerEffect.word;
-}
+function getDamageCalloutMessage(answerEffect: AnswerEffect) {
+  const damage = answerEffect.damageAmount ?? 0;
 
-function getAnswerEffectTitle(answerEffect: AnswerEffect) {
-  if (answerEffect.completeChallengeContinues) return "ボス撃破！";
-  if (answerEffect.bossDefeated) return "撃破！";
-  if (answerEffect.bossAlreadyDefeated && answerEffect.type === "correct") return "正解！";
-  if (answerEffect.isCritical) return "クリティカル！";
-  if (answerEffect.type === "correct") return "ボスにダメージ！";
+  if (answerEffect.type === "wrong") {
+    return `勇者が${damage}ダメージを受けた…`;
+  }
 
-  return "勇者にダメージ！";
-}
-
-function getAnswerEffectMessage(answerEffect: AnswerEffect) {
   if (answerEffect.completeChallengeContinues) {
-    return "完全制覇モードのため、残りの問題で知識の完成度を試そう！";
+    return damage > 0 ? `敵に${damage}ダメージ！` : "敵は撃破済み！";
   }
 
-  if (answerEffect.type === "correct") {
-    return getCorrectFeedback(answerEffect);
+  if (answerEffect.bossDefeated) {
+    return `敵に${damage}ダメージ！撃破！`;
   }
 
-  return `正解: ${answerEffect.correctAnswer}`;
+  return answerEffect.isCritical
+    ? `敵に${damage}ダメージ！クリティカル！`
+    : `敵に${damage}ダメージ！`;
 }
 
 function HpMeter({
@@ -2548,51 +2539,46 @@ function HpMeter({
 function QuestionArea({
   choices,
   currentQuestion,
-  currentQuestionNumber,
   furiganaEnabled,
+  locationLabel,
   onAnswer,
-  questMode,
   selectedAnswer,
-  totalQuestions,
 }: {
   choices: string[];
   currentQuestion: LearningWord;
-  currentQuestionNumber: number;
   furiganaEnabled: boolean;
+  locationLabel: string;
   onAnswer: (choice: string) => void;
-  questMode: QuestMode;
   selectedAnswer: string | null;
-  totalQuestions: number;
 }) {
   return (
-    <section className={styles.questionPanel} aria-label="クイズ問題">
-      <div className={styles.questionTopline}>
-        <div className={styles.questionMeta}>
-          <span>
-            第{currentQuestionNumber}問 / {getQuestLimitLabel(questMode, totalQuestions)}
-          </span>
-          <span>{currentQuestion.level}</span>
+    <div className={styles.questionColumn}>
+      <section className={styles.questionPanel} aria-label="クイズ問題">
+        <div className={styles.questionTopline}>
+          <div className={styles.questLocation}>
+            {currentQuestion.level}：{locationLabel}
+          </div>
+          <SpeechButton
+            text={currentQuestion.word}
+            label="単語を聞く"
+            title={`${currentQuestion.word} を読み上げる`}
+          />
         </div>
-        <SpeechButton
-          text={currentQuestion.word}
-          label="単語を聞く"
-          title={`${currentQuestion.word} を読み上げる`}
+
+        <div className={styles.questionText}>
+          <h2>{currentQuestion.word}</h2>
+          <p>の意味は？</p>
+        </div>
+
+        <AnswerChoices
+          choices={choices}
+          currentQuestion={currentQuestion}
+          furiganaEnabled={furiganaEnabled}
+          onAnswer={onAnswer}
+          selectedAnswer={selectedAnswer}
         />
-      </div>
-
-      <div className={styles.questionText}>
-        <h2>{currentQuestion.word}</h2>
-        <p>の意味は？</p>
-      </div>
-
-      <AnswerChoices
-        choices={choices}
-        currentQuestion={currentQuestion}
-        furiganaEnabled={furiganaEnabled}
-        onAnswer={onAnswer}
-        selectedAnswer={selectedAnswer}
-      />
-    </section>
+      </section>
+    </div>
   );
 }
 
@@ -2611,7 +2597,7 @@ function AnswerChoices({
 }) {
   return (
     <div className={styles.answerGrid}>
-      {choices.map((choice) => {
+      {choices.map((choice, index) => {
         const isSelected = selectedAnswer === choice;
         const isCorrectChoice = choice === currentQuestion.meaning;
         const hasAnswered = selectedAnswer !== null;
@@ -2632,6 +2618,7 @@ function AnswerChoices({
             disabled={hasAnswered}
             className={className}
           >
+            <span className={styles.answerLabel}>{String.fromCharCode(65 + index)}</span>
             {choice}
             {furiganaEnabled && reading && (
               <span className={styles.choiceReading}>{reading}</span>
@@ -2894,17 +2881,24 @@ function QuestResultScreen({
 
             {heroStatusAfter && (
               <section className={cx(styles.resultDetailCard, styles.resultHeroCard)}>
-                <span className={styles.resultSectionLabel}>主人公</span>
+                <div className={styles.resultCardTop}>
+                  <span className={styles.resultSectionLabel}>主人公</span>
+                  <img
+                    src="/images/hero/hero_ready.png"
+                    alt="勇者"
+                    className={styles.resultHeroSprite}
+                  />
+                </div>
                 <h3>{heroStatusAfter.title}</h3>
                 <strong>Lv{heroLevelAfter}</strong>
-                <p>
+                <div className={styles.resultHeroStatus}>
                   {heroExpProgress?.isMaxLevel
                     ? "MAX"
                     : `次のLvまで ${
                         (heroExpProgress?.requiredExp ?? 0) -
                         (heroExpProgress?.currentExp ?? 0)
                       }EXP`}
-                </p>
+                </div>
                 {!heroExpProgress?.isMaxLevel && heroExpProgress && (
                   <div className={styles.resultExpTrack}>
                     <div
@@ -2932,13 +2926,18 @@ function QuestResultScreen({
 
             {buddyQuestExpResult && (
               <section className={cx(styles.resultDetailCard, styles.resultBuddyCard)}>
-                <span className={styles.resultSectionLabel}>
-                  {buddyAlreadyMax
-                    ? "相棒レベルは最大です"
-                    : buddyQuestExpResult.leveledUp || buddyReachedMax
-                      ? "相棒モンスター成長！"
-                      : "相棒モンスター経験値"}
-                </span>
+                <div className={styles.resultCardTop}>
+                  <span className={styles.resultSectionLabel}>
+                    {buddyAlreadyMax
+                      ? "相棒レベルは最大です"
+                      : buddyQuestExpResult.leveledUp || buddyReachedMax
+                        ? "相棒モンスター成長！"
+                        : "相棒モンスター経験値"}
+                  </span>
+                  <span className={styles.resultBuddyEmoji} aria-hidden="true">
+                    {buddyQuestExpResult.card.monsterEmoji}
+                  </span>
+                </div>
                 <h3>{buddyQuestExpResult.card.name}</h3>
                 <strong>{buddyLevelText}</strong>
                 {!buddyAlreadyMax && (
@@ -2951,6 +2950,14 @@ function QuestResultScreen({
                       ? "相棒レベルは最大です"
                       : `次のLvまで ${buddyQuestExpResult.after.remainingExp}EXP`}
                 </div>
+                {!buddyQuestExpResult.after.isMaxLevel && !buddyAlreadyMax && (
+                  <div className={styles.resultExpTrack}>
+                    <div
+                      className={styles.resultExpFill}
+                      style={{ width: `${buddyQuestExpResult.after.percent}%` }}
+                    />
+                  </div>
+                )}
               </section>
             )}
 

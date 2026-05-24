@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -20,24 +20,31 @@ import { learningWords, type LearningWord } from "../../data/words";
 import SpeechButton from "../components/SpeechButton";
 
 const ALL_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const WORD_MEMORY_STORAGE_KEY = "wordMemoryProgress";
+const WORD_MEMORY_CHANGE_EVENT = "wordMemoryProgressChange";
 
 type StudyMode = "list" | "memory";
+type MemorySource = "all" | "review";
 type StudyExpNotice = Pick<
   HeroExpResult,
   "gainedExp" | "leveledUp" | "before" | "after"
 >;
+type WordMemoryRecord = {
+  no: string;
+  correctCount: number;
+  wrongCount: number;
+  streak: number;
+  needsReview: boolean;
+  lastAnsweredAt: string;
+  lastCorrectAt?: string;
+};
+type WordMemoryProgress = Record<string, WordMemoryRecord>;
 
 const DEFAULT_MEMORY_PERFECT_XP = 3;
+const EMPTY_WORD_MEMORY_PROGRESS: WordMemoryProgress = {};
+let cachedWordMemoryProgressText: string | null = null;
+let cachedWordMemoryProgress: WordMemoryProgress = EMPTY_WORD_MEMORY_PROGRESS;
 
-function searchWords(searchText: string) {
-  const keyword = searchText.trim().toLowerCase();
-  if (!keyword) return learningWords;
-  return learningWords.filter(
-    (w) =>
-      w.word.toLowerCase().includes(keyword) ||
-      w.meaning.includes(searchText)
-  );
-}
 
 function getFilteredWords(searchText: string, levelFilter: string) {
   const keyword = searchText.trim().toLowerCase();
@@ -45,9 +52,7 @@ function getFilteredWords(searchText: string, levelFilter: string) {
     const matchesSearch =
       keyword === "" ||
       word.word.toLowerCase().includes(keyword) ||
-      word.meaning.includes(searchText) ||
-      word.example.toLowerCase().includes(keyword) ||
-      word.exampleMeaning.includes(searchText);
+      word.meaning.includes(searchText);
     const matchesLevel = levelFilter === "all" || word.level === levelFilter;
     return matchesSearch && matchesLevel;
   });
@@ -67,6 +72,118 @@ function applyRangeFilter(
 
 function getMemoryStudyXp() {
   return DEFAULT_MEMORY_PERFECT_XP;
+}
+
+function getWordKey(word: LearningWord) {
+  return word.no || word.word;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeWordMemoryProgress(value: unknown): WordMemoryProgress {
+  if (!isRecord(value)) return {};
+
+  const progress: WordMemoryProgress = {};
+
+  for (const [key, rawRecord] of Object.entries(value)) {
+    if (!isRecord(rawRecord)) continue;
+
+    const no = typeof rawRecord.no === "string" ? rawRecord.no : key;
+    const correctCount = Math.max(0, Math.floor(Number(rawRecord.correctCount) || 0));
+    const wrongCount = Math.max(0, Math.floor(Number(rawRecord.wrongCount) || 0));
+    const streak = Math.max(0, Math.floor(Number(rawRecord.streak) || 0));
+    const lastAnsweredAt =
+      typeof rawRecord.lastAnsweredAt === "string" ? rawRecord.lastAnsweredAt : "";
+    const lastCorrectAt =
+      typeof rawRecord.lastCorrectAt === "string" ? rawRecord.lastCorrectAt : undefined;
+    const needsReview = rawRecord.needsReview === true || (wrongCount > 0 && streak < 2);
+
+    if (correctCount === 0 && wrongCount === 0 && !lastAnsweredAt) continue;
+
+    progress[no] = {
+      no,
+      correctCount,
+      wrongCount,
+      streak,
+      needsReview,
+      lastAnsweredAt,
+      ...(lastCorrectAt ? { lastCorrectAt } : {}),
+    };
+  }
+
+  return progress;
+}
+
+function loadWordMemoryProgress(): WordMemoryProgress {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const savedText = localStorage.getItem(WORD_MEMORY_STORAGE_KEY) ?? "{}";
+
+    if (savedText === cachedWordMemoryProgressText) {
+      return cachedWordMemoryProgress;
+    }
+
+    cachedWordMemoryProgressText = savedText;
+    cachedWordMemoryProgress = normalizeWordMemoryProgress(JSON.parse(savedText));
+
+    return cachedWordMemoryProgress;
+  } catch {
+    localStorage.removeItem(WORD_MEMORY_STORAGE_KEY);
+    cachedWordMemoryProgressText = "{}";
+    cachedWordMemoryProgress = EMPTY_WORD_MEMORY_PROGRESS;
+    return cachedWordMemoryProgress;
+  }
+}
+
+function saveWordMemoryProgress(progress: WordMemoryProgress) {
+  if (typeof window === "undefined") return;
+
+  const text = JSON.stringify(progress);
+  cachedWordMemoryProgressText = text;
+  cachedWordMemoryProgress = progress;
+  localStorage.setItem(WORD_MEMORY_STORAGE_KEY, text);
+  window.dispatchEvent(new CustomEvent(WORD_MEMORY_CHANGE_EVENT));
+}
+
+function subscribeToWordMemoryProgressChange(onChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+
+  const handleChange = () => onChange();
+  window.addEventListener(WORD_MEMORY_CHANGE_EVENT, handleChange);
+  window.addEventListener("storage", handleChange);
+
+  return () => {
+    window.removeEventListener(WORD_MEMORY_CHANGE_EVENT, handleChange);
+    window.removeEventListener("storage", handleChange);
+  };
+}
+
+function updateWordMemoryRecord(
+  progress: WordMemoryProgress,
+  word: LearningWord,
+  isCorrect: boolean
+) {
+  const no = getWordKey(word);
+  const current = progress[no];
+  const now = new Date().toISOString();
+  const nextStreak = isCorrect ? (current?.streak ?? 0) + 1 : 0;
+  const nextRecord: WordMemoryRecord = {
+    no,
+    correctCount: (current?.correctCount ?? 0) + (isCorrect ? 1 : 0),
+    wrongCount: (current?.wrongCount ?? 0) + (isCorrect ? 0 : 1),
+    streak: nextStreak,
+    needsReview: isCorrect ? nextStreak < 2 && (current?.wrongCount ?? 0) > 0 : true,
+    lastAnsweredAt: now,
+    ...(isCorrect ? { lastCorrectAt: now } : current?.lastCorrectAt ? { lastCorrectAt: current.lastCorrectAt } : {}),
+  };
+
+  return {
+    ...progress,
+    [no]: nextRecord,
+  };
 }
 
 function getAnswerLabel(index: number) {
@@ -156,6 +273,7 @@ function createMemoryAnswerChoices(
 export default function WordsPage() {
   const [searchText, setSearchText] = useState("");
   const [studyMode, setStudyMode] = useState<StudyMode>("list");
+  const [memorySource, setMemorySource] = useState<MemorySource>("all");
   const [activeLetter, setActiveLetter] = useState("A");
   const [levelFilter, setLevelFilter] = useState("all");
   const [rangeIndex, setRangeIndex] = useState<number | null>(null);
@@ -171,14 +289,25 @@ export default function WordsPage() {
   );
   const [memoryDoneCount, setMemoryDoneCount] = useState(0);
   const [memoryHistory, setMemoryHistory] = useState<LearningWord[]>([]);
+  const [memoryIsReviewingHistory, setMemoryIsReviewingHistory] =
+    useState(false);
   const [studyExpNotice, setStudyExpNotice] =
     useState<StudyExpNotice | null>(null);
   const [studyGoldNotice, setStudyGoldNotice] = useState<number | null>(null);
+  const [sessionWrongNos, setSessionWrongNos] = useState<Set<string>>(new Set());
+  const [answerCorrectCount, setAnswerCorrectCount] = useState(0);
+  const [answerTotalCount, setAnswerTotalCount] = useState(0);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionBlurTimeoutRef = useRef<number | null>(null);
   const furiganaEnabled = useSyncExternalStore(
     subscribeToFuriganaEnabledChange,
     getStoredFuriganaEnabled,
     () => false
+  );
+  const wordMemoryProgress = useSyncExternalStore(
+    subscribeToWordMemoryProgressChange,
+    loadWordMemoryProgress,
+    () => EMPTY_WORD_MEMORY_PROGRESS
   );
 
   useEffect(() => {
@@ -193,7 +322,7 @@ export default function WordsPage() {
     return () => clearTimeout(t);
   }, [studyGoldNotice]);
 
-  const filteredWords = useMemo(() => searchWords(searchText), [searchText]);
+  const filteredWords = useMemo(() => getFilteredWords(searchText, "all"), [searchText]);
 
   const suggestions = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
@@ -224,6 +353,16 @@ export default function WordsPage() {
     return groups;
   }, [filteredWords]);
 
+  const hasSearchKeyword = searchText.trim().length > 0;
+  const firstVisibleLetter = useMemo(() => {
+    return Array.from(dictGroups.keys()).sort()[0] ?? "A";
+  }, [dictGroups]);
+
+  const currentDictLetter =
+    !hasSearchKeyword && dictGroups.has(activeLetter)
+      ? activeLetter
+      : firstVisibleLetter;
+
   const levels = useMemo(() => {
     return Array.from(new Set(learningWords.map((word) => word.level)));
   }, []);
@@ -235,20 +374,57 @@ export default function WordsPage() {
 
   const rangeCount = Math.ceil(levelOnlyWords.length / 100);
 
+  const reviewWordCount = useMemo(() => {
+    return learningWords.filter(
+      (word) => wordMemoryProgress[getWordKey(word)]?.needsReview
+    ).length;
+  }, [wordMemoryProgress]);
+
+  const getMemoryWordsFor = useCallback((
+    level: string,
+    range: number | null,
+    source: MemorySource
+  ) => {
+    const base = getFilteredWords("", level);
+    const rangeFiltered = applyRangeFilter(base, level, range, levelOnlyWords);
+
+    if (source === "review") {
+      return rangeFiltered.filter(
+        (word) => wordMemoryProgress[getWordKey(word)]?.needsReview
+      );
+    }
+
+    return rangeFiltered;
+  }, [levelOnlyWords, wordMemoryProgress]);
+
   const memoryFilteredWords = useMemo(() => {
-    const base = getFilteredWords(searchText, levelFilter);
-    return applyRangeFilter(base, levelFilter, rangeIndex, levelOnlyWords);
-  }, [searchText, levelFilter, rangeIndex, levelOnlyWords]);
+    return getMemoryWordsFor(levelFilter, rangeIndex, memorySource);
+  }, [getMemoryWordsFor, levelFilter, rangeIndex, memorySource]);
 
   const currentMemoryWord = memoryQueue[0];
   const memorySessionTotal = memoryDoneCount + memoryQueue.length;
-  const memoryCurrentNumber = currentMemoryWord
-    ? memoryDoneCount + 1
-    : memorySessionTotal;
+  const memoryRemainingLabel =
+    sessionWords.length === memoryQueue.length
+      ? `${sessionWords.length} 語`
+      : `${sessionWords.length} 語中 残り ${memoryQueue.length} 語`;
   const memoryProgressPercent =
     memorySessionTotal > 0
       ? Math.min(100, Math.round((memoryDoneCount / memorySessionTotal) * 100))
       : 0;
+  const memoryAccuracy =
+    answerTotalCount > 0
+      ? Math.round((answerCorrectCount / answerTotalCount) * 100)
+      : null;
+  const displayedDictEntries = useMemo(() => {
+    const sortedEntries = Array.from(dictGroups.entries()).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
+
+    if (hasSearchKeyword) return sortedEntries;
+
+    const words = dictGroups.get(currentDictLetter);
+    return words ? [[currentDictLetter, words] as [string, LearningWord[]]] : [];
+  }, [currentDictLetter, dictGroups, hasSearchKeyword]);
   const memoryAnswerChoices = useMemo(() => {
     if (!currentMemoryWord) return [];
     return createMemoryAnswerChoices(
@@ -272,9 +448,13 @@ export default function WordsPage() {
     setSessionWords(words);
     setClearedNos(new Set());
     setWrongNos(new Set());
+    setSessionWrongNos(new Set());
+    setAnswerCorrectCount(0);
+    setAnswerTotalCount(0);
     setMemoryQueue(words);
     setMemoryDoneCount(0);
     setMemoryHistory([]);
+    setMemoryIsReviewingHistory(false);
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
     setStudyExpNotice(null);
@@ -287,35 +467,52 @@ export default function WordsPage() {
 
   const handleSearchChange = (value: string) => {
     setSearchText(value);
-    const base = getFilteredWords(value, levelFilter);
-    resetMemorySessionForWords(applyRangeFilter(base, levelFilter, rangeIndex, levelOnlyWords));
   };
 
   const handleSuggestionSelect = (word: LearningWord) => {
     handleSearchChange(word.word);
     setShowSuggestions(false);
+    if (suggestionBlurTimeoutRef.current !== null) {
+      window.clearTimeout(suggestionBlurTimeoutRef.current);
+      suggestionBlurTimeoutRef.current = null;
+    }
     const first = word.word[0]?.toUpperCase() ?? "A";
     setActiveLetter(/^[A-Z]$/.test(first) ? first : "A");
+  };
+
+  const handleSearchBlur = () => {
+    suggestionBlurTimeoutRef.current = window.setTimeout(() => {
+      setShowSuggestions(false);
+      suggestionBlurTimeoutRef.current = null;
+    }, 150);
   };
 
   const handleLevelChange = (level: string) => {
     setLevelFilter(level);
     setRangeIndex(null);
-    resetMemorySessionForWords(getFilteredWords(searchText, level));
+    resetMemorySessionForWords(getMemoryWordsFor(level, null, memorySource));
   };
 
   const handleRangeChange = (idx: number | null) => {
     setRangeIndex(idx);
-    const base = getFilteredWords(searchText, levelFilter);
-    resetMemorySessionForWords(applyRangeFilter(base, levelFilter, idx, levelOnlyWords));
+    resetMemorySessionForWords(getMemoryWordsFor(levelFilter, idx, memorySource));
+  };
+
+  const handleMemorySourceChange = (source: MemorySource) => {
+    setMemorySource(source);
+    resetMemorySessionForWords(getMemoryWordsFor(levelFilter, rangeIndex, source));
   };
 
   const handleModeChange = (mode: StudyMode) => {
     setStudyMode(mode);
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
+    setMemoryIsReviewingHistory(false);
     setStudyExpNotice(null);
     setStudyGoldNotice(null);
+    if (mode === "memory") {
+      resetMemorySessionForWords(memoryFilteredWords);
+    }
     if (mode === "list") setRangeIndex(null);
   };
 
@@ -344,10 +541,17 @@ export default function WordsPage() {
     const isCorrect = selectedAnswer === studiedWord.meaning;
     setMemorySelectedIndex(choiceIndex);
     setMemoryAnswered(true);
+    setMemoryIsReviewingHistory(false);
+    setAnswerTotalCount((count) => count + 1);
+
+    saveWordMemoryProgress(
+      updateWordMemoryRecord(wordMemoryProgress, studiedWord, isCorrect)
+    );
 
     if (isCorrect) {
       setClearedNos((prev) => new Set([...prev, studiedWord.no]));
       setWrongNos((prev) => { const next = new Set(prev); next.delete(studiedWord.no); return next; });
+      setAnswerCorrectCount((count) => count + 1);
       addGold(3);
       setStudyGoldNotice(3);
       const gainedExp = getMemoryStudyXp();
@@ -361,6 +565,7 @@ export default function WordsPage() {
       });
     } else {
       setWrongNos((prev) => new Set([...prev, studiedWord.no]));
+      setSessionWrongNos((prev) => new Set([...prev, studiedWord.no]));
       setStudyExpNotice(null);
       setStudyGoldNotice(null);
     }
@@ -374,11 +579,13 @@ export default function WordsPage() {
     setMemoryQueue((currentQueue) => {
       const [head, ...nextWords] = currentQueue;
       if (!head) return currentQueue;
+      if (memoryIsReviewingHistory) return nextWords;
       return memoryIsCorrect ? nextWords : [...nextWords, head];
     });
     setMemoryDoneCount((current) => current + 1);
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
+    setMemoryIsReviewingHistory(false);
     setStudyExpNotice(null);
     setStudyGoldNotice(null);
   };
@@ -386,14 +593,56 @@ export default function WordsPage() {
   const handleMemoryPrev = () => {
     if (memoryHistory.length === 0) return;
     const prevWord = memoryHistory[memoryHistory.length - 1];
+    const prevChoices = createMemoryAnswerChoices(
+      prevWord,
+      memoryFilteredWords.length > 1 ? memoryFilteredWords : learningWords
+    );
     setMemoryHistory((prev) => prev.slice(0, -1));
     setMemoryQueue((prev) => [prevWord, ...prev]);
     setMemoryDoneCount((current) => Math.max(0, current - 1));
-    setMemoryAnswered(false);
-    setMemorySelectedIndex(null);
+    setMemoryAnswered(true);
+    setMemorySelectedIndex(prevChoices.indexOf(prevWord.meaning));
+    setMemoryIsReviewingHistory(true);
     setStudyExpNotice(null);
     setStudyGoldNotice(null);
   };
+
+  const handleRetryWrong = () => {
+    const wrongWords = sessionWords.filter((w) => sessionWrongNos.has(w.no));
+    if (wrongWords.length > 0) resetMemorySessionForWords(wrongWords);
+  };
+
+  const memoryHandlersRef = useRef({ handleMemoryAnswer, handleMemoryNext, handleMemoryPrev, memoryAnswered, currentMemoryWord });
+
+  useEffect(() => {
+    memoryHandlersRef.current = {
+      handleMemoryAnswer,
+      handleMemoryNext,
+      handleMemoryPrev,
+      memoryAnswered,
+      currentMemoryWord,
+    };
+  });
+
+  useEffect(() => {
+    if (studyMode !== "memory") return;
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === "INPUT") return;
+      const { handleMemoryAnswer, handleMemoryNext, handleMemoryPrev, memoryAnswered, currentMemoryWord } = memoryHandlersRef.current;
+      const keyMap: Record<string, number> = { a: 0, b: 1, c: 2, d: 3, "1": 0, "2": 1, "3": 2, "4": 3 };
+      const choiceIndex = keyMap[e.key.toLowerCase()];
+      if (choiceIndex !== undefined && !memoryAnswered && currentMemoryWord) {
+        handleMemoryAnswer(choiceIndex);
+      } else if ((e.key === "Enter" || e.key === " " || e.key === "ArrowRight") && memoryAnswered) {
+        e.preventDefault();
+        handleMemoryNext();
+      } else if (e.key === "ArrowLeft") {
+        handleMemoryPrev();
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [studyMode]);
 
   return (
     <main className="eq-page wordbook-page">
@@ -502,11 +751,30 @@ export default function WordsPage() {
                 {rangeIndex !== null
                   ? ` / ${rangeIndex * 100 + 1}-${Math.min((rangeIndex + 1) * 100, levelOnlyWords.length)}`
                   : ""}
-                {" "}/ 残り {memoryQueue.length} 語
+                {" "}/ {memoryRemainingLabel}
               </strong>
             </div>
 
             <div className="wordbook-memory-controls">
+              <div className="memory-source-tabs" aria-label="暗記する単語の種類を選ぶ">
+                <button
+                  type="button"
+                  onClick={() => handleMemorySourceChange("all")}
+                  className={memorySource === "all" ? "memory-source-tab active" : "memory-source-tab"}
+                >
+                  全単語
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleMemorySourceChange("review")}
+                  className={memorySource === "review" ? "memory-source-tab active" : "memory-source-tab"}
+                  disabled={reviewWordCount === 0}
+                >
+                  苦手復習
+                  {reviewWordCount > 0 ? ` ${reviewWordCount}` : ""}
+                </button>
+              </div>
+
               <div className="memory-level-tabs" aria-label="暗記する級を選ぶ">
                 <button
                   type="button"
@@ -562,36 +830,36 @@ export default function WordsPage() {
         )}
 
         {studyMode === "list" && (
-          <div className="eq-panel words-filter-panel">
-            <div className="words-search-wrap">
-              <span className="words-search-icon">🔎</span>
-              <input
-                type="text"
-                value={searchText}
-                onChange={(event) => { handleSearchChange(event.target.value); setShowSuggestions(true); }}
-                onFocus={() => setShowSuggestions(true)}
-                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                placeholder="英単語・意味・例文で検索"
-                className="wordbook-search"
-              />
-            </div>
-          </div>
-        )}
-
-        {studyMode === "list" && showSuggestions && suggestions.length > 0 && (
-          <div style={{ marginTop: "4px", background: "rgba(10, 18, 36, 0.97)", border: "1px solid rgba(45, 212, 191, 0.32)", borderRadius: "12px", padding: "4px", boxShadow: "0 8px 28px rgba(0, 0, 0, 0.48)", zIndex: 100, position: "relative" }}>
-            {suggestions.map((word) => (
-              <div
-                key={word.no}
-                onMouseDown={() => handleSuggestionSelect(word)}
-                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "8px 12px", borderRadius: "8px", cursor: "pointer" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(45, 212, 191, 0.12)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              >
-                <span style={{ fontWeight: 700, color: "#e2e8f0", fontSize: "14px", minWidth: "110px", flexShrink: 0 }}>{word.word}</span>
-                <span style={{ color: "#94a3b8", fontSize: "12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{word.meaning}</span>
+          <div className="words-search-outer">
+            <div className="eq-panel words-filter-panel">
+              <div className="words-search-wrap">
+                <span className="words-search-icon">🔎</span>
+                <input
+                  type="text"
+                  value={searchText}
+                  onChange={(event) => { handleSearchChange(event.target.value); setShowSuggestions(true); }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={handleSearchBlur}
+                  placeholder="英単語・意味・例文で検索"
+                  className="wordbook-search"
+                />
               </div>
-            ))}
+            </div>
+
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="search-suggestions-list">
+                {suggestions.map((word) => (
+                  <div
+                    key={word.no}
+                    onMouseDown={() => handleSuggestionSelect(word)}
+                    className="search-suggestion-item"
+                  >
+                    <span className="suggestion-word">{word.word}</span>
+                    <span className="suggestion-meaning">{word.meaning}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -657,14 +925,24 @@ export default function WordsPage() {
                           </span>
                         </>
                       ) : (
-                        <span>
-                          暗記進捗 {memoryCurrentNumber} / {memorySessionTotal}
+                        <>
+                          <span>
+                            クリア {clearedNos.size} / {sessionWords.length} 語
+                          </span>
+                          <span className="memory-progress-remain">
+                            残り {memoryQueue.length} 語
+                          </span>
+                        </>
+                      )}
+                      {memoryAccuracy !== null && (
+                        <span className="memory-progress-remain">
+                          正答率 {memoryAccuracy}% ・ 苦手 {sessionWrongNos.size}語
                         </span>
                       )}
                     </div>
-                    {memoryAnswered && memoryIsCorrect && (
-                      <div className="memory-meta-notices">
-                        <div className="memory-exp-notice" role="status">
+                    {memoryAnswered && memoryIsCorrect && !memoryIsReviewingHistory && (
+                      <div className="memory-meta-notices" role="status">
+                        <div className="memory-exp-notice">
                           <strong>EXP +{studyExpNotice?.gainedExp ?? 3}</strong>
                           <span>
                             {studyExpNotice?.leveledUp
@@ -672,12 +950,15 @@ export default function WordsPage() {
                               : "主人公EXP"}
                           </span>
                         </div>
-                        <div className="memory-gold-notice" role="status">
+                        <div className="memory-gold-notice">
                           <strong>🪙 +{studyGoldNotice ?? 3}</strong>
                           <span>ゴールド獲得</span>
                         </div>
                       </div>
                     )}
+                    <p className="memory-keyboard-hint">
+                      A〜D で選択 · Enter/Space で次へ · ← → で移動
+                    </p>
                   </div>
 
                   <div
@@ -753,28 +1034,46 @@ export default function WordsPage() {
                     })}
                   </div>
 
-
                   {memoryAnswered && (
-                    <div
-                      className={
-                        memoryIsCorrect
-                          ? "memory-result correct"
-                          : "memory-result wrong"
-                      }
-                    >
-                      <strong>
-                        {memoryIsCorrect
-                          ? "正解です"
-                          : "もう一度確認しましょう"}
-                      </strong>
-                      <p>
-                        {`${currentMemoryWord.word} は「${currentMemoryWord.meaning}」という意味です。${
+                    <>
+                      <div
+                        className={
                           memoryIsCorrect
-                            ? ""
-                            : " 間違えた単語は後でもう一度出ます。"
-                        }`}
-                      </p>
-                    </div>
+                            ? "memory-result correct"
+                            : "memory-result wrong"
+                        }
+                      >
+                        <strong>
+                          {memoryIsCorrect
+                            ? "正解です"
+                            : "もう一度確認しましょう"}
+                        </strong>
+                        <p>
+                          {`${currentMemoryWord.word} は「${currentMemoryWord.meaning}」という意味です。${
+                            memoryIsCorrect
+                              ? ""
+                              : " 間違えた単語は後でもう一度出ます。"
+                          }`}
+                        </p>
+                      </div>
+
+                      {memoryIsCorrect && (
+                        <div className="memory-meta-notices" role="status">
+                          <div className="memory-exp-notice">
+                            <strong>EXP +{studyExpNotice?.gainedExp ?? 3}</strong>
+                            <span>
+                              {studyExpNotice?.leveledUp
+                                ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
+                                : "主人公EXP"}
+                            </span>
+                          </div>
+                          <div className="memory-gold-notice">
+                            <strong>🪙 +{studyGoldNotice ?? 3}</strong>
+                            <span>ゴールド獲得</span>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <div className="memory-actions">
@@ -802,17 +1101,42 @@ export default function WordsPage() {
             ) : (
               <div className="eq-panel memory-complete">
                 <p>MEMORY COMPLETE</p>
-                <h2>今回の暗記が完了しました</h2>
+                <h2>
+                  {memorySource === "review" && sessionWords.length === 0
+                    ? "復習する苦手単語はありません"
+                    : "今回の暗記が完了しました"}
+                </h2>
                 <span>
-                  もう一度挑戦すると、同じ条件の単語を最初から確認できます。
+                  {memorySource === "review" && sessionWords.length === 0
+                    ? "間違えた単語はここに集まり、2回連続で正解すると復習リストから外れます。"
+                    : "もう一度挑戦すると、同じ条件の単語を最初から確認できます。"}
                 </span>
-                <button
-                  type="button"
-                  onClick={resetMemorySession}
-                  className="eq-button eq-button-primary"
-                >
-                  もう一度はじめる
-                </button>
+                <div className="memory-complete-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (memorySource === "review" && sessionWords.length === 0) {
+                        handleMemorySourceChange("all");
+                        return;
+                      }
+                      resetMemorySession();
+                    }}
+                    className="eq-button eq-button-primary"
+                  >
+                    {memorySource === "review" && sessionWords.length === 0
+                      ? "全単語で練習する"
+                      : "もう一度はじめる"}
+                  </button>
+                  {sessionWrongNos.size > 0 && memorySource !== "review" && (
+                    <button
+                      type="button"
+                      onClick={handleRetryWrong}
+                      className="eq-button eq-button-secondary"
+                    >
+                      間違えた {sessionWrongNos.size} 語を復習
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -825,7 +1149,7 @@ export default function WordsPage() {
                   <button
                     key={letter}
                     type="button"
-                    className={`dict-index-btn${activeLetter === letter ? " is-active" : ""}`}
+                    className={`dict-index-btn${currentDictLetter === letter ? " is-active" : ""}`}
                     onClick={() => setActiveLetter(letter)}
                   >
                     {letter}
@@ -839,13 +1163,10 @@ export default function WordsPage() {
             </nav>
 
             <div className="dict-sections">
-              {(() => {
-                const words = dictGroups.get(activeLetter);
-                if (!words) return null;
-                return (
-                  <section className="dict-group">
+              {displayedDictEntries.map(([letter, words]) => (
+                  <section className="dict-group" key={letter}>
                     <div className="dict-letter-head">
-                      <span>{activeLetter}</span>
+                      <span>{letter}</span>
                       <small>{words.length}語</small>
                     </div>
                     <div className="dict-words-grid">
@@ -890,8 +1211,7 @@ export default function WordsPage() {
                       })}
                     </div>
                   </section>
-                );
-              })()}
+              ))}
             </div>
           </>
         )}
@@ -925,6 +1245,37 @@ export default function WordsPage() {
         .wordbook-stage {
           display: flex;
           justify-content: center;
+        }
+
+        .eq-display-card p,
+        .eq-display-card h2,
+        .eq-display-card > span {
+          position: relative;
+          z-index: 2;
+          text-align: center;
+        }
+
+        .eq-display-card p {
+          margin: 22px 0 0;
+          color: #fde68a;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.18em;
+        }
+
+        .eq-display-card h2 {
+          margin: 8px 0 0;
+          font-size: 26px;
+          font-weight: 900;
+        }
+
+        .eq-display-card > span {
+          display: block;
+          margin: 6px auto 0;
+          max-width: 220px;
+          color: #94a3b8;
+          font-size: 13px;
+          font-weight: 900;
         }
 
         .wordbook-mode-actions {
@@ -989,14 +1340,14 @@ export default function WordsPage() {
         .wordbook-memory-label {
           color: #99f6e4;
           font-size: 11px;
-          font-weight: 1000;
+          font-weight: 800;
         }
 
         .wordbook-memory-summary strong {
           color: #fef3c7;
           font-size: 16px;
           line-height: 1.2;
-          font-weight: 1000;
+          font-weight: 900;
         }
 
         .wordbook-memory-controls {
@@ -1005,6 +1356,45 @@ export default function WordsPage() {
           justify-content: flex-end;
           gap: 8px;
           flex-wrap: wrap;
+        }
+
+        .memory-source-tabs {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          flex: 0 0 auto;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 999px;
+          padding: 3px;
+          background: rgba(2, 6, 23, 0.42);
+        }
+
+        .memory-source-tab {
+          min-height: 30px;
+          border: 0;
+          border-radius: 999px;
+          background: transparent;
+          color: #94a3b8;
+          padding: 0 11px;
+          font: inherit;
+          font-size: 11px;
+          font-weight: 1000;
+          white-space: nowrap;
+          cursor: pointer;
+          transition:
+            background 0.16s ease,
+            color 0.16s ease,
+            opacity 0.16s ease;
+        }
+
+        .memory-source-tab.active {
+          background: rgba(250, 204, 21, 0.16);
+          color: #fef3c7;
+        }
+
+        .memory-source-tab:disabled {
+          cursor: not-allowed;
+          opacity: 0.42;
         }
 
         .memory-level-tabs {
@@ -1150,6 +1540,25 @@ export default function WordsPage() {
           border: 1px solid rgba(45, 212, 191, 0.32);
           border-radius: 12px;
           box-shadow: 0 8px 28px rgba(0, 0, 0, 0.48);
+        }
+
+        .words-search-outer {
+          position: relative;
+        }
+
+        .search-suggestions-list {
+          position: absolute;
+          top: calc(100% + 4px);
+          left: 0;
+          right: 0;
+          z-index: 200;
+          padding: 4px;
+          background: rgba(10, 18, 36, 0.97);
+          border: 1px solid rgba(45, 212, 191, 0.32);
+          border-radius: 12px;
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.48);
+          max-height: 280px;
+          overflow-y: auto;
         }
 
         .search-suggestion-item {
@@ -1409,6 +1818,7 @@ export default function WordsPage() {
         }
 
         .memory-progress-left {
+          min-width: 0;
           display: flex;
           align-items: center;
           gap: 8px;
@@ -1426,8 +1836,16 @@ export default function WordsPage() {
         .memory-meta-notices {
           display: flex;
           align-items: center;
+          justify-content: flex-end;
           gap: 6px;
           flex-shrink: 0;
+          flex-wrap: wrap;
+          margin: 0 0 0 auto;
+        }
+
+        .memory-meta-notices + .memory-keyboard-hint,
+        .memory-result + .memory-meta-notices {
+          display: none;
         }
 
         .memory-progress-remain {
@@ -1539,7 +1957,7 @@ export default function WordsPage() {
           background: rgba(34, 211, 238, 0.1);
           color: #a5f3fc;
           font-size: 10px;
-          font-weight: 1000;
+          font-weight: 800;
           line-height: 1.25;
         }
 
@@ -1548,9 +1966,9 @@ export default function WordsPage() {
           margin: 8px 0 0;
           color: #5eead4;
           font-size: 10px;
-          font-weight: 1000;
+          font-weight: 800;
           text-align: center;
-          letter-spacing: 0.14em;
+          letter-spacing: 0.1em;
           opacity: 0.7;
         }
 
@@ -1796,6 +2214,28 @@ export default function WordsPage() {
           font-weight: 800;
         }
 
+        .memory-complete-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          justify-content: center;
+        }
+
+        .memory-keyboard-hint {
+          flex: 0 0 auto;
+          margin: 0 0 0 auto;
+          text-align: right;
+          color: #64748b;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.03em;
+          white-space: nowrap;
+        }
+
+        @media (hover: none) {
+          .memory-keyboard-hint { display: none; }
+        }
+
         .dict-index-bar {
           position: sticky;
           top: 0;
@@ -1861,6 +2301,8 @@ export default function WordsPage() {
 
         .dict-group {
           scroll-margin-top: 72px;
+          content-visibility: auto;
+          contain-intrinsic-size: 520px;
         }
 
         .dict-letter-head {
@@ -1893,6 +2335,8 @@ export default function WordsPage() {
 
         .words-card {
           min-width: 0;
+          content-visibility: auto;
+          contain-intrinsic-size: 250px;
           border: 1px solid rgba(255, 255, 255, 0.1);
           border-radius: 24px;
           padding: 18px;
@@ -2064,6 +2508,25 @@ export default function WordsPage() {
           to {
             transform: translateY(0) scale(1);
             opacity: 1;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .memory-card-glow,
+          .memory-result,
+          .memory-complete {
+            animation: none !important;
+          }
+
+          .memory-choice,
+          .words-card,
+          .dict-index-btn,
+          .memory-level-tab,
+          .memory-range-tab,
+          .wordbook-memory-back-button,
+          .memory-actions button,
+          .memory-progress-track div {
+            transition: none !important;
           }
         }
 
@@ -2241,6 +2704,12 @@ export default function WordsPage() {
           .memory-progress-row {
             align-items: flex-start;
             flex-direction: column;
+          }
+
+          .memory-keyboard-hint {
+            margin-left: 0;
+            text-align: left;
+            white-space: normal;
           }
 
           .memory-progress-row button {

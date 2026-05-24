@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   addGold,
@@ -180,6 +180,33 @@ export default function WrittenPage() {
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
   };
 
+  const writtenHandlersRef = useRef({ handleAnswer, goToQuestion, currentIndex, hasAnswered, questionsLength: questions.length });
+
+  useEffect(() => {
+    writtenHandlersRef.current = { handleAnswer, goToQuestion, currentIndex, hasAnswered, questionsLength: questions.length };
+  });
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === "INPUT") return;
+      const { handleAnswer, goToQuestion, currentIndex, hasAnswered, questionsLength } = writtenHandlersRef.current;
+      const keyMap: Record<string, number> = { a: 0, b: 1, c: 2, d: 3, "1": 0, "2": 1, "3": 2, "4": 3 };
+      const choiceIndex = keyMap[e.key.toLowerCase()];
+      if (choiceIndex !== undefined && !hasAnswered) {
+        handleAnswer(choiceIndex);
+      } else if ((e.key === "Enter" || e.key === " ") && hasAnswered) {
+        e.preventDefault();
+        goToQuestion(currentIndex + 1);
+      } else if (e.key === "ArrowLeft") {
+        goToQuestion(currentIndex - 1);
+      } else if (e.key === "ArrowRight" && currentIndex < questionsLength - 1) {
+        goToQuestion(currentIndex + 1);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
   if (!currentQuestion) {
     return (
       <main className="written-page">
@@ -264,6 +291,7 @@ export default function WrittenPage() {
                 <span>{categoryLabels[currentQuestion.category]}</span>
                 <span>{currentIndex + 1} / {questions.length}</span>
               </div>
+              <div className="written-meta-right">
               {hasAnswered && isCorrect && (
                 <div className="written-meta-notices">
                   <div className="written-exp-notice" role="status">
@@ -276,6 +304,8 @@ export default function WrittenPage() {
                   </div>
                 </div>
               )}
+                <p className="written-keyboard-hint">A〜D で選択 · Enter/Space で次へ · ← → で移動</p>
+              </div>
             </div>
 
             <div className="written-question-text">
@@ -413,15 +443,15 @@ export default function WrittenPage() {
           margin: 0;
           color: #5eead4;
           font-size: 11px;
-          font-weight: 1000;
-          letter-spacing: 0.1em;
+          font-weight: 800;
+          letter-spacing: 0.08em;
         }
 
         .written-header h1 {
           margin: 6px 0 0;
           font-size: clamp(22px, 3vw, 32px);
           line-height: 1.14;
-          font-weight: 1000;
+          font-weight: 900;
         }
 
         .written-progress-card {
@@ -551,7 +581,7 @@ export default function WrittenPage() {
           background: rgba(255, 255, 255, 0.055);
           color: #cbd5e1;
           font-size: 11px;
-          font-weight: 1000;
+          font-weight: 800;
           cursor: pointer;
           transition:
             border-color 0.14s ease,
@@ -609,6 +639,15 @@ export default function WrittenPage() {
           gap: 7px;
         }
 
+        .written-meta-right {
+          min-width: 0;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          gap: 8px;
+          margin-left: auto;
+        }
+
         .written-meta-left span {
           min-height: 25px;
           display: inline-flex;
@@ -635,6 +674,10 @@ export default function WrittenPage() {
           flex-shrink: 0;
         }
 
+        .written-meta-notices + .written-keyboard-hint {
+          display: none;
+        }
+
         .written-question-text {
           min-height: 96px;
           display: flex;
@@ -648,7 +691,7 @@ export default function WrittenPage() {
           text-align: center;
           font-size: clamp(20px, 2.7vw, 30px);
           line-height: 1.3;
-          font-weight: 1000;
+          font-weight: 900;
           overflow-wrap: anywhere;
         }
 
@@ -690,6 +733,13 @@ export default function WrittenPage() {
           cursor: default;
         }
 
+        .written-choice:disabled:not(.correct):not(.wrong) {
+          opacity: 0.45;
+          border-color: rgba(255, 255, 255, 0.06);
+          background: rgba(255, 255, 255, 0.03);
+          color: #475569;
+        }
+
         .written-choice span {
           width: 32px;
           height: 32px;
@@ -700,7 +750,7 @@ export default function WrittenPage() {
           background: rgba(255, 255, 255, 0.1);
           color: #fef3c7;
           font-size: 13px;
-          font-weight: 1000;
+          font-weight: 900;
           flex-shrink: 0;
         }
 
@@ -814,7 +864,7 @@ export default function WrittenPage() {
           display: block;
           color: #fef3c7;
           font-size: 14px;
-          font-weight: 1000;
+          font-weight: 900;
         }
 
         .written-result p {
@@ -832,6 +882,21 @@ export default function WrittenPage() {
           font-size: 12px;
           line-height: 1.45;
           font-weight: 800;
+        }
+
+        .written-keyboard-hint {
+          margin: 0;
+          flex-shrink: 0;
+          text-align: right;
+          color: #64748b;
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.03em;
+          white-space: nowrap;
+        }
+
+        @media (hover: none) {
+          .written-keyboard-hint { display: none; }
         }
 
         .written-actions {

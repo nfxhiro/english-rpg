@@ -808,6 +808,9 @@ export default function Home() {
           display: flex;
           align-items: center;
           justify-content: center;
+          background: none;
+          border-radius: 0;
+          overflow: visible;
           opacity: 0.96;
           filter:
             drop-shadow(0 14px 18px rgba(0, 0, 0, 0.42))
