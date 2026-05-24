@@ -1116,8 +1116,15 @@ export default function WordsPage() {
                 </article>
               </div>
             ) : (
-              <div className="eq-panel memory-complete">
-                <p>MEMORY COMPLETE</p>
+              <div className={`eq-panel memory-complete${memorySource === "review" && sessionWords.length === 0 ? " memory-complete-clear" : " memory-complete-done"}`}>
+                <div className="memory-complete-bg" aria-hidden="true" />
+                <div className="memory-complete-stars" aria-hidden="true">
+                  <span /><span /><span /><span /><span />
+                </div>
+                <div className="memory-complete-icon" aria-hidden="true">
+                  {memorySource === "review" && sessionWords.length === 0 ? "🎯" : "✨"}
+                </div>
+                <p className="memory-complete-kicker">MEMORY COMPLETE</p>
                 <h2>
                   {memorySource === "review" && sessionWords.length === 0
                     ? "復習する苦手単語はありません"
@@ -2248,36 +2255,150 @@ export default function WordsPage() {
         }
 
         .memory-complete {
+          position: relative;
+          overflow: hidden;
           width: min(100%, 720px);
-          min-height: 360px;
+          min-height: 380px;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-direction: column;
           text-align: center;
+          padding: 52px 36px 40px;
+          gap: 0;
         }
 
-        .memory-complete p {
-          margin: 0;
-          color: #67e8f9;
-          font-size: 12px;
+        .memory-complete-done {
+          border-color: rgba(250, 204, 21, 0.38);
+          background:
+            radial-gradient(ellipse at 50% 0%, rgba(250, 204, 21, 0.16), transparent 52%),
+            radial-gradient(ellipse at 90% 90%, rgba(168, 85, 247, 0.12), transparent 40%),
+            linear-gradient(135deg, rgba(24, 31, 68, 0.94), rgba(8, 13, 32, 0.98));
+          box-shadow:
+            0 0 60px rgba(250, 204, 21, 0.1),
+            0 24px 70px rgba(0, 0, 0, 0.3);
+        }
+
+        .memory-complete-clear {
+          border-color: rgba(34, 211, 238, 0.42);
+          background:
+            radial-gradient(ellipse at 50% 0%, rgba(34, 211, 238, 0.18), transparent 52%),
+            radial-gradient(ellipse at 10% 90%, rgba(52, 211, 153, 0.1), transparent 40%),
+            linear-gradient(135deg, rgba(4, 22, 44, 0.96), rgba(2, 10, 26, 0.98));
+          box-shadow:
+            0 0 60px rgba(34, 211, 238, 0.1),
+            0 24px 70px rgba(0, 0, 0, 0.3);
+        }
+
+        .memory-complete-bg {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          opacity: 0.07;
+          background:
+            linear-gradient(32deg, transparent 0 38%, rgba(255, 255, 255, 0.6) 38.2% 38.6%, transparent 39% 100%),
+            radial-gradient(circle at 18% 78%, transparent 0 54px, rgba(255, 255, 255, 0.5) 55px 56px, transparent 57px),
+            radial-gradient(circle at 82% 22%, transparent 0 42px, rgba(255, 255, 255, 0.5) 43px 44px, transparent 45px);
+        }
+
+        .memory-complete-stars {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+
+        .memory-complete-stars span {
+          position: absolute;
+          width: 4px;
+          height: 4px;
+          border-radius: 999px;
+          animation: mc-spark 3s ease-in-out infinite alternate;
+        }
+
+        .memory-complete-done .memory-complete-stars span {
+          background: #fef3c7;
+          box-shadow: 0 0 8px rgba(250, 204, 21, 0.8);
+        }
+
+        .memory-complete-clear .memory-complete-stars span {
+          background: #cffafe;
+          box-shadow: 0 0 8px rgba(34, 211, 238, 0.8);
+        }
+
+        .memory-complete-stars span:nth-child(1) { left: 12%; top: 20%; animation-delay: 0s; }
+        .memory-complete-stars span:nth-child(2) { left: 36%; top: 10%; animation-delay: 0.7s; }
+        .memory-complete-stars span:nth-child(3) { right: 20%; top: 18%; animation-delay: 0.3s; }
+        .memory-complete-stars span:nth-child(4) { right: 12%; bottom: 30%; animation-delay: 1.1s; }
+        .memory-complete-stars span:nth-child(5) { left: 18%; bottom: 22%; animation-delay: 0.5s; }
+
+        @keyframes mc-spark {
+          from { opacity: 0.2; transform: scale(0.8); }
+          to   { opacity: 1;   transform: scale(1.3); }
+        }
+
+        .memory-complete-icon {
+          position: relative;
+          z-index: 1;
+          font-size: 56px;
+          line-height: 1;
+          filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.4));
+          animation: mc-icon-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes mc-icon-in {
+          from { opacity: 0; transform: scale(0.5) translateY(12px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .memory-complete-kicker {
+          position: relative;
+          z-index: 1;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin: 16px 0 0;
+          padding: 6px 14px;
+          border-radius: 999px;
+          font-size: 11px;
           font-weight: 1000;
-          letter-spacing: 0.16em;
+          letter-spacing: 0.2em;
+          line-height: 1;
+        }
+
+        .memory-complete-done .memory-complete-kicker {
+          border: 1px solid rgba(250, 204, 21, 0.5);
+          background: rgba(250, 204, 21, 0.12);
+          color: #fde68a;
+          animation: mc-badge-pulse 2s ease-in-out infinite alternate;
+        }
+
+        .memory-complete-clear .memory-complete-kicker {
+          border: 1px solid rgba(34, 211, 238, 0.5);
+          background: rgba(34, 211, 238, 0.1);
+          color: #67e8f9;
+        }
+
+        @keyframes mc-badge-pulse {
+          from { box-shadow: 0 0 0 rgba(250, 204, 21, 0); }
+          to   { box-shadow: 0 0 14px rgba(250, 204, 21, 0.3); }
         }
 
         .memory-complete h2 {
-          margin: 12px 0 0;
+          position: relative;
+          z-index: 1;
+          margin: 14px 0 0;
           color: #f8fafc;
-          font-size: 30px;
-          line-height: 1.25;
+          font-size: clamp(22px, 4vw, 32px);
+          line-height: 1.2;
           font-weight: 1000;
-          letter-spacing: 0;
         }
 
         .memory-complete span {
-          max-width: 480px;
+          position: relative;
+          z-index: 1;
+          max-width: 460px;
           display: block;
-          margin: 10px 0 22px;
+          margin: 12px 0 28px;
           color: #94a3b8;
           font-size: 14px;
           line-height: 1.8;
@@ -2285,6 +2406,8 @@ export default function WordsPage() {
         }
 
         .memory-complete-actions {
+          position: relative;
+          z-index: 1;
           display: flex;
           flex-wrap: wrap;
           gap: 10px;
@@ -2584,7 +2707,10 @@ export default function WordsPage() {
         @media (prefers-reduced-motion: reduce) {
           .memory-card-glow,
           .memory-result,
-          .memory-complete {
+          .memory-complete,
+          .memory-complete-icon,
+          .memory-complete-kicker,
+          .memory-complete-stars span {
             animation: none !important;
           }
 
