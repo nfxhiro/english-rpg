@@ -317,7 +317,13 @@ export default function Home() {
             <span>設定・データ管理</span>
           </Link>
         </div>
+
       </section>
+
+      <footer className="site-footer">
+        <p className="site-footer-title">EIKEN QUEST FRONTIER</p>
+        <p className="site-footer-copy">© 2026 New Frontier Inc. All rights reserved.</p>
+      </footer>
 
       <style>{`
         :root {
@@ -1192,6 +1198,27 @@ export default function Home() {
           .secondary-action {
             font-size: 16px;
           }
+        }
+
+        .site-footer {
+          text-align: center;
+          padding: 20px 24px calc(20px + env(safe-area-inset-bottom));
+          border-top: 1px solid rgba(255, 255, 255, 0.07);
+          margin-top: 8px;
+        }
+
+        .site-footer-title {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          color: rgba(255, 255, 255, 0.35);
+          margin: 0 0 6px;
+        }
+
+        .site-footer-copy {
+          margin: 0;
+          font-size: 10px;
+          color: rgba(255, 255, 255, 0.2);
         }
       `}</style>
     </main>
