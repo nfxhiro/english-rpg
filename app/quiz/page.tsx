@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -885,31 +886,27 @@ export default function QuizPage() {
   const [gameOverReason, setGameOverReason] = useState<GameOverReason>(null);
   const prevGameStatusRef = useRef<GameStatus>("playing");
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      try {
-        setQuestProgress(loadQuestProgress());
-        setHeroLevel(loadHeroStatus().level);
-        const loadedShopState = loadShopState();
-        const selectedMonsterCard = getSelectedMonsterCard(loadedShopState);
-        const loadedEarnedCards = loadEarnedCards();
-        const selectedEarnedCard = selectedMonsterCard
-          ? loadedEarnedCards.find((card) => card.cardId === selectedMonsterCard.id) ?? null
-          : null;
-        setBuddyCard(selectedMonsterCard);
-        setBuddyEarnedCard(selectedEarnedCard);
-      } catch (error) {
-        console.error("クエストモードの初期化に失敗しました:", error);
-        setQuestProgress({});
-        setHeroLevel(1);
-        setBuddyCard(null);
-        setBuddyEarnedCard(null);
-      } finally {
-        setIsReady(true);
-      }
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+  useLayoutEffect(() => {
+    try {
+      setQuestProgress(loadQuestProgress());
+      setHeroLevel(loadHeroStatus().level);
+      const loadedShopState = loadShopState();
+      const selectedMonsterCard = getSelectedMonsterCard(loadedShopState);
+      const loadedEarnedCards = loadEarnedCards();
+      const selectedEarnedCard = selectedMonsterCard
+        ? loadedEarnedCards.find((card) => card.cardId === selectedMonsterCard.id) ?? null
+        : null;
+      setBuddyCard(selectedMonsterCard);
+      setBuddyEarnedCard(selectedEarnedCard);
+    } catch (error) {
+      console.error("クエストモードの初期化に失敗しました:", error);
+      setQuestProgress({});
+      setHeroLevel(1);
+      setBuddyCard(null);
+      setBuddyEarnedCard(null);
+    } finally {
+      setIsReady(true);
+    }
   }, []);
 
   // Battle BGM loop

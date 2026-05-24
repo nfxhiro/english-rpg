@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import AppLoading from "../../components/AppLoading";
@@ -108,16 +108,12 @@ export default function CardDetailPage() {
     return getMonsterCardById(cardIdFromUrl);
   }, [cardIdFromUrl]);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setEarnedCards(loadEarnedCards());
-      setShopState(loadShopState());
-      setHeroLevel(loadHeroStatus().level);
-      setQuestProgress(loadQuestProgressSnapshot());
-      setIsReady(true);
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+  useLayoutEffect(() => {
+    setEarnedCards(loadEarnedCards());
+    setShopState(loadShopState());
+    setHeroLevel(loadHeroStatus().level);
+    setQuestProgress(loadQuestProgressSnapshot());
+    setIsReady(true);
   }, []);
 
   if (!isReady) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -206,15 +206,11 @@ export default function PackPage() {
   const [godPackPhase, setGodPackPhase] = useState(0);
   const [cheatToast, setCheatToast] = useState(false);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setPackTickets(loadPackTickets());
-      setGold(loadGold());
-      setEarnedCards(loadEarnedCards());
-      setIsReady(true);
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+  useLayoutEffect(() => {
+    setPackTickets(loadPackTickets());
+    setGold(loadGold());
+    setEarnedCards(loadEarnedCards());
+    setIsReady(true);
   }, []);
 
   useEffect(() => {

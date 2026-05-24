@@ -2,7 +2,7 @@
 
 import {
   useDeferredValue,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
 } from "react";
@@ -103,13 +103,9 @@ export default function CardsPage() {
     deferredOwnedFilter !== ownedFilter ||
     deferredAttributeFilter !== attributeFilter;
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setEarnedCards(loadEarnedCards());
-      setIsReady(true);
-    }, 0);
-
-    return () => window.clearTimeout(timer);
+  useLayoutEffect(() => {
+    setEarnedCards(loadEarnedCards());
+    setIsReady(true);
   }, []);
 
   const earnedCardMap = useMemo(() => {
