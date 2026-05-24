@@ -2396,13 +2396,14 @@ export default function WordsPage() {
         .memory-complete span {
           position: relative;
           z-index: 1;
-          max-width: 460px;
+          max-width: 380px;
           display: block;
           margin: 12px 0 28px;
           color: #94a3b8;
-          font-size: 14px;
-          line-height: 1.8;
+          font-size: 13px;
+          line-height: 1.85;
           font-weight: 800;
+          text-wrap: balance;
         }
 
         .memory-complete-actions {
@@ -2412,6 +2413,13 @@ export default function WordsPage() {
           flex-wrap: wrap;
           gap: 10px;
           justify-content: center;
+        }
+
+        .memory-complete-actions .eq-button {
+          min-height: 50px;
+          font-size: 15px;
+          padding: 0 28px;
+          border-radius: 18px;
         }
 
         .memory-keyboard-hint {
