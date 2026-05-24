@@ -2234,27 +2234,67 @@
 }
 
 .questModeMini {
+  border-color: rgba(34, 197, 94, 0.48);
   background:
-    radial-gradient(circle at 100% 0%, rgba(34, 197, 94, 0.16), transparent 38%),
-    linear-gradient(135deg, rgba(6, 78, 59, 0.4), rgba(15, 23, 42, 0.9));
+    radial-gradient(circle at 92% 8%, rgba(52, 211, 153, 0.32), transparent 44%),
+    radial-gradient(circle at 8% 88%, rgba(16, 185, 129, 0.18), transparent 38%),
+    linear-gradient(135deg, rgba(6, 78, 59, 0.72), rgba(4, 20, 14, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(52, 211, 153, 0.14),
+    inset 3px 0 0 rgba(52, 211, 153, 0.5);
+}
+
+.questModeMini .questCardIcon {
+  border-color: rgba(52, 211, 153, 0.5);
+  background: rgba(52, 211, 153, 0.14);
 }
 
 .questModeNormal {
+  border-color: rgba(34, 211, 238, 0.48);
   background:
-    radial-gradient(circle at 100% 0%, rgba(34, 211, 238, 0.18), transparent 38%),
-    linear-gradient(135deg, rgba(14, 116, 144, 0.36), rgba(15, 23, 42, 0.9));
+    radial-gradient(circle at 92% 8%, rgba(34, 211, 238, 0.32), transparent 44%),
+    radial-gradient(circle at 8% 88%, rgba(14, 165, 233, 0.18), transparent 38%),
+    linear-gradient(135deg, rgba(14, 116, 144, 0.68), rgba(2, 10, 26, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(34, 211, 238, 0.14),
+    inset 3px 0 0 rgba(34, 211, 238, 0.5);
+}
+
+.questModeNormal .questCardIcon {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.14);
 }
 
 .questModeBoss {
+  border-color: rgba(248, 113, 113, 0.52);
   background:
-    radial-gradient(circle at 100% 0%, rgba(248, 113, 113, 0.2), transparent 38%),
-    linear-gradient(135deg, rgba(127, 29, 29, 0.42), rgba(15, 23, 42, 0.9));
+    radial-gradient(circle at 92% 8%, rgba(248, 113, 113, 0.36), transparent 44%),
+    radial-gradient(circle at 8% 88%, rgba(239, 68, 68, 0.2), transparent 38%),
+    linear-gradient(135deg, rgba(127, 29, 29, 0.76), rgba(20, 4, 4, 0.97));
+  box-shadow:
+    inset 0 1px 0 rgba(248, 113, 113, 0.14),
+    inset 3px 0 0 rgba(248, 113, 113, 0.56);
+}
+
+.questModeBoss .questCardIcon {
+  border-color: rgba(248, 113, 113, 0.52);
+  background: rgba(248, 113, 113, 0.16);
 }
 
 .questModeComplete {
+  border-color: rgba(250, 204, 21, 0.56);
   background:
-    radial-gradient(circle at 100% 0%, rgba(250, 204, 21, 0.18), transparent 38%),
-    linear-gradient(135deg, rgba(88, 28, 135, 0.42), rgba(15, 23, 42, 0.9));
+    radial-gradient(circle at 92% 8%, rgba(250, 204, 21, 0.3), transparent 44%),
+    radial-gradient(circle at 8% 88%, rgba(168, 85, 247, 0.24), transparent 38%),
+    linear-gradient(135deg, rgba(88, 28, 135, 0.72), rgba(12, 4, 24, 0.97));
+  box-shadow:
+    inset 0 1px 0 rgba(250, 204, 21, 0.18),
+    inset 3px 0 0 rgba(250, 204, 21, 0.6);
+}
+
+.questModeComplete .questCardIcon {
+  border-color: rgba(250, 204, 21, 0.56);
+  background: rgba(250, 204, 21, 0.16);
 }
 
 .questModeCleared {
