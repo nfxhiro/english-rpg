@@ -82,7 +82,6 @@ function HomeIcon({
       className={className}
       sizes="96px"
       aria-hidden="true"
-      unoptimized
     />
   );
 }
@@ -216,8 +215,7 @@ export default function Home() {
                 height={1378}
                 className="home-showcase-image"
                 sizes="(max-width: 1040px) 216px, 288px"
-                preload
-                unoptimized
+                priority
               />
             </div>
           </div>

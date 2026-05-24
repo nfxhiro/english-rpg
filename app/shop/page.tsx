@@ -164,7 +164,6 @@ export default function ShopPage() {
                     className="strip-icon-image"
                     sizes="36px"
                     aria-hidden="true"
-                    unoptimized
                   />
                 </span>
                 <span className="strip-label">{label}</span>
@@ -217,7 +216,6 @@ export default function ShopPage() {
                   className="equipment-category-image"
                   sizes="(max-width: 580px) 128px, 160px"
                   aria-hidden="true"
-                  unoptimized
                 />
               </span>
               <span className="equipment-category-label">{label}</span>

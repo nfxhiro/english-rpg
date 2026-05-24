@@ -724,7 +724,6 @@ export default function PackPage() {
                           sizes="130px"
                           style={{ width: "100%", height: "100%", objectFit: "contain" }}
                           aria-hidden="true"
-                          unoptimized
                         />
                       </div>
                       <p>10 PACK SUMMON</p>
@@ -838,7 +837,6 @@ export default function PackPage() {
                           sizes="130px"
                           style={{ width: "100%", height: "100%", objectFit: "contain" }}
                           aria-hidden="true"
-                          unoptimized
                         />
                     </div>
                     <p>{isOpening ? "SUMMONING" : "MAGIC PACK"}</p>
@@ -1004,7 +1002,6 @@ export default function PackPage() {
                     className="pack-empty-image"
                     sizes="52px"
                     aria-hidden="true"
-                    unoptimized
                   />
                 </div>
                 <h3>まだパックを開封していません</h3>

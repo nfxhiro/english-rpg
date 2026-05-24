@@ -742,7 +742,6 @@ export default function WordsPage() {
                     className="eq-display-image"
                     sizes="156px"
                     aria-hidden="true"
-                    unoptimized
                   />
                 </div>
                 <div className="wordbook-card-runes" aria-hidden="true">

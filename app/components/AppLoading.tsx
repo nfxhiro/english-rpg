@@ -35,7 +35,6 @@ export default function AppLoading({
                 className="loading-icon-image"
                 sizes="96px"
                 aria-hidden="true"
-                unoptimized
               />
             ) : (
               icon

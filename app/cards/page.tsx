@@ -232,7 +232,6 @@ export default function CardsPage() {
                   className="eq-display-image"
                   sizes="150px"
                   aria-hidden="true"
-                  unoptimized
                 />
               </div>
               <p>MONSTER CARDS</p>
