@@ -121,7 +121,7 @@ export default function ShopPage() {
 
       <section className="eq-shell">
         <div className="eq-topbar">
-          <Link href="/" className="eq-back-link">← ホームへ戻る</Link>
+          <Link href="/" className="eq-back-link">ホームへ戻る</Link>
         </div>
 
         <div className="shop-header">
@@ -146,7 +146,7 @@ export default function ShopPage() {
 
         {/* Equipped slots strip */}
         <div className="shop-equipped-strip">
-          {CATEGORY_TABS.map(({ id, label, icon }) => {
+          {CATEGORY_TABS.map(({ id, label, image }) => {
             const equippedId = equipState.equippedItems[id];
             const equippedItem = equippedId ? EQUIP_ITEMS.find((i) => i.id === equippedId) : null;
             return (
@@ -155,7 +155,18 @@ export default function ShopPage() {
                 className={`strip-slot${equippedItem ? " is-equipped" : ""}${activeTab === id ? " is-active" : ""}`}
                 onClick={() => setActiveTab(id)}
               >
-                <span className="strip-icon">{equippedItem ? equippedItem.icon : icon}</span>
+                <span className="strip-icon-frame">
+                  <Image
+                    src={image}
+                    alt=""
+                    width={1254}
+                    height={1254}
+                    className="strip-icon-image"
+                    sizes="36px"
+                    aria-hidden="true"
+                    unoptimized
+                  />
+                </span>
                 <span className="strip-label">{label}</span>
                 <strong className="strip-name">{equippedItem ? equippedItem.name : "未装備"}</strong>
               </button>
@@ -170,7 +181,7 @@ export default function ShopPage() {
               <p className="eq-panel-kicker">TOTAL EFFECTS</p>
               <h2 className="eq-panel-title">装備効果合計</h2>
             </div>
-            <span className="eq-panel-icon">📊</span>
+            <span className="eq-panel-icon">✨</span>
           </div>
           {hasEffects ? (
             <div className="effects-grid">
@@ -343,11 +354,12 @@ export default function ShopPage() {
         }
 
         .shop-header {
-          display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 24px;
-          align-items: start;
-          margin-bottom: 24px;
+          display: grid !important;
+          grid-template-columns: minmax(0, 1fr) minmax(176px, auto) !important;
+          gap: 18px !important;
+          align-items: center !important;
+          margin-bottom: 16px !important;
+          padding: 24px !important;
         }
 
         .shop-header-text {
@@ -356,10 +368,10 @@ export default function ShopPage() {
 
         .shop-gold-box {
           flex-shrink: 0;
-          min-width: 190px;
+          min-width: 176px !important;
           border: 1px solid rgba(250,204,21,0.42);
-          border-radius: 22px;
-          padding: 18px 22px;
+          border-radius: 18px;
+          padding: 14px 18px;
           background:
             radial-gradient(circle at 50% 0%, rgba(250,204,21,0.16), transparent 50%),
             linear-gradient(145deg, rgba(14,21,52,0.92), rgba(9,11,28,0.98));
@@ -377,14 +389,14 @@ export default function ShopPage() {
           display: block;
           margin-top: 6px;
           color: #fde047;
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 900;
         }
 
         .shop-earn-link {
           display: inline-block;
-          margin-top: 10px;
-          padding: 7px 14px;
+          margin-top: 8px;
+          padding: 6px 12px;
           border-radius: 999px;
           border: 1px solid rgba(250,204,21,0.28);
           background: rgba(250,204,21,0.08);
@@ -403,14 +415,14 @@ export default function ShopPage() {
         .shop-equipped-strip {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 10px;
-          margin-bottom: 20px;
+          gap: 8px;
+          margin-bottom: 14px;
         }
 
         .strip-slot {
           border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 18px;
-          padding: 13px 10px;
+          border-radius: 16px;
+          padding: 10px 9px;
           background: rgba(255,255,255,0.04);
           display: flex;
           flex-direction: column;
@@ -441,9 +453,22 @@ export default function ShopPage() {
           border-color: rgba(34,197,94,0.65);
         }
 
-        .strip-icon {
-          font-size: 22px;
-          line-height: 1;
+        .strip-icon-frame {
+          width: 38px;
+          height: 38px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          filter:
+            drop-shadow(0 8px 10px rgba(0, 0, 0, 0.34))
+            drop-shadow(0 0 10px rgba(34, 211, 238, 0.12));
+        }
+
+        .strip-icon-image {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .strip-label {
@@ -469,14 +494,15 @@ export default function ShopPage() {
 
         /* Effects panel */
         .shop-effects-panel {
-          margin-bottom: 24px;
+          margin-bottom: 16px;
+          padding: 18px;
         }
 
         .effects-grid {
           display: flex;
           flex-wrap: wrap;
-          gap: 10px;
-          margin-top: 8px;
+          gap: 8px;
+          margin-top: 6px;
         }
 
         .effect-chip {
@@ -484,8 +510,8 @@ export default function ShopPage() {
           flex-direction: column;
           align-items: center;
           gap: 3px;
-          padding: 10px 18px;
-          border-radius: 16px;
+          padding: 8px 14px;
+          border-radius: 14px;
           border: 1px solid rgba(34,211,238,0.25);
           background: rgba(34,211,238,0.07);
           min-width: 88px;
@@ -519,26 +545,26 @@ export default function ShopPage() {
         .equipment-category-grid {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 12px;
-          margin-bottom: 24px;
+          gap: 10px;
+          margin-bottom: 16px;
         }
 
         .equipment-category-card {
           position: relative;
-          min-height: 148px;
+          min-height: 126px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 9px;
+          gap: 7px;
           overflow: hidden;
-          border-radius: 22px;
+          border-radius: 18px;
           border: 1px solid rgba(255,255,255,0.12);
           background:
             radial-gradient(circle at 50% 12%, rgba(34,211,238,0.1), transparent 38%),
             linear-gradient(145deg, rgba(15,23,42,0.92), rgba(7,12,24,0.97));
           color: #e5e7eb;
-          padding: 12px 12px 14px;
+          padding: 10px;
           font-weight: 900;
           cursor: pointer;
           font-family: inherit;
@@ -602,7 +628,7 @@ export default function ShopPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 18px;
+          border-radius: 16px;
           background:
             radial-gradient(circle at 50% 52%, rgba(255,255,255,0.08), transparent 58%);
         }
@@ -627,7 +653,7 @@ export default function ShopPage() {
           position: relative;
           z-index: 1;
           color: inherit;
-          font-size: 16px;
+          font-size: 15px;
           font-weight: 900;
           line-height: 1.15;
           text-align: center;
@@ -639,14 +665,14 @@ export default function ShopPage() {
         .shop-grid {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 18px;
-          margin-bottom: 32px;
+          gap: 14px;
+          margin-bottom: 18px;
         }
 
         .shop-card {
           position: relative;
           border: 1px solid rgba(250,204,21,0.18);
-          border-radius: 26px;
+          border-radius: 20px;
           overflow: hidden;
           background:
             radial-gradient(circle at 92% 0%, rgba(250,204,21,0.08), transparent 35%),
@@ -675,8 +701,8 @@ export default function ShopPage() {
 
         .shop-equipped-badge {
           position: absolute;
-          top: 12px;
-          right: 12px;
+          top: 10px;
+          right: 10px;
           z-index: 2;
           padding: 4px 10px;
           border-radius: 999px;
@@ -689,7 +715,7 @@ export default function ShopPage() {
 
         .shop-card-preview {
           position: relative;
-          height: 110px;
+          height: 88px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -699,7 +725,7 @@ export default function ShopPage() {
         }
 
         .shop-card-emoji {
-          font-size: 56px;
+          font-size: 46px;
           filter: drop-shadow(0 6px 14px rgba(0,0,0,0.45));
           position: relative;
           z-index: 1;
@@ -707,23 +733,23 @@ export default function ShopPage() {
         }
 
         .shop-card-body {
-          padding: 16px;
+          padding: 13px;
         }
 
         .shop-card-name {
           margin: 0;
-          font-size: 16px;
+          font-size: 15px;
           font-weight: 900;
           color: white;
           line-height: 1.3;
         }
 
         .shop-card-desc {
-          margin: 6px 0 0;
+          margin: 5px 0 0;
           color: #94a3b8;
           font-size: 12px;
           font-weight: 800;
-          line-height: 1.55;
+          line-height: 1.45;
         }
 
         .shop-card-rec {
@@ -737,19 +763,19 @@ export default function ShopPage() {
           display: flex;
           flex-wrap: wrap;
           gap: 6px;
-          margin-top: 10px;
+          margin-top: 8px;
         }
 
         .shop-stat-row span {
           display: inline-flex;
           align-items: center;
-          min-height: 24px;
+          min-height: 22px;
           border: 1px solid rgba(34,211,238,0.24);
           border-radius: 999px;
           background: rgba(34,211,238,0.08);
           padding: 4px 8px;
           color: #bae6fd;
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 900;
           line-height: 1;
         }
@@ -759,7 +785,7 @@ export default function ShopPage() {
           align-items: center;
           justify-content: space-between;
           gap: 10px;
-          margin-top: 14px;
+          margin-top: 12px;
         }
 
         .shop-card-price {
@@ -826,19 +852,20 @@ export default function ShopPage() {
 
         /* Guide panel */
         .shop-guide-panel {
-          margin-bottom: 48px;
+          margin-bottom: 30px;
+          padding: 18px;
         }
 
         .shop-guide-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 12px;
+          gap: 10px;
         }
 
         .shop-guide-item {
           border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 18px;
-          padding: 14px 16px;
+          border-radius: 16px;
+          padding: 12px 14px;
           background: rgba(255,255,255,0.04);
         }
 
@@ -860,7 +887,8 @@ export default function ShopPage() {
 
         @media (max-width: 900px) {
           .shop-header {
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr !important;
+            padding: 18px !important;
           }
 
           .shop-gold-box {

@@ -685,16 +685,7 @@ a {
 .showcase-shine,
 .book-shine,
 .pack-shine {
-  position: absolute;
-  inset: -90px;
-  background: linear-gradient(
-    115deg,
-    transparent 35%,
-    rgba(255, 255, 255, 0.28),
-    transparent 65%
-  );
-  animation: eq-shine 3.2s ease-in-out infinite;
-  z-index: 1;
+  display: none;
 }
 
 .eq-display-icon,
@@ -1905,6 +1896,36 @@ a {
   }
 }
 
+/* Cards index: keep every card shell flat, regardless of rarity or awakening. */
+.cards-page .monster-card.dex-card,
+.cards-page .monster-card.dex-card:hover,
+.cards-page .monster-card.dex-card.rarity-n,
+.cards-page .monster-card.dex-card.rarity-r,
+.cards-page .monster-card.dex-card.rarity-sr,
+.cards-page .monster-card.dex-card.rarity-ssr,
+.cards-page .monster-card.dex-card.rarity-ur,
+.cards-page .monster-card.dex-card.awakening-1,
+.cards-page .monster-card.dex-card.awakening-2,
+.cards-page .monster-card.dex-card.awakening-3 {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.cards-page .monster-card.dex-card:hover {
+  transform: translateY(-3px) !important;
+  background: rgb(15 22 48) !important;
+}
+
+.cards-page .monster-card.dex-card::before,
+.cards-page .monster-card.dex-card::after,
+.cards-page .monster-card.dex-card .dc-rarity-aura {
+  display: none !important;
+  opacity: 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
 /* ================================
    Design Safety
    文字の被り・はみ出しを防ぐ共通調整
@@ -2680,7 +2701,7 @@ a {
 
 .global-bgm-btn {
   position: fixed;
-  bottom: 20px;
+  bottom: calc(88px + env(safe-area-inset-bottom));
   right: 20px;
   z-index: 9999;
   min-width: 80px;
@@ -2733,7 +2754,7 @@ a {
 
 @media (max-width: 480px) {
   .global-bgm-btn {
-    bottom: 14px;
+    bottom: calc(80px + env(safe-area-inset-bottom));
     right: 14px;
     min-width: 68px;
     font-size: 11px;

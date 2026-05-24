@@ -666,7 +666,7 @@ export function getMonsterGrowthStage(level: number) {
   if (level >= 15) return "達人";
   if (level >= 10) return "熟練";
   if (level >= 5) return "成長中";
-  return "契約済み";
+  return "見習い";
 }
 
 export function getMonsterNextExpLabel(progress: MonsterLevelProgress) {

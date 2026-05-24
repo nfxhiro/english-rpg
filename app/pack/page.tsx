@@ -296,12 +296,6 @@ export default function PackPage() {
   const ownedCount = earnedCards.length;
   const totalCount = monsterCards.length;
 
-  const totalOwnedCopies = useMemo(() => {
-    return earnedCards.reduce((total, card) => {
-      return total + getOwnedCount(card);
-    }, 0);
-  }, [earnedCards]);
-
   const collectionRate =
     getCollectionRate(ownedCount, totalCount);
 
@@ -544,7 +538,7 @@ export default function PackPage() {
         <section className="eq-shell">
           <div className="eq-topbar">
             <Link href="/" className="eq-back-link">
-              ← ホームへ戻る
+              ホームへ戻る
             </Link>
           </div>
 
@@ -603,7 +597,7 @@ export default function PackPage() {
       <section className="eq-shell">
         <div className="eq-topbar">
           <Link href="/" className="eq-back-link">
-            ← ホームへ戻る
+            ホームへ戻る
           </Link>
         </div>
 
@@ -1001,71 +995,24 @@ export default function PackPage() {
               </div>
             ) : (
               <div className="pack-empty-result">
-                <div>🎁</div>
+                <div className="pack-empty-icon">
+                  <Image
+                    src="/home-icons/pack.png"
+                    alt=""
+                    width={709}
+                    height={1179}
+                    className="pack-empty-image"
+                    sizes="52px"
+                    aria-hidden="true"
+                    unoptimized
+                  />
+                </div>
                 <h3>まだパックを開封していません</h3>
                 <p>
                   チケット1枚で1回開封できます。チケット10枚まとめ購入は1枚ずつ買うより100Gお得です。
                 </p>
               </div>
             )}
-          </div>
-
-          <div className="eq-panel">
-            <div className="eq-panel-head">
-              <div>
-                <p className="eq-panel-kicker">TICKET SHOP</p>
-                <h2 className="eq-panel-title">チケット購入</h2>
-              </div>
-              <span className="eq-panel-icon">🎫</span>
-            </div>
-
-            <div className="pack-ticket-box">
-              <span>所持チケット</span>
-              <strong>{packTickets}枚</strong>
-              <p>
-                クエストで獲得したゴールドは、上のショップでチケット購入に使えます。チケット10枚まとめ購入（900G）は1枚ずつ買うより100G お得です。
-              </p>
-            </div>
-
-            <Link href="/quiz" className="eq-button eq-button-ghost pack-panel-link">
-              クエストでゴールドを稼ぐ →
-            </Link>
-          </div>
-
-          <div className="eq-panel">
-            <div className="eq-panel-head">
-              <div>
-                <p className="eq-panel-kicker">COLLECTION</p>
-                <h2 className="eq-panel-title">図鑑の進み具合</h2>
-              </div>
-              <span className="eq-panel-icon">🃏</span>
-            </div>
-
-            <div className="pack-stat-grid">
-              <div>
-                <span>所持カード種類</span>
-                <strong>{ownedCount}</strong>
-              </div>
-
-              <div>
-                <span>総所持枚数</span>
-                <strong>{totalOwnedCopies}</strong>
-              </div>
-
-              <div>
-                <span>カード総数</span>
-                <strong>{totalCount}</strong>
-              </div>
-
-              <div>
-                <span>達成率</span>
-                <strong>{collectionRate}%</strong>
-              </div>
-            </div>
-
-            <Link href="/cards" className="eq-button eq-button-ghost pack-panel-link">
-              カード図鑑を見る →
-            </Link>
           </div>
 
           <div className="eq-panel">
@@ -1105,13 +1052,48 @@ export default function PackPage() {
           max-width: 1360px !important;
         }
 
+        .pack-page .eq-hero {
+          gap: 24px;
+          padding: 28px;
+        }
+
         .pack-page .eq-actions {
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+          gap: 10px;
           max-width: none;
         }
 
         .pack-page .eq-button {
           padding-inline: 16px;
+          min-height: 48px;
+        }
+
+        .pack-page .eq-panel {
+          padding: 18px;
+          border-radius: 20px;
+        }
+
+        .pack-page .eq-panel-head {
+          margin-bottom: 14px;
+        }
+
+        .pack-page .eq-panel-title {
+          font-size: 22px;
+        }
+
+        .pack-page .eq-status-strip {
+          gap: 10px;
+        }
+
+        .pack-page .eq-status-card {
+          min-height: 78px;
+          padding: 13px 14px;
+          border-radius: 16px;
+        }
+
+        .pack-page .eq-status-card strong {
+          margin-top: 6px;
+          font-size: 23px;
         }
 
         /* ================================
@@ -1505,8 +1487,8 @@ export default function PackPage() {
           border: 1px solid rgba(45, 212, 191, 0.3);
           border-radius: 14px;
           background: linear-gradient(90deg, rgba(45, 212, 191, 0.07), rgba(20, 184, 166, 0.03));
-          padding: 10px 18px;
-          margin-bottom: 10px;
+          padding: 9px 14px;
+          margin-bottom: 8px;
         }
 
         .pack-gold-label {
@@ -1518,7 +1500,7 @@ export default function PackPage() {
 
         .pack-gold-amount {
           color: #f0fdfa;
-          font-size: 22px;
+          font-size: 20px;
           font-weight: 1000;
           text-shadow: 0 0 16px rgba(45, 212, 191, 0.35);
         }
@@ -1526,14 +1508,14 @@ export default function PackPage() {
         /* ショップエリア */
         .pack-shop {
           border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 20px;
-          padding: 14px;
+          border-radius: 16px;
+          padding: 12px;
           background: rgba(8, 12, 30, 0.7);
           margin-bottom: 10px;
         }
 
         .pack-shop-label {
-          margin: 0 0 10px;
+          margin: 0 0 8px;
           color: #7dd3fc;
           font-size: 10px;
           font-weight: 900;
@@ -1544,7 +1526,7 @@ export default function PackPage() {
         .pack-shop-grid {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 10px;
+          gap: 8px;
         }
 
         /* ---- 1枚買うボタン（ティール） ---- */
@@ -1553,12 +1535,12 @@ export default function PackPage() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 5px;
+          gap: 4px;
           border: 1.5px solid rgba(45, 212, 191, 0.42);
-          border-radius: 16px;
+          border-radius: 14px;
           background: linear-gradient(160deg, rgba(45, 212, 191, 0.12) 0%, rgba(20, 184, 166, 0.06) 100%);
           color: white;
-          padding: 14px 10px;
+          padding: 10px 8px;
           font: inherit;
           cursor: pointer;
           transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -1578,19 +1560,19 @@ export default function PackPage() {
         }
 
         .pack-shop-btn span {
-          font-size: 24px;
+          font-size: 21px;
           filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
         }
 
         .pack-shop-btn strong {
-          font-size: 13px;
+          font-size: 12px;
           font-weight: 900;
           color: #f0fdfa;
         }
 
         .pack-shop-btn small {
           color: #99f6e4;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 900;
         }
 
@@ -1624,8 +1606,8 @@ export default function PackPage() {
           border: 1px solid rgba(255, 255, 255, 0.12);
           border-radius: 14px;
           background: rgba(255, 255, 255, 0.04);
-          padding: 11px 18px;
-          margin-bottom: 16px;
+          padding: 9px 14px;
+          margin-bottom: 12px;
           color: #94a3b8;
           font-size: 12px;
           font-weight: 900;
@@ -1634,7 +1616,7 @@ export default function PackPage() {
 
         .pack-tickets-bar strong {
           color: #f0f9ff;
-          font-size: 20px;
+          font-size: 18px;
           font-weight: 1000;
         }
 
@@ -1657,6 +1639,11 @@ export default function PackPage() {
           color: #d8b4fe !important;
           box-shadow: none !important;
           text-shadow: none !important;
+          animation: none !important;
+        }
+
+        .pack-page .eq-button-tenpack.pack-open-button::after {
+          display: none !important;
         }
 
         .pack-page .eq-button-tenpack.pack-open-button:hover {
@@ -1678,7 +1665,7 @@ export default function PackPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          min-height: 430px;
+          min-height: 390px;
         }
 
         .pack-hero--tenpack {
@@ -1692,10 +1679,10 @@ export default function PackPage() {
 
         .pack-display {
           position: relative;
-          width: 286px;
-          height: 398px;
+          width: 252px;
+          height: 352px;
           overflow: hidden;
-          border-radius: 38px;
+          border-radius: 32px;
           padding: 4px;
           background: linear-gradient(135deg, #facc15, #a855f7, #22d3ee);
           box-shadow: 0 0 70px rgba(168, 85, 247, 0.28);
@@ -1705,7 +1692,7 @@ export default function PackPage() {
           content: "";
           position: absolute;
           inset: 4px;
-          border-radius: 34px;
+          border-radius: 28px;
           background:
             radial-gradient(circle at 50% 16%, rgba(255, 255, 255, 0.18), transparent 40%),
             #050816;
@@ -2085,12 +2072,12 @@ export default function PackPage() {
         }
 
         .pack-gift {
-          width: 180px;
-          height: 210px;
+          width: 142px;
+          height: 168px;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin: 20px auto 0;
+          margin: 32px auto 0;
           filter: drop-shadow(0 20px 28px rgba(0, 0, 0, 0.42));
         }
 
@@ -2106,8 +2093,8 @@ export default function PackPage() {
         }
 
         .pack-result-emoji {
-          margin-top: 24px;
-          font-size: 88px;
+          margin-top: 20px;
+          font-size: 78px;
           filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.42));
         }
 
@@ -2189,7 +2176,7 @@ export default function PackPage() {
         }
 
         .pack-display p {
-          margin: 14px 0 0;
+          margin: 12px 0 0;
           color: #fde68a;
           font-size: 11px;
           font-weight: 1000;
@@ -2198,7 +2185,7 @@ export default function PackPage() {
 
         .pack-display h2 {
           margin: 8px 18px 0;
-          font-size: 28px;
+          font-size: 26px;
           line-height: 1.15;
           font-weight: 1000;
           overflow: hidden;
@@ -2284,7 +2271,7 @@ export default function PackPage() {
 
         .pack-stage-chip {
           width: fit-content;
-          margin: 14px auto 0;
+          margin: 12px auto 0;
           border-radius: 999px;
           padding: 7px 12px;
           border: 1px solid rgba(34, 211, 238, 0.32);
@@ -2302,18 +2289,14 @@ export default function PackPage() {
 
         .pack-dashboard {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 22px;
-          margin-top: 24px;
+          grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1fr);
+          gap: 16px;
+          margin-top: 18px;
           align-items: start;
         }
 
         .pack-dashboard > .eq-panel {
           min-width: 0;
-        }
-
-        .pack-main-panel {
-          grid-column: span 3;
         }
 
         .pack-result-card {
@@ -2410,12 +2393,26 @@ export default function PackPage() {
           padding: 24px;
         }
 
-        .pack-empty-result div {
-          font-size: 70px;
+        .pack-empty-icon {
+          width: 52px;
+          height: 78px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          filter:
+            drop-shadow(0 18px 24px rgba(0, 0, 0, 0.42))
+            drop-shadow(0 0 18px rgba(168, 85, 247, 0.2));
+        }
+
+        .pack-empty-image {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .pack-empty-result h3 {
-          margin: 14px 0 0;
+          margin: 12px 0 0;
           font-size: 24px;
           font-weight: 1000;
         }
@@ -2428,15 +2425,6 @@ export default function PackPage() {
           font-weight: 800;
         }
 
-        .pack-ticket-box {
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 24px;
-          background: rgba(255, 255, 255, 0.055);
-          padding: 16px;
-        }
-
-        .pack-ticket-box span,
-        .pack-stat-grid span,
         .rarity-rate-list span {
           display: block;
           color: #94a3b8;
@@ -2444,27 +2432,17 @@ export default function PackPage() {
           font-weight: 800;
         }
 
-        .pack-ticket-box strong,
-        .pack-stat-grid strong,
         .rarity-rate-list strong {
           display: block;
           margin-top: 7px;
           color: #fde68a;
-          font-size: 24px;
+          font-size: 22px;
           line-height: 1;
           font-weight: 1000;
         }
 
-        .pack-ticket-box p {
-          margin: 10px 0 0;
-          color: #cbd5e1;
-          line-height: 1.7;
-          font-size: 14px;
-          font-weight: 800;
-        }
-
         .pack-progress-block {
-          margin-top: 16px;
+          margin-top: 12px;
         }
 
         .pack-progress-label {
@@ -2472,7 +2450,7 @@ export default function PackPage() {
           align-items: center;
           justify-content: space-between;
           gap: 14px;
-          margin-bottom: 12px;
+          margin-bottom: 10px;
           color: #cbd5e1;
           font-size: 13px;
           font-weight: 900;
@@ -2486,32 +2464,18 @@ export default function PackPage() {
           background: linear-gradient(90deg, #a855f7, #22d3ee, #fde047);
         }
 
-        .pack-panel-link {
-          display: flex;
-          width: 100%;
-          max-width: 100%;
-          margin-top: 16px;
-          min-height: 50px;
-          font-size: 14px;
-          padding-inline: 16px;
-          white-space: normal;
-          overflow-wrap: anywhere;
-        }
-
-        .pack-stat-grid,
         .rarity-rate-list {
           display: grid;
           grid-template-columns: repeat(2, minmax(min(100%, 110px), 1fr));
           gap: 12px;
         }
 
-        .pack-stat-grid div,
         .rarity-rate-list div {
           min-width: 0;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 20px;
+          border-radius: 16px;
           background: rgba(255, 255, 255, 0.055);
-          padding: 14px;
+          padding: 12px;
         }
 
         .rarity-guaranteed-note {
@@ -3379,23 +3343,9 @@ export default function PackPage() {
           to   { opacity: 1; transform: translateY(0); }
         }
 
-        @media (max-width: 1080px) {
-          .pack-dashboard {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
-          .pack-main-panel {
-            grid-column: span 2;
-          }
-        }
-
-        @media (max-width: 720px) {
+        @media (max-width: 860px) {
           .pack-dashboard {
             grid-template-columns: 1fr;
-          }
-
-          .pack-main-panel {
-            grid-column: span 1;
           }
         }
 
@@ -3443,9 +3393,9 @@ export default function PackPage() {
           }
 
           .pack-gift {
-            width: 150px;
-            height: 175px;
-            margin-top: 18px;
+            width: 126px;
+            height: 150px;
+            margin-top: 30px;
           }
 
           .pack-result-emoji {
@@ -3500,7 +3450,6 @@ export default function PackPage() {
             font-size: 76px;
           }
 
-          .pack-stat-grid,
           .rarity-rate-list {
             grid-template-columns: 1fr;
           }

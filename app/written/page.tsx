@@ -212,7 +212,7 @@ export default function WrittenPage() {
       <main className="written-page">
         <section className="written-shell">
           <nav className="eq-topbar written-topbar">
-            <Link href="/" className="eq-back-link written-back">← ホームへ戻る</Link>
+            <Link href="/" className="eq-back-link written-back">ホームへ戻る</Link>
           </nav>
           <div className="written-empty">問題がありません。</div>
         </section>
@@ -224,8 +224,8 @@ export default function WrittenPage() {
     <main className="written-page">
       <section className="written-shell">
         <nav className="eq-topbar written-topbar">
-          <Link href="/" className="eq-back-link written-back">← ホームへ戻る</Link>
-          <Link href="/quiz" className="eq-back-link written-quest-link">クエストへ →</Link>
+          <Link href="/" className="eq-back-link written-back">ホームへ戻る</Link>
+          <Link href="/quiz" className="eq-back-link written-quest-link">クエストへ</Link>
         </nav>
 
         <header className="written-header">

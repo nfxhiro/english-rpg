@@ -66,10 +66,10 @@ function getRarityRank(rarity: Rarity) {
 }
 
 function getRarityMeterActiveStyle(rarity: Rarity): React.CSSProperties {
-  if (rarity === "UR")  return { background: "linear-gradient(90deg, #ff50c8, #64c8ff, #facc15)" };
+  if (rarity === "UR") return { background: "linear-gradient(90deg, #ff50c8, #64c8ff, #facc15)" };
   if (rarity === "SSR") return { background: "linear-gradient(90deg, #facc15, #fb923c)" };
-  if (rarity === "SR")  return { background: "linear-gradient(90deg, #a855f7, #22d3ee)" };
-  if (rarity === "R")   return { background: "linear-gradient(90deg, #22d3ee, #60a5fa)" };
+  if (rarity === "SR") return { background: "linear-gradient(90deg, #a855f7, #22d3ee)" };
+  if (rarity === "R") return { background: "linear-gradient(90deg, #22d3ee, #60a5fa)" };
   return { background: "linear-gradient(90deg, #94a3b8, #e2e8f0)" };
 }
 
@@ -120,10 +120,6 @@ export default function CardsPage() {
   const totalCount = monsterCards.length;
   const collectionRate =
     getCollectionRate(ownedCount, totalCount);
-
-  const totalOwnedCopies = useMemo(() => {
-    return earnedCards.reduce((total, card) => total + getOwnedCount(card), 0);
-  }, [earnedCards]);
 
   const masteredCount = useMemo(() => {
     return earnedCards.filter((card) => card.correctCount >= 10).length;
@@ -193,7 +189,7 @@ export default function CardsPage() {
       <section className="eq-shell">
         <nav className="eq-topbar">
           <Link href="/" className="eq-back-link">
-            ← ホームへ戻る
+            ホームへ戻る
           </Link>
         </nav>
 
@@ -225,42 +221,23 @@ export default function CardsPage() {
           </div>
 
           <div className="book-stage">
-            <div className="eq-display-card">
+            <div className="eq-display-card cards-display-card">
               <div className="eq-display-shine" />
               <div className="eq-display-icon eq-display-image-frame">
                 <Image
-                  src="/home-icons/book.png"
+                  src="/home-icons/cards.png"
                   alt=""
-                  width={1229}
-                  height={1042}
+                  width={1254}
+                  height={787}
                   className="eq-display-image"
                   sizes="150px"
                   aria-hidden="true"
                   unoptimized
                 />
               </div>
-              <p>COLLECTION BOOK</p>
-              <h2>{collectionRate}%</h2>
-              <span>
-                {ownedCount} / {totalCount} types
-              </span>
-            </div>
-          </div>
-
-          <div className="eq-status-strip">
-            <div className="eq-status-card">
-              <span>所持カード種類</span>
-              <strong>{ownedCount}</strong>
-            </div>
-
-            <div className="eq-status-card">
-              <span>総所持枚数</span>
-              <strong>{totalOwnedCopies}</strong>
-            </div>
-
-            <div className="eq-status-card is-highlight">
-              <span>図鑑達成率</span>
-              <strong>{collectionRate}%</strong>
+              <p>MONSTER CARDS</p>
+              <h2>{ownedCount}/{totalCount}</h2>
+              <span>{collectionRate}% collected</span>
             </div>
           </div>
         </div>
@@ -483,21 +460,170 @@ export default function CardsPage() {
 
       <style jsx>{`
         .cards-filter-panel {
-          margin-top: 24px;
+          margin-top: 18px;
+          padding: 18px;
+        }
+
+        .cards-filter-panel .filter-grid {
+          display: grid;
+          grid-template-columns: minmax(300px, 1.1fr) minmax(430px, 1.05fr) minmax(260px, 0.75fr);
+          gap: 14px;
+          align-items: end;
+        }
+
+        .cards-filter-panel .search-box,
+        .cards-filter-panel .rarity-filter,
+        .cards-filter-panel .owned-filter {
+          min-width: 0;
+        }
+
+        .cards-filter-panel .search-box span,
+        .cards-filter-panel .rarity-filter > span,
+        .cards-filter-panel .owned-filter > span,
+        .cards-filter-panel .attr-filter > span {
+          display: block;
+          margin: 0 0 7px;
+          color: #94a3b8;
+          font-size: 11px;
+          font-weight: 1000;
+          letter-spacing: 0.08em;
+        }
+
+        .cards-filter-panel .search-box input {
+          min-height: 46px;
+          border-radius: 16px;
+          font-size: 14px;
+        }
+
+        .cards-filter-panel .rarity-buttons,
+        .cards-filter-panel .owned-buttons {
+          display: grid;
+          gap: 8px;
+        }
+
+        .cards-filter-panel .rarity-buttons {
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+
+        .cards-filter-panel .owned-buttons {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .cards-filter-panel .rarity-buttons button,
+        .cards-filter-panel .owned-buttons button,
+        .cards-filter-panel .attr-scroll button {
+          min-width: 0;
+          min-height: 42px;
+          border-radius: 14px;
+          padding: 0 10px;
+        }
+
+        .cards-filter-panel .owned-buttons button {
+          min-width: 0;
+        }
+
+        .cards-filter-panel .attr-filter {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          align-items: center;
+          gap: 12px;
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .cards-filter-panel .attr-filter > span {
+          margin-bottom: 0;
+        }
+
+        .cards-filter-panel .attr-scroll {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          overflow: visible;
+          padding-bottom: 0;
+        }
+
+        .cards-filter-panel .attr-scroll button {
+          min-width: 0;
+          min-height: 34px;
+          border-radius: 999px;
+          font-size: 12px;
+        }
+
+        .cards-page .eq-hero {
+          gap: 24px;
+          padding: 28px;
+        }
+
+        .cards-page .eq-display-card {
+          width: 252px;
+          height: 352px;
+          border-radius: 32px;
+        }
+
+        .cards-page .eq-display-card::before {
+          border-radius: 28px;
+        }
+
+        .cards-display-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        .cards-display-card .eq-display-image-frame {
+          width: 168px;
+          height: 112px;
+          margin-top: 62px;
+        }
+
+        .cards-display-card p,
+        .cards-display-card h2,
+        .cards-display-card > span {
+          position: relative;
+          z-index: 2;
+          text-align: center;
+        }
+
+        .cards-display-card p {
+          margin: 44px 0 0;
+          color: #fde68a;
+          font-size: 11px;
+          font-weight: 1000;
+          letter-spacing: 0.18em;
+        }
+
+        .cards-display-card h2 {
+          margin: 9px 0 0;
+          color: #f8fafc;
+          font-size: 28px;
+          line-height: 1;
+          font-weight: 1000;
+        }
+
+        .cards-display-card > span {
+          display: block;
+          margin: 7px auto 0;
+          max-width: 220px;
+          color: #cbd5e1;
+          font-size: 13px;
+          line-height: 1.3;
+          font-weight: 900;
         }
 
         .cards-filter-stats {
-          margin-top: 18px;
+          margin-top: 14px;
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 12px;
+          gap: 10px;
         }
 
         .cards-filter-stats div {
-          border-radius: 18px;
+          border-radius: 16px;
           border: 1px solid rgba(255, 255, 255, 0.1);
           background: rgba(255, 255, 255, 0.055);
-          padding: 14px;
+          padding: 12px;
         }
 
         .cards-filter-stats span {
@@ -509,14 +635,14 @@ export default function CardsPage() {
 
         .cards-filter-stats strong {
           display: block;
-          margin-top: 6px;
-          font-size: 18px;
+          margin-top: 5px;
+          font-size: 17px;
           font-weight: 1000;
         }
 
         /* Grid top margin */
         .dex-grid {
-          margin-top: 22px;
+          margin-top: 16px;
         }
 
         /* Empty state */
@@ -558,104 +684,60 @@ export default function CardsPage() {
           display: flex;
           flex-direction: column;
           padding: 12px;
-          min-height: 278px;
+          min-height: 254px;
           border-width: 2px;
-          border-color: rgb(var(--dc-main-rgb) / 0.36);
-          box-shadow:
-            0 18px 42px rgba(0, 0, 0, 0.32),
-            0 0 22px rgb(var(--dc-main-rgb) / 0.16),
-            inset 0 0 0 1px rgb(var(--dc-main-rgb) / 0.12);
+          border-color: rgba(255, 255, 255, 0.1);
+          box-shadow: 0 16px 34px rgba(0, 0, 0, 0.3);
           transition:
             transform 0.2s ease,
             box-shadow 0.2s ease,
             border-color 0.2s ease,
             background 0.2s ease;
-          border-radius: 20px;
+          border-radius: 18px;
           isolation: isolate;
         }
 
         /* Use double-class specificity to guarantee override of globals.css */
         .monster-card.dex-card {
-          background:
-            radial-gradient(circle at 76% 0%, rgb(var(--dc-main-rgb) / 0.24), transparent 44%),
-            radial-gradient(circle at 12% 100%, rgb(var(--dc-accent-rgb) / 0.12), transparent 38%),
-            rgb(15 22 48);
+          background: rgb(15 22 48);
+        }
+
+        .dex-card .monster-glow {
+          display: none;
         }
 
         .dex-card::before,
         .dex-card::after {
-          content: "";
-          position: absolute;
-          pointer-events: none;
+          display: none;
         }
 
-        .dex-card::before {
-          inset: 0;
-          z-index: 1;
-          border-radius: inherit;
-          opacity: var(--dc-foil-opacity);
-          background:
-            linear-gradient(112deg, transparent 0 18%, rgb(255 255 255 / 0.38) 23%, transparent 31% 100%);
-          transform: translateX(-38%);
-          mix-blend-mode: screen;
-        }
-
-        .dex-card::after {
-          inset: 6px;
-          z-index: 1;
-          border: 1px solid rgb(var(--dc-main-rgb) / 0.18);
-          border-radius: 15px;
-          box-shadow: inset 0 0 28px rgb(var(--dc-main-rgb) / 0.08);
-        }
-
-        .dex-card > :not(.dc-rarity-aura) {
+        .dex-card > * {
           position: relative;
           z-index: 2;
         }
 
         .dex-card:hover {
-          transform: translateY(-6px) scale(1.02);
-          border-color: rgb(var(--dc-main-rgb) / 0.78);
-          box-shadow:
-            0 26px 54px rgba(0, 0, 0, 0.38),
-            0 0 36px rgb(var(--dc-main-rgb) / 0.34),
-            inset 0 0 0 1px rgb(var(--dc-accent-rgb) / 0.18);
-        }
-
-        .dex-card:hover::before {
-          animation: dcCardFoilSweep 0.9s ease both;
+          transform: translateY(-3px);
+          border-color: rgba(255, 255, 255, 0.22);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
         }
 
         .dex-card.awakening-1 {
-          border-color: rgba(34, 211, 238, 0.5);
-          box-shadow:
-            0 18px 42px rgba(0, 0, 0, 0.32),
-            0 0 28px rgba(34, 211, 238, 0.24),
-            inset 0 0 0 1px rgba(34, 211, 238, 0.14);
+          border-color: rgba(255, 255, 255, 0.14);
+          box-shadow: 0 16px 34px rgba(0, 0, 0, 0.3);
         }
 
         .dex-card.awakening-2 .dc-rarity-aura {
-          opacity: 0.78;
-          filter: blur(16px);
-          background:
-            radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.34), transparent 58%),
-            conic-gradient(from 0deg, rgba(34, 211, 238, 0.36), transparent, rgba(250, 204, 21, 0.22), transparent);
+          display: none;
         }
 
         .dex-card.awakening-3 {
-          border-color: rgba(250, 204, 21, 0.62);
-          box-shadow:
-            0 22px 52px rgba(0, 0, 0, 0.38),
-            0 0 34px rgba(250, 204, 21, 0.28),
-            0 0 48px rgba(34, 211, 238, 0.16),
-            inset 0 0 0 1px rgba(250, 204, 21, 0.18);
+          border-color: rgba(255, 255, 255, 0.18);
+          box-shadow: 0 16px 34px rgba(0, 0, 0, 0.3);
         }
 
         .dex-card.awakening-3::after {
-          border-color: rgba(250, 204, 21, 0.34);
-          box-shadow:
-            inset 0 0 28px rgba(250, 204, 21, 0.12),
-            0 0 18px rgba(250, 204, 21, 0.16);
+          display: none;
         }
 
         /* Rarity-specific glows & frames */
@@ -668,15 +750,10 @@ export default function CardsPage() {
           --dc-rare-text: #111827;
           --dc-foil-opacity: 0.04;
           border-color: rgba(148, 163, 184, 0.22);
-          box-shadow:
-            0 14px 30px rgba(0, 0, 0, 0.3),
-            0 0 12px rgb(var(--dc-main-rgb) / 0.1),
-            inset 0 0 0 1px rgb(var(--dc-main-rgb) / 0.07);
+          box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
         }
         .dex-card.rarity-n .dc-frame {
-          background:
-            radial-gradient(circle at 50% 20%, rgba(226, 232, 240, 0.3), transparent 52%),
-            linear-gradient(135deg, rgba(71, 85, 105, 0.34), rgba(30, 41, 59, 0.48));
+          background: linear-gradient(135deg, rgba(71, 85, 105, 0.34), rgba(30, 41, 59, 0.48));
           border-color: rgba(148, 163, 184, 0.28);
         }
         .dex-card.rarity-n .monster-glow {
@@ -695,24 +772,15 @@ export default function CardsPage() {
           --dc-shadow-rgb: 8 145 178;
           --dc-rare-text: #062235;
           --dc-foil-opacity: 0.1;
-          border-color: rgba(34, 211, 238, 0.45);
-          box-shadow:
-            0 0 20px rgba(34, 211, 238, 0.28),
-            0 14px 36px rgba(0, 0, 0, 0.3),
-            inset 0 3px 0 rgba(34, 211, 238, 0.55),
-            inset 0 0 0 1px rgba(34, 211, 238, 0.1);
+          border-color: rgba(255, 255, 255, 0.12);
+          box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
         }
         .dex-card.rarity-r:hover {
-          box-shadow:
-            inset 0 3px 0 rgba(34, 211, 238, 0.8),
-            0 0 34px rgba(34, 211, 238, 0.58),
-            0 18px 42px rgba(0, 0, 0, 0.34);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
         }
         .dex-card.rarity-r .dc-frame {
-          background:
-            radial-gradient(circle at 50% 20%, rgba(34, 211, 238, 0.44), transparent 52%),
-            linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(59, 130, 246, 0.22));
-          border-color: rgba(34, 211, 238, 0.4);
+          background: linear-gradient(135deg, rgba(34, 211, 238, 0.18), rgba(59, 130, 246, 0.14));
+          border-color: rgba(34, 211, 238, 0.28);
         }
         .dex-card.rarity-r .monster-glow {
           background: rgba(34, 211, 238, 0.32);
@@ -730,24 +798,15 @@ export default function CardsPage() {
           --dc-shadow-rgb: 126 34 206;
           --dc-rare-text: #ffffff;
           --dc-foil-opacity: 0.22;
-          border-color: rgba(168, 85, 247, 0.6);
-          box-shadow:
-            0 20px 48px rgba(0, 0, 0, 0.36),
-            0 0 36px rgba(168, 85, 247, 0.42),
-            inset 0 3px 0 rgba(168, 85, 247, 0.75),
-            inset 0 0 0 1px rgba(216, 180, 254, 0.18);
+          border-color: rgba(255, 255, 255, 0.14);
+          box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
         }
         .dex-card.rarity-sr:hover {
-          box-shadow:
-            inset 0 3px 0 rgba(168, 85, 247, 0.9),
-            0 0 44px rgba(168, 85, 247, 0.7),
-            0 18px 42px rgba(0, 0, 0, 0.34);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
         }
         .dex-card.rarity-sr .dc-frame {
-          background:
-            radial-gradient(circle at 50% 20%, rgba(168, 85, 247, 0.54), transparent 52%),
-            linear-gradient(135deg, rgba(168, 85, 247, 0.36), rgba(34, 211, 238, 0.2));
-          border-color: rgba(168, 85, 247, 0.52);
+          background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(34, 211, 238, 0.12));
+          border-color: rgba(168, 85, 247, 0.32);
         }
         .dex-card.rarity-sr .monster-glow {
           background: rgba(168, 85, 247, 0.38);
@@ -766,42 +825,19 @@ export default function CardsPage() {
           --dc-rare-text: #201007;
           --dc-foil-opacity: 0.32;
           border-width: 2px;
-          border-color: rgba(250, 204, 21, 0.65);
-          background:
-            radial-gradient(circle at 72% 2%, rgba(250, 204, 21, 0.45), transparent 42%),
-            radial-gradient(circle at 14% 92%, rgba(251, 146, 60, 0.28), transparent 38%),
-            linear-gradient(150deg, rgb(42 26 4), rgb(65 40 8) 45%, rgb(12 10 26));
-          animation: dcSSRGlow 2.4s ease-in-out infinite;
+          border-color: rgba(255, 255, 255, 0.16);
+          background: linear-gradient(150deg, rgb(42 26 4), rgb(65 40 8) 45%, rgb(12 10 26));
         }
         .dex-card.rarity-ssr:hover {
-          animation-play-state: paused;
-          box-shadow:
-            inset 0 4px 0 rgba(250, 204, 21, 0.95),
-            0 0 58px rgba(250, 204, 21, 0.78),
-            0 20px 46px rgba(0, 0, 0, 0.36);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
         }
         .dex-card.rarity-ssr .dc-frame {
-          background:
-            radial-gradient(circle at 50% 20%, rgba(251, 191, 36, 0.58), transparent 52%),
-            linear-gradient(135deg, rgba(251, 191, 36, 0.4), rgba(234, 88, 12, 0.26));
-          border-color: rgba(251, 191, 36, 0.56);
+          background: linear-gradient(135deg, rgba(251, 191, 36, 0.22), rgba(234, 88, 12, 0.14));
+          border-color: rgba(251, 191, 36, 0.36);
           overflow: hidden;
         }
         .dex-card.rarity-ssr .dc-frame::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          background: linear-gradient(
-            110deg,
-            transparent 22%,
-            rgba(255, 255, 255, 0.32) 48%,
-            rgba(255, 248, 120, 0.15) 54%,
-            transparent 78%
-          );
-          background-size: 200% 100%;
-          animation: dcFrameShimmer 2.6s ease-in-out infinite;
-          pointer-events: none;
+          display: none;
         }
         .dex-card.rarity-ssr .monster-glow {
           background: rgba(251, 191, 36, 0.36);
@@ -820,20 +856,10 @@ export default function CardsPage() {
           --dc-rare-text: #ffffff;
           --dc-foil-opacity: 0.42;
           border-width: 2px;
-          background:
-            radial-gradient(circle at 72% 0%, rgba(255, 80, 200, 0.5), transparent 38%),
-            radial-gradient(circle at 14% 92%, rgba(100, 200, 255, 0.36), transparent 38%),
-            radial-gradient(circle at 50% 50%, rgba(250, 200, 80, 0.18), transparent 55%),
-            linear-gradient(140deg, rgb(50 8 62), rgb(8 14 44) 42%, rgb(48 22 4));
-          animation: dcURGlow 2.8s linear infinite;
+          background: linear-gradient(140deg, rgb(50 8 62), rgb(8 14 44) 42%, rgb(48 22 4));
         }
         .dex-card.rarity-ur:hover {
-          animation-play-state: paused;
-          box-shadow:
-            inset 0 4px 0 #fff,
-            0 0 60px rgba(255, 80, 200, 0.75),
-            0 0 30px rgba(100, 200, 255, 0.42),
-            0 8px 32px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.34);
           border-color: rgba(255, 255, 255, 0.96);
         }
         .dex-card.rarity-ur .dc-frame {
@@ -844,26 +870,12 @@ export default function CardsPage() {
           overflow: hidden;
         }
         .dex-card.rarity-ur .dc-frame::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          background: linear-gradient(
-            110deg,
-            transparent 15%,
-            rgba(255, 255, 255, 0.4) 42%,
-            rgba(100, 200, 255, 0.22) 55%,
-            transparent 85%
-          );
-          background-size: 200% 100%;
-          animation: dcFrameShimmer 1.8s ease-in-out infinite;
-          pointer-events: none;
+          display: none;
         }
         .dex-card.rarity-ur .monster-glow {
           width: 130px;
           height: 130px;
           background: rgba(255, 80, 200, 0.4);
-          animation: dcURGlowPulse 2s ease-in-out infinite;
         }
         .dex-card.rarity-ur .dc-rarity {
           color: #ffffff;
@@ -872,22 +884,13 @@ export default function CardsPage() {
         }
 
         .dc-rarity-aura {
-          position: absolute;
-          inset: -18% -16%;
-          z-index: 0;
-          border-radius: inherit;
-          opacity: 0.32;
-          background:
-            radial-gradient(circle at 70% 14%, rgb(var(--dc-main-rgb) / 0.5), transparent 30%),
-            radial-gradient(circle at 18% 86%, rgb(var(--dc-accent-rgb) / 0.3), transparent 28%);
-          filter: blur(18px);
-          pointer-events: none;
+          display: none;
         }
 
         .dex-card.rarity-sr .dc-rarity-aura,
         .dex-card.rarity-ssr .dc-rarity-aura,
         .dex-card.rarity-ur .dc-rarity-aura {
-          animation: dcAuraPulse 3.8s ease-in-out infinite;
+          display: none;
         }
 
         .dex-card.unknown-card {
@@ -898,70 +901,12 @@ export default function CardsPage() {
           transform: translateY(-3px) scale(1.01);
         }
         .dex-card.unknown-card .dc-rarity-aura {
-          opacity: 0.12;
+          display: none;
         }
         .dex-card.unknown-card::before {
           opacity: 0.06;
         }
 
-        /* Rarity keyframes */
-        @keyframes dcSSRGlow {
-          0%, 100% {
-            box-shadow:
-              inset 0 4px 0 rgba(250, 204, 21, 0.9),
-              0 0 32px rgba(250, 204, 21, 0.44),
-              0 18px 42px rgba(0, 0, 0, 0.32);
-          }
-          50% {
-            box-shadow:
-              inset 0 4px 0 rgba(251, 146, 60, 0.9),
-              0 0 58px rgba(250, 204, 21, 0.72),
-              0 0 28px rgba(234, 88, 12, 0.32),
-              0 18px 42px rgba(0, 0, 0, 0.34);
-          }
-        }
-        @keyframes dcURGlow {
-          0%, 100% {
-            box-shadow:
-              inset 0 4px 0 #ff50c8,
-              0 0 44px rgba(255, 80, 200, 0.68),
-              0 0 80px rgba(255, 80, 200, 0.28),
-              0 0 20px rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 80, 200, 0.85);
-          }
-          33% {
-            box-shadow:
-              inset 0 4px 0 #64c8ff,
-              0 0 44px rgba(100, 200, 255, 0.68),
-              0 0 80px rgba(100, 200, 255, 0.28),
-              0 0 20px rgba(255, 255, 255, 0.2);
-            border-color: rgba(100, 200, 255, 0.85);
-          }
-          66% {
-            box-shadow:
-              inset 0 4px 0 #facc15,
-              0 0 44px rgba(255, 200, 80, 0.68),
-              0 0 80px rgba(255, 200, 80, 0.28),
-              0 0 20px rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 200, 80, 0.85);
-          }
-        }
-        @keyframes dcFrameShimmer {
-          0% { background-position: -100% 0; }
-          60%, 100% { background-position: 200% 0; }
-        }
-        @keyframes dcURGlowPulse {
-          0%, 100% { background: rgba(255, 80, 200, 0.4); }
-          50% { background: rgba(100, 200, 255, 0.44); }
-        }
-        @keyframes dcAuraPulse {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.46; transform: scale(1.06); }
-        }
-        @keyframes dcCardFoilSweep {
-          0% { transform: translateX(-58%); }
-          100% { transform: translateX(62%); }
-        }
         /* Header row */
         .dc-header {
           display: flex;
@@ -1005,12 +950,10 @@ export default function CardsPage() {
         /* Emoji frame — overrides .monster-frame height */
         .dc-frame {
           margin: 0 0 6px;
-          height: 118px;
-          border-radius: 16px;
+          height: 102px;
+          border-radius: 14px;
           flex-shrink: 0;
-          box-shadow:
-            inset 0 0 34px rgb(var(--dc-main-rgb) / 0.1),
-            0 12px 28px rgba(0, 0, 0, 0.22);
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
         }
 
         .dc-frame::before {
@@ -1104,77 +1047,55 @@ export default function CardsPage() {
         .dc-rarity-meter {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));
-          gap: 3px;
-          margin-top: 8px;
-          height: 8px;
+          gap: 4px;
+          height: 7px;
+          margin-top: 7px;
         }
 
         .dc-rarity-meter span {
           border-radius: 999px;
-          background: rgba(148, 163, 184, 0.12);
-          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+          background: rgba(148, 163, 184, 0.14);
         }
 
         .dc-rarity-meter span.active {
-          background: linear-gradient(
-            90deg,
-            rgb(var(--dc-main-rgb)),
-            rgb(var(--dc-accent-rgb))
-          );
-          box-shadow:
-            0 0 8px rgba(var(--dc-main-rgb), 0.7),
-            0 0 16px rgba(var(--dc-main-rgb), 0.35);
-        }
-
-        .dex-card.rarity-ssr .dc-rarity-meter span.active {
-          background: linear-gradient(90deg, #facc15, #fb923c);
-          box-shadow: 0 0 8px rgba(250, 204, 21, 0.8), 0 0 16px rgba(250, 204, 21, 0.4);
-        }
-
-        .dex-card.rarity-ur .dc-rarity-meter span.active {
-          background: linear-gradient(90deg, #ff50c8, #64c8ff, #facc15);
-          box-shadow: 0 0 8px rgba(255, 80, 200, 0.8), 0 0 16px rgba(100, 200, 255, 0.4);
-        }
-
-        .dex-card.rarity-sr .dc-rarity-meter span.active {
-          background: linear-gradient(90deg, #a855f7, #22d3ee);
-          box-shadow: 0 0 8px rgba(168, 85, 247, 0.8), 0 0 16px rgba(168, 85, 247, 0.4);
-        }
-
-        .dex-card.rarity-r .dc-rarity-meter span.active {
-          background: linear-gradient(90deg, #22d3ee, #60a5fa);
-          box-shadow: 0 0 8px rgba(34, 211, 238, 0.7), 0 0 14px rgba(34, 211, 238, 0.35);
-        }
-
-        .dex-card.rarity-n .dc-rarity-meter span.active {
-          background: linear-gradient(90deg, #94a3b8, #e2e8f0);
           box-shadow: none;
         }
 
         .dex-card.rarity-ssr .dc-frame {
           border-width: 2px;
-          box-shadow:
-            inset 0 0 44px rgba(250, 204, 21, 0.22),
-            0 0 0 1px rgba(254, 243, 199, 0.2),
-            0 16px 34px rgba(0, 0, 0, 0.28);
+          box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
         }
 
         .dex-card.rarity-ur .dc-frame {
           border: 2px solid transparent;
           background:
-            radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.38), transparent 44%) padding-box,
-            linear-gradient(135deg, rgba(255, 80, 200, 0.44), rgba(100, 200, 255, 0.42)) padding-box,
+            linear-gradient(135deg, rgba(255, 80, 200, 0.2), rgba(100, 200, 255, 0.18)) padding-box,
             conic-gradient(from 0deg, #ff50c8, #64c8ff, #facc15, #ffffff, #ff50c8) border-box;
-          box-shadow:
-            inset 0 0 50px rgba(255, 255, 255, 0.12),
-            0 0 24px rgba(255, 80, 200, 0.28),
-            0 0 42px rgba(100, 200, 255, 0.2);
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
+        }
+
+        .cards-page .monster-card.dex-card,
+        .cards-page .monster-card.dex-card.rarity-n,
+        .cards-page .monster-card.dex-card.rarity-r,
+        .cards-page .monster-card.dex-card.rarity-sr,
+        .cards-page .monster-card.dex-card.rarity-ssr,
+        .cards-page .monster-card.dex-card.rarity-ur,
+        .cards-page .monster-card.dex-card.awakening-1,
+        .cards-page .monster-card.dex-card.awakening-2,
+        .cards-page .monster-card.dex-card.awakening-3 {
+          border-color: rgba(255, 255, 255, 0.1) !important;
+          box-shadow: none !important;
+        }
+
+        .cards-page .monster-card.dex-card:hover {
+          border-color: rgba(255, 255, 255, 0.18) !important;
+          box-shadow: none !important;
         }
 
         /* Card name */
         .dc-name {
-          margin: 9px 0 0;
-          font-size: 15px;
+          margin: 7px 0 0;
+          font-size: 14px;
           font-weight: 1000;
           line-height: 1.2;
           white-space: normal;
@@ -1202,7 +1123,7 @@ export default function CardsPage() {
           display: flex;
           flex-wrap: wrap;
           gap: 5px;
-          margin-top: 8px;
+          margin-top: 6px;
         }
 
         .dc-growth-row span {
@@ -1219,7 +1140,7 @@ export default function CardsPage() {
         /* Footer row */
         .dc-footer {
           margin-top: auto;
-          padding-top: 8px;
+          padding-top: 6px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -1264,7 +1185,7 @@ export default function CardsPage() {
 
         /* EXP bar at bottom */
         .dc-exp {
-          margin-top: 8px;
+          margin-top: 6px;
         }
 
         .dc-exp div {
@@ -1288,7 +1209,7 @@ export default function CardsPage() {
           display: flex;
           align-items: center;
           gap: 12px;
-          margin-top: 14px;
+          margin-top: 12px;
         }
 
         .attr-filter > span {
@@ -1329,12 +1250,33 @@ export default function CardsPage() {
         }
 
         @media (max-width: 1200px) {
+          .cards-filter-panel .filter-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+
+          .cards-filter-panel .search-box {
+            grid-column: 1 / -1;
+          }
+
           .cards-filter-stats {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
 
         @media (max-width: 720px) {
+          .cards-page .eq-hero {
+            padding: 18px;
+          }
+
+          .cards-filter-panel .filter-grid,
+          .cards-filter-panel .attr-filter {
+            grid-template-columns: 1fr;
+          }
+
+          .cards-filter-panel .owned-filter {
+            grid-column: auto;
+          }
+
           .cards-filter-stats {
             grid-template-columns: 1fr;
           }

@@ -15,7 +15,6 @@ import {
 import {
   EarnedCard,
   getMonsterCardById,
-  getOwnedCount,
   monsterCards,
   MonsterCard,
 } from "../data/cards";
@@ -173,12 +172,6 @@ export default function Home() {
   const collectionRate =
     getCollectionRate(ownedCount, totalCardCount);
 
-  const totalOwnedCopies = useMemo(() => {
-    return earnedCards.reduce((total, card) => {
-      return total + getOwnedCount(card);
-    }, 0);
-  }, [earnedCards]);
-
   const displayTitle = shopState.selectedTitle ?? hero?.title ?? "はじまりの勇者";
 
   return (
@@ -201,33 +194,16 @@ export default function Home() {
             </p>
 
             <div className="main-actions">
-              <Link href="/quiz" className="primary-action">
-                <span>⚡</span>
-                クエストに出る
+              <Link href="/quiz" className="primary-action hero-quest-action">
+                <span className="hero-quest-copy">
+                  <span className="hero-quest-label">Quest</span>
+                  <strong>クエスト</strong>
+                  <small>問題に挑戦して経験値を獲得</small>
+                </span>
+                <span className="hero-quest-icon">
+                  <HomeIcon name="quest" className="hero-quest-icon-image" />
+                </span>
               </Link>
-
-              <Link href="/words" className="secondary-action">
-                <span>📚</span>
-                単語帳を見る
-              </Link>
-
-            </div>
-
-            <div className="home-stats" aria-label="冒険の概要">
-              <div>
-                <span>LEVEL</span>
-                <strong>Lv.{hero?.level ?? 1}</strong>
-              </div>
-              <div>
-                <span>CARDS</span>
-                <strong>
-                  {ownedCount}/{totalCardCount}
-                </strong>
-              </div>
-              <div>
-                <span>TICKETS</span>
-                <strong>{packTickets}枚</strong>
-              </div>
             </div>
           </div>
 
@@ -248,15 +224,6 @@ export default function Home() {
         </div>
 
         <nav className="home-action-grid" aria-label="メインメニュー">
-          <Link href="/quiz" className="home-action-card is-primary">
-            <span className="action-icon">
-              <HomeIcon name="quest" className="home-action-icon-image" />
-            </span>
-            <span className="action-label">Quest</span>
-            <strong>クエスト</strong>
-            <small>問題に挑戦して経験値を獲得</small>
-          </Link>
-
           <Link href="/pack" className="home-action-card">
             <span className="action-icon">
               <HomeIcon name="pack" className="home-action-icon-image" />
@@ -284,13 +251,13 @@ export default function Home() {
             <small>装備を整えてバトルを有利に</small>
           </Link>
 
-          <Link href="/written" className="home-action-card written-card">
+          <Link href="/words" className="home-action-card written-card">
             <span className="action-icon written-icon">
               <HomeIcon name="written" className="home-action-icon-image" />
             </span>
-            <span className="action-label">Written</span>
-            <strong>筆記トレーニング</strong>
-            <small>4択問題で文法・語彙を確認</small>
+            <span className="action-label">Words</span>
+            <strong>単語トレーニング</strong>
+            <small>単語を見て暗記と筆記へ進む</small>
           </Link>
         </nav>
 
@@ -338,41 +305,7 @@ export default function Home() {
             </div>
 
             <Link href="/hero" className="panel-link">
-              主人公を見る →
-            </Link>
-          </section>
-
-          <section className="panel collection-panel">
-            <div className="panel-head">
-              <div>
-                <p>COLLECTION</p>
-                <h2>仲間カード</h2>
-              </div>
-              <span className="panel-icon">
-                <HomeIcon name="cards" className="panel-icon-image" />
-              </span>
-            </div>
-
-            <div className="collection-meter">
-              <strong>{collectionRate}%</strong>
-              <span>
-                {ownedCount}種類 / {totalCardCount}種類
-              </span>
-              <div className="progress-track">
-                <div
-                  className="progress-bar collection-progress"
-                  style={{ width: `${collectionRate}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="collection-summary">
-              <span>総所持枚数</span>
-              <strong>{totalOwnedCopies}</strong>
-            </div>
-
-            <Link href="/cards" className="panel-link">
-              図鑑を開く →
+              主人公を見る
             </Link>
           </section>
 
@@ -387,12 +320,19 @@ export default function Home() {
       </section>
 
       <style>{`
+        :root {
+          --radius-page-card: 32px;
+          --radius-logo-card: 28px;
+          --radius-button: 22px;
+          --radius-small-card: 20px;
+        }
+
         .home-page {
           min-height: 100vh;
           position: relative;
           overflow-x: hidden;
           color: white;
-          padding: 28px;
+          padding: 28px 28px calc(40px + env(safe-area-inset-bottom));
         }
 
         .home-page::before,
@@ -414,7 +354,7 @@ export default function Home() {
           align-items: center;
           overflow: hidden;
           border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 30px;
+          border-radius: var(--radius-page-card);
           padding: 38px;
           background:
             linear-gradient(135deg, rgba(19, 29, 48, 0.96), rgba(15, 20, 33, 0.96) 54%, rgba(13, 34, 36, 0.92));
@@ -494,23 +434,22 @@ export default function Home() {
         }
 
         .main-actions {
-          margin-top: 28px;
+          margin-top: 24px;
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 14px;
-          width: 100%;
-          max-width: 620px;
+          grid-template-columns: minmax(0, 1fr);
+          width: min(100%, 560px);
+          max-width: 100%;
         }
 
         .primary-action,
         .secondary-action,
         .panel-link {
-          min-height: 68px;
+          min-height: 64px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 10px;
-          border-radius: 18px;
+          border-radius: var(--radius-button);
           text-decoration: none;
           text-align: center;
           font-size: 17px;
@@ -526,10 +465,82 @@ export default function Home() {
         }
 
         .primary-action {
+          position: relative;
+          overflow: hidden;
           border: 1px solid rgba(255, 245, 157, 0.72);
-          background: linear-gradient(135deg, #fff7ad 0%, #facc15 44%, #fb923c 100%);
-          color: #111827;
+          background:
+            radial-gradient(circle at 84% 12%, rgba(251, 191, 36, 0.34), transparent 38%),
+            linear-gradient(135deg, rgba(56, 41, 8, 0.96), rgba(40, 26, 10, 0.92) 56%, rgba(18, 20, 38, 0.92));
+          color: #f8fafc;
           box-shadow: 0 18px 42px rgba(250, 204, 21, 0.26);
+        }
+
+        .hero-quest-action {
+          min-height: 148px;
+          justify-content: space-between;
+          padding: 22px 24px;
+          text-align: left;
+          border-color: rgba(250, 204, 21, 0.38) !important;
+          background:
+            radial-gradient(circle at 86% 18%, rgba(250, 204, 21, 0.22), transparent 31%),
+            radial-gradient(circle at 14% 100%, rgba(250, 204, 21, 0.18), transparent 38%),
+            linear-gradient(145deg, rgba(70, 48, 9, 0.9), rgba(17, 24, 39, 0.96)) !important;
+          color: #f8fafc !important;
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .hero-quest-copy {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 7px;
+          min-width: 0;
+        }
+
+        .hero-quest-label {
+          color: #86efac;
+          font-size: 13px;
+          font-weight: 1000;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+
+        .hero-quest-copy strong {
+          color: #ffffff;
+          font-size: 34px;
+          line-height: 1.05;
+          font-weight: 1000;
+        }
+
+        .hero-quest-copy small {
+          color: #e5e7eb;
+          font-size: 15px;
+          line-height: 1.35;
+          font-weight: 900;
+        }
+
+        .hero-quest-icon {
+          position: relative;
+          z-index: 1;
+          flex: 0 0 auto;
+          width: 116px;
+          height: 116px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: -4px;
+          filter:
+            drop-shadow(0 18px 22px rgba(0, 0, 0, 0.46))
+            drop-shadow(0 0 18px rgba(250, 204, 21, 0.22));
+        }
+
+        .hero-quest-icon-image {
+          display: block;
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
         }
 
         .secondary-action,
@@ -582,11 +593,6 @@ export default function Home() {
           background: rgba(14, 165, 233, 0.12) !important;
         }
 
-        .collection-panel .panel-link:hover {
-          border-color: rgba(250, 204, 21, 0.38) !important;
-          background: rgba(250, 204, 21, 0.12) !important;
-        }
-
         .home-stats {
           display: grid;
           grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -615,9 +621,7 @@ export default function Home() {
         .home-stats span,
         .panel-head p,
         .action-label,
-        .hero-level-row span,
-        .collection-meter span,
-        .collection-summary span {
+        .hero-level-row span {
           color: #94a3b8;
           font-size: 11px;
           font-weight: 900;
@@ -636,15 +640,13 @@ export default function Home() {
         .home-monster-showcase {
           display: flex;
           justify-content: center;
+          overflow: visible;
         }
 
         .home-showcase-card {
           position: relative;
+          display: block;
           width: min(100%, 288px);
-          aspect-ratio: 978 / 1378;
-          overflow: hidden;
-          border-radius: 30px;
-          background: #071019;
           filter:
             drop-shadow(0 28px 50px rgba(0, 0, 0, 0.42))
             drop-shadow(0 0 34px rgba(34, 211, 238, 0.16));
@@ -658,12 +660,11 @@ export default function Home() {
           display: block;
           width: 100%;
           height: auto;
-          border-radius: 30px;
         }
 
         .home-action-grid {
           display: grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
           gap: 14px;
           margin-top: 18px;
           animation: homeIn 0.55s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -697,7 +698,7 @@ export default function Home() {
           justify-content: flex-end;
           overflow: hidden;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 24px;
+          border-radius: var(--radius-small-card);
           padding: 18px;
           text-decoration: none;
           color: white;
@@ -735,7 +736,7 @@ export default function Home() {
             linear-gradient(145deg, rgba(70, 48, 9, 0.86), rgba(17, 24, 39, 0.96));
         }
 
-        .home-action-card:nth-child(2) {
+        .home-action-card:nth-child(1) {
           border-color: rgba(251, 113, 133, 0.28);
           background:
             radial-gradient(circle at 88% 12%, rgba(251, 191, 36, 0.18), transparent 30%),
@@ -743,7 +744,7 @@ export default function Home() {
             linear-gradient(145deg, rgba(42, 20, 34, 0.9), rgba(11, 17, 29, 0.96));
         }
 
-        .home-action-card:nth-child(3) {
+        .home-action-card:nth-child(2) {
           border-color: rgba(45, 212, 191, 0.28);
           background:
             radial-gradient(circle at 86% 18%, rgba(34, 211, 238, 0.17), transparent 31%),
@@ -751,7 +752,7 @@ export default function Home() {
             linear-gradient(145deg, rgba(8, 37, 43, 0.9), rgba(10, 16, 28, 0.96));
         }
 
-        .home-action-card:nth-child(4) {
+        .home-action-card:nth-child(3) {
           border-color: rgba(196, 181, 253, 0.25);
           background:
             radial-gradient(circle at 86% 18%, rgba(129, 140, 248, 0.18), transparent 31%),
@@ -759,20 +760,31 @@ export default function Home() {
             linear-gradient(145deg, rgba(30, 27, 75, 0.76), rgba(10, 16, 28, 0.96));
         }
 
+        .home-action-card.written-card {
+          border-color: rgba(45, 212, 191, 0.28);
+          background:
+            radial-gradient(circle at 80% 20%, rgba(45, 212, 191, 0.12), transparent 50%),
+            linear-gradient(145deg, rgba(16, 24, 40, 0.92), rgba(9, 14, 24, 0.95)) !important;
+        }
+
         .home-action-card.is-primary .action-label {
           color: #86efac;
         }
 
-        .home-action-card:nth-child(2) .action-label {
+        .home-action-card:nth-child(1) .action-label {
           color: #fda4af;
         }
 
-        .home-action-card:nth-child(3) .action-label {
+        .home-action-card:nth-child(2) .action-label {
           color: #67e8f9;
         }
 
-        .home-action-card:nth-child(4) .action-label {
+        .home-action-card:nth-child(3) .action-label {
           color: #c4b5fd;
+        }
+
+        .home-action-card.written-card .action-label {
+          color: #99f6e4;
         }
 
         .home-action-card:hover {
@@ -848,7 +860,7 @@ export default function Home() {
 
         .dashboard-grid {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: minmax(0, 1fr);
           gap: 18px;
           margin-top: 18px;
           animation: homeIn 0.55s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -858,7 +870,7 @@ export default function Home() {
           position: relative;
           overflow: hidden;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 24px;
+          border-radius: var(--radius-small-card);
           padding: 22px;
           background:
             linear-gradient(145deg, rgba(15, 23, 42, 0.86), rgba(8, 12, 22, 0.94));
@@ -868,37 +880,34 @@ export default function Home() {
         }
 
         .hero-status-panel {
+          display: grid;
+          grid-template-columns: minmax(220px, 0.8fr) minmax(360px, 1.25fr) minmax(280px, 1fr) 180px;
+          align-items: center;
+          gap: 18px;
           border-color: rgba(56, 189, 248, 0.2) !important;
+          padding: 18px 20px;
           background:
             radial-gradient(circle at 92% 10%, rgba(56, 189, 248, 0.16), transparent 28%),
             radial-gradient(circle at 12% 100%, rgba(52, 211, 153, 0.1), transparent 34%),
             linear-gradient(145deg, rgba(10, 24, 42, 0.9), rgba(8, 12, 22, 0.95)) !important;
         }
 
-        .collection-panel {
-          border-color: rgba(250, 204, 21, 0.22) !important;
-          background:
-            radial-gradient(circle at 92% 10%, rgba(250, 204, 21, 0.16), transparent 30%),
-            radial-gradient(circle at 10% 100%, rgba(45, 212, 191, 0.12), transparent 36%),
-            linear-gradient(145deg, rgba(38, 30, 16, 0.82), rgba(8, 12, 22, 0.95)) !important;
+        .hero-status-panel .panel-head {
+          align-items: center;
+          margin-bottom: 0;
         }
 
         .hero-status-panel .panel-head p {
           color: #67e8f9;
         }
 
-        .collection-panel .panel-head p {
-          color: #fde68a;
-        }
-
         .hero-status-panel .panel-link {
+          width: auto;
+          min-width: 0;
+          min-height: 44px;
+          margin-top: 0;
           border-color: rgba(56, 189, 248, 0.22) !important;
           background: rgba(14, 165, 233, 0.08) !important;
-        }
-
-        .collection-panel .panel-link {
-          border-color: rgba(250, 204, 21, 0.24) !important;
-          background: rgba(250, 204, 21, 0.08) !important;
         }
 
         .panel-head {
@@ -943,24 +952,36 @@ export default function Home() {
 
         .hero-level-row {
           display: grid;
-          grid-template-columns: minmax(0, 1.25fr) minmax(120px, 0.75fr);
-          gap: 14px;
-          padding-block: 4px 18px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          grid-template-columns: minmax(0, 1.55fr) minmax(112px, 0.55fr);
+          gap: 10px;
+          padding-block: 0;
+          border-bottom: 0;
+        }
+
+        .hero-level-row > div {
+          min-height: 72px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 12px 14px;
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          background: rgba(255, 255, 255, 0.04);
         }
 
         .hero-level-row strong {
           display: block;
-          margin-top: 8px;
+          margin-top: 7px;
           color: #fef3c7;
-          font-size: 22px;
+          font-size: 21px;
           line-height: 1.25;
           font-weight: 900;
           overflow-wrap: anywhere;
         }
 
         .progress-info {
-          margin-top: 18px;
+          min-width: 0;
+          margin-top: 0;
         }
 
         .progress-info > div:first-child {
@@ -995,48 +1016,11 @@ export default function Home() {
           background: linear-gradient(90deg, #2dd4bf, #fde047, #fb923c);
         }
 
-        .collection-progress {
-          background: linear-gradient(90deg, #fb7185, #facc15, #2dd4bf);
-        }
-
         .panel-link {
           width: 100%;
           margin-top: 18px;
           min-height: 50px;
           font-size: 15px;
-        }
-
-        .collection-meter {
-          padding-bottom: 18px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .collection-meter strong {
-          display: block;
-          color: #fef3c7;
-          font-size: 42px;
-          line-height: 1;
-          font-weight: 900;
-        }
-
-        .collection-meter span {
-          display: block;
-          margin-top: 8px;
-        }
-
-        .collection-summary {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          min-height: 48px;
-          margin-top: 14px;
-        }
-
-        .collection-summary strong {
-          color: white;
-          font-size: 24px;
-          font-weight: 900;
         }
 
         @keyframes shine {
@@ -1092,6 +1076,19 @@ export default function Home() {
           .home-action-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
+
+          .hero-status-panel {
+            grid-template-columns: minmax(0, 1fr) minmax(260px, 1fr);
+          }
+
+          .hero-status-panel .progress-info,
+          .hero-status-panel .panel-link {
+            grid-column: 1 / -1;
+          }
+
+          .hero-status-panel .panel-link {
+            width: 100%;
+          }
         }
 
         @media (max-width: 760px) {
@@ -1103,7 +1100,6 @@ export default function Home() {
 
           .hero-panel {
             gap: 24px;
-            border-radius: 24px;
             padding: 22px;
           }
 
@@ -1131,6 +1127,7 @@ export default function Home() {
           .home-stats,
           .home-action-grid,
           .dashboard-grid,
+          .hero-status-panel,
           .hero-level-row {
             grid-template-columns: 1fr;
           }
@@ -1140,8 +1137,47 @@ export default function Home() {
           }
 
           .panel {
-            border-radius: 22px;
             padding: 18px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          :root {
+            --radius-page-card: 28px;
+            --radius-logo-card: 24px;
+            --radius-button: 18px;
+            --radius-small-card: 16px;
+          }
+
+          .home-page {
+            padding: 18px 14px calc(32px + env(safe-area-inset-bottom));
+          }
+
+          .primary-action,
+          .secondary-action {
+            min-height: 58px;
+          }
+
+          .hero-quest-action {
+            min-height: 132px;
+            padding: 16px;
+          }
+
+          .hero-quest-copy strong {
+            font-size: 28px;
+          }
+
+          .hero-quest-icon {
+            width: 88px;
+            height: 88px;
+          }
+
+          .home-showcase-card {
+            width: min(100%, 280px);
+          }
+
+          .main-actions {
+            grid-template-columns: 1fr;
           }
         }
 

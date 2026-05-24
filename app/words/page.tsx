@@ -653,7 +653,10 @@ export default function WordsPage() {
       <section className="eq-shell">
         <nav className="eq-topbar">
           <Link href="/" className="eq-back-link">
-            ← ホームへ戻る
+            ホームへ戻る
+          </Link>
+          <Link href="/quiz" className="eq-back-link wordbook-quest-link">
+            クエストへ
           </Link>
           <button
             type="button"
@@ -672,14 +675,14 @@ export default function WordsPage() {
             <div className="eq-hero-copy">
               <div className="eq-eyebrow">
                 <span>📚</span>
-                <span>WORD BOOK</span>
+                <span>VOCAB TRAINING</span>
               </div>
 
-              <h1 className="eq-page-title">単語帳</h1>
+              <h1 className="eq-page-title">単語トレーニング</h1>
 
               <p className="eq-lead">
-                登録されている英単語・熟語の意味・例文を確認できます。
-                このページだけで、一覧確認と1語ずつの暗記練習を切り替えられます。
+                英単語・熟語を意味と例文で確認し、暗記練習から筆記問題まで進めます。
+                まずは単語を見て、覚えたら問題で定着させましょう。
               </p>
 
               <div
@@ -693,7 +696,7 @@ export default function WordsPage() {
                   className="eq-button eq-button-primary wordbook-mode-action active"
                 >
                   <span>📖</span>
-                  辞書モード
+                  単語を見る
                 </button>
 
                 <button
@@ -703,40 +706,55 @@ export default function WordsPage() {
                   className="eq-button eq-button-secondary wordbook-mode-action"
                 >
                   <span>⭐</span>
-                  暗記モード
+                  暗記する
                 </button>
+
+                <Link
+                  href="/written"
+                  className="eq-button eq-button-secondary wordbook-mode-action"
+                >
+                  <span>✏️</span>
+                  筆記で確認
+                </Link>
               </div>
 
               <div className="wordbook-stats-row">
                 <span className="wordbook-stat-item">
-                  <em>登録語数</em>
+                  <em>収録語数</em>
                   <strong>{learningWords.length}</strong>
                 </span>
                 <span className="wordbook-stat-item">
-                  <em>検索結果</em>
+                  <em>表示中</em>
                   <strong>{filteredWords.length}</strong>
                 </span>
               </div>
             </div>
 
             <div className="wordbook-stage">
-              <div className="eq-display-card">
+              <div className="eq-display-card wordbook-display-card">
                 <div className="eq-display-shine" />
                 <div className="eq-display-icon eq-display-image-frame">
                   <Image
-                    src="/home-icons/book.png"
+                    src="/home-icons/written.png"
                     alt=""
-                    width={1229}
-                    height={1042}
+                    width={1254}
+                    height={1254}
                     className="eq-display-image"
-                    sizes="150px"
+                    sizes="156px"
                     aria-hidden="true"
                     unoptimized
                   />
                 </div>
-                <p>WORD BOOK</p>
+                <div className="wordbook-card-runes" aria-hidden="true">
+                  <span>A</span>
+                  <span>B</span>
+                  <span>C</span>
+                  <span>D</span>
+                  <span>E</span>
+                </div>
+                <p>VOCAB TRAINING</p>
                 <h2>{learningWords.length}</h2>
-                <span>registered words</span>
+                <span>words ready</span>
               </div>
             </div>
           </div>
@@ -1236,15 +1254,64 @@ export default function WordsPage() {
             color 0.16s ease;
         }
 
+        .wordbook-quest-link {
+          border-color: rgba(45, 212, 191, 0.32) !important;
+          background: rgba(45, 212, 191, 0.08) !important;
+          color: #ccfbf1 !important;
+        }
+
+        .wordbook-quest-link:hover {
+          border-color: rgba(45, 212, 191, 0.5) !important;
+          background: rgba(45, 212, 191, 0.14) !important;
+        }
+
         .wordbook-furigana-toggle.is-on {
-          border-color: rgba(250, 204, 21, 0.52);
+          border-color: rgba(250, 204, 21, 0.55);
           background: rgba(250, 204, 21, 0.12);
-          color: #fef3c7;
+          color: #fde68a;
         }
 
         .wordbook-stage {
           display: flex;
           justify-content: center;
+        }
+
+        .wordbook-display-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          height: auto;
+          padding-bottom: 28px;
+        }
+
+        .wordbook-display-card .eq-display-image-frame {
+          width: 156px;
+          height: 156px;
+          margin-top: 42px;
+        }
+
+        .wordbook-card-runes {
+          position: relative;
+          z-index: 2;
+          display: grid;
+          grid-template-columns: repeat(5, 28px);
+          gap: 8px;
+          margin-top: 14px;
+        }
+
+        .wordbook-card-runes span {
+          width: 28px;
+          height: 28px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid rgba(253, 230, 138, 0.32);
+          border-radius: 10px;
+          background: rgba(250, 204, 21, 0.08);
+          color: #fef3c7;
+          font-size: 12px;
+          font-weight: 1000;
+          box-shadow: inset 0 0 14px rgba(45, 212, 191, 0.08);
         }
 
         .eq-display-card p,
@@ -1256,7 +1323,7 @@ export default function WordsPage() {
         }
 
         .eq-display-card p {
-          margin: 22px 0 0;
+          margin: 18px 0 0;
           color: #fde68a;
           font-size: 11px;
           font-weight: 900;
@@ -1279,16 +1346,20 @@ export default function WordsPage() {
         }
 
         .wordbook-mode-actions {
-          max-width: 600px;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          max-width: 760px;
           margin-top: 16px;
+          gap: 12px;
         }
 
         .wordbook-mode-action {
+          min-height: 64px;
           font-family: inherit;
           border-color: rgba(255, 255, 255, 0.12) !important;
           background: rgba(255, 255, 255, 0.06) !important;
           color: #f8fafc !important;
           box-shadow: none !important;
+          white-space: nowrap;
         }
 
         .wordbook-mode-action span {

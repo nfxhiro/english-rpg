@@ -143,7 +143,7 @@ export default function CardDetailPage() {
         <section className="detail-shell">
           <nav className="eq-topbar">
             <Link href="/cards" className="eq-back-link">
-              ← カード図鑑へ戻る
+              カード図鑑へ戻る
             </Link>
           </nav>
 
@@ -214,7 +214,7 @@ export default function CardDetailPage() {
       <section className="detail-shell">
         <nav className="eq-topbar">
           <Link href="/cards" className="eq-back-link">
-            ← カード図鑑へ戻る
+            カード図鑑へ戻る
           </Link>
         </nav>
 
@@ -301,27 +301,6 @@ export default function CardDetailPage() {
             </div>
           </div>
 
-          <div className="status-strip">
-            <div className="status-card">
-              <span>レア度</span>
-              <strong>{isOwned ? card.rarity : "???"}</strong>
-            </div>
-
-            <div className="status-card">
-              <span>モンスターLv</span>
-              <strong>{isOwned ? `Lv.${monsterProgress.level}` : "???"}</strong>
-            </div>
-
-            <div className="status-card">
-              <span>覚醒Lv</span>
-              <strong>{isOwned ? `Lv.${awakeningLevel}` : "???"}</strong>
-            </div>
-
-            <div className="status-card">
-              <span>所持枚数</span>
-              <strong>{isOwned ? `${ownedCopies}枚` : "0枚"}</strong>
-            </div>
-          </div>
         </div>
 
         <div className="dashboard-grid">
@@ -340,16 +319,6 @@ export default function CardDetailPage() {
                 <strong className={getStatusClass(status)}>
                   {isOwned ? status : "未獲得"}
                 </strong>
-              </div>
-
-              <div>
-                <span>モンスターLv</span>
-                <strong>{isOwned ? `Lv.${monsterProgress.level} / 20` : "???"}</strong>
-              </div>
-
-              <div>
-                <span>覚醒Lv</span>
-                <strong>{isOwned ? `Lv.${awakeningLevel}` : "???"}</strong>
               </div>
 
               <div>
@@ -373,15 +342,10 @@ export default function CardDetailPage() {
                 <span>レア度</span>
                 <strong>{isOwned ? card.rarity : "???"}</strong>
               </div>
-
-              <div>
-                <span>カードID</span>
-                <strong>{isOwned ? card.id : "???"}</strong>
-              </div>
             </div>
 
             <div className="message-box">
-              <span>レア度メモ</span>
+              <span>メモ</span>
               <p>
                 {isOwned
                   ? getRarityMessage(card.rarity)
@@ -408,13 +372,13 @@ export default function CardDetailPage() {
                   </div>
 
                   <div>
-                    <span>成長段階</span>
-                    <strong>{getMonsterGrowthStage(monsterProgress.level)}</strong>
+                    <span>覚醒Lv</span>
+                    <strong>Lv.{awakeningLevel}</strong>
                   </div>
 
                   <div>
-                    <span>総EXP</span>
-                    <strong>{exp}</strong>
+                    <span>成長段階</span>
+                    <strong>{getMonsterGrowthStage(monsterProgress.level)}</strong>
                   </div>
                 </div>
 
@@ -440,15 +404,15 @@ export default function CardDetailPage() {
                   </p>
                 </div>
 
-                <div className="awakening-box">
-                  <span>覚醒</span>
-                  <strong>覚醒 Lv.{awakeningLevel}</strong>
-                  <p>
-                    {nextAwakening
-                      ? `次は${nextAwakening.requiredCopies}枚所持で覚醒Lv.${nextAwakening.targetLevel}です。あと${nextAwakening.remainingCopies}枚。`
-                      : "覚醒Lv3に到達しています。特別なフレームと背景演出が解放されています。"}
-                  </p>
-                </div>
+                {nextAwakening && (
+                  <div className="awakening-box">
+                    <span>次の覚醒</span>
+                    <strong>あと{nextAwakening.remainingCopies}枚</strong>
+                    <p>
+                      {nextAwakening.requiredCopies}枚所持で覚醒Lv.{nextAwakening.targetLevel}になります。
+                    </p>
+                  </div>
+                )}
               </>
             ) : (
               <div className="loading-box">
@@ -468,7 +432,7 @@ export default function CardDetailPage() {
 
             {isOwned ? (
               <div className="unlock-columns">
-                <div className="unlock-box">
+                <div className="unlock-section unlock-done">
                   <span>解放済み</span>
                   {unlockSummary.unlocked.length > 0 ? (
                     <ul>
@@ -481,7 +445,7 @@ export default function CardDetailPage() {
                   )}
                 </div>
 
-                <div className="unlock-box">
+                <div className="unlock-section unlock-next">
                   <span>次の解放</span>
                   {unlockSummary.next.length > 0 ? (
                     <ul>
@@ -499,55 +463,6 @@ export default function CardDetailPage() {
                 パックから契約すると、称号・背景・覚醒フレームの解放状況が表示されます。
               </div>
             )}
-          </div>
-
-          <div className="panel description-panel">
-            <div className="panel-head">
-              <div>
-                <p>STORY</p>
-                <h2>カード説明</h2>
-              </div>
-              <span className="panel-icon">📖</span>
-            </div>
-
-            <div className="example-box">
-              <span>説明</span>
-              <strong>
-                {isOwned ? card.description : "カード獲得後に表示されます。"}
-              </strong>
-            </div>
-
-            <div className="example-box">
-              <span>称号</span>
-              <strong>{isOwned ? card.title : "？？？"}</strong>
-            </div>
-          </div>
-
-          <div className="panel action-panel">
-            <div className="panel-head">
-              <div>
-                <p>NEXT ACTION</p>
-                <h2>次にやること</h2>
-              </div>
-              <span className="panel-icon">⚡</span>
-            </div>
-
-            <div className="action-list">
-              <Link href="/quiz">
-                <strong>クエストでゴールドを稼ぐ</strong>
-                <span>正解を重ねるほど、チケット購入用のゴールドが増えます</span>
-              </Link>
-
-              <Link href="/pack">
-                <strong>パックから仲間を増やす</strong>
-                <span>ゴールドでチケットを買ってパックを開封できます</span>
-              </Link>
-
-              <Link href="/cards">
-                <strong>図鑑へ戻る</strong>
-                <span>他のカードや未獲得カードを確認できます</span>
-              </Link>
-            </div>
           </div>
         </div>
       </section>
@@ -568,7 +483,7 @@ const pageStyles = `
       radial-gradient(circle at 50% 100%, rgba(251, 191, 36, 0.13), transparent 32%),
       #050816;
     color: white;
-    padding: 28px;
+    padding: 22px;
   }
 
   .bg-orb {
@@ -606,18 +521,18 @@ const pageStyles = `
   .detail-shell {
     position: relative;
     z-index: 1;
-    max-width: 1240px;
+    max-width: 1180px;
     margin: 0 auto;
   }
 
   .detail-hero-panel {
     display: grid;
-    grid-template-columns: 1.1fr 330px;
-    gap: 32px;
+    grid-template-columns: minmax(0, 1fr) minmax(248px, 292px) !important;
+    gap: 24px;
     align-items: center;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 40px;
-    padding: 38px;
+    border-radius: 30px;
+    padding: 26px;
     background: linear-gradient(
       135deg,
       rgba(24, 31, 68, 0.94),
@@ -630,7 +545,7 @@ const pageStyles = `
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 16px;
+    padding: 8px 13px;
     border-radius: 999px;
     border: 1px solid rgba(251, 191, 36, 0.32);
     background: rgba(251, 191, 36, 0.1);
@@ -642,40 +557,40 @@ const pageStyles = `
 
   .detail-copy h1,
   .not-found-panel h1 {
-    margin: 26px 0 0;
-    font-size: clamp(48px, 8vw, 92px);
-    line-height: 0.92;
+    margin: 18px 0 0;
+    font-size: clamp(40px, 6vw, 66px);
+    line-height: 0.96;
     letter-spacing: 0;
     font-weight: 1000;
   }
 
   .lead {
-    margin: 26px 0 0;
-    max-width: 650px;
+    margin: 18px 0 0;
+    max-width: 620px;
     color: #cbd5e1;
-    line-height: 1.95;
-    font-size: 16px;
+    line-height: 1.8;
+    font-size: 14px;
   }
 
   .main-actions {
-    margin-top: 28px;
+    margin-top: 22px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 14px;
-    max-width: 620px;
+    gap: 12px;
+    max-width: 560px;
   }
 
   .primary-action,
   .pack-action,
   .favorite-action {
-    min-height: 70px;
+    min-height: 58px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
-    border-radius: 24px;
+    border-radius: 20px;
     text-decoration: none;
-    font-size: 19px;
+    font-size: 16px;
     font-weight: 1000;
     border: 0;
     font-family: inherit;
@@ -733,11 +648,11 @@ const pageStyles = `
 
   .big-card {
     position: relative;
-    width: 286px;
-    min-height: 455px;
+    width: 252px;
+    min-height: 392px;
     overflow: hidden;
-    border-radius: 38px;
-    padding: 4px 4px 20px;
+    border-radius: 32px;
+    padding: 4px 4px 16px;
     background: linear-gradient(135deg, #94a3b8, #22d3ee, #a855f7);
     box-shadow: 0 0 70px rgba(168, 85, 247, 0.28);
   }
@@ -746,7 +661,7 @@ const pageStyles = `
     content: "";
     position: absolute;
     inset: 4px;
-    border-radius: 34px;
+    border-radius: 28px;
     background:
       radial-gradient(circle at 50% 16%, rgba(255, 255, 255, 0.18), transparent 40%),
       #050816;
@@ -820,7 +735,7 @@ const pageStyles = `
   }
 
   .big-card-top {
-    margin: 20px 18px 0;
+    margin: 16px 16px 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -837,12 +752,12 @@ const pageStyles = `
   }
 
   .big-monster-frame {
-    margin: 22px 18px 0;
-    height: 210px;
+    margin: 18px 16px 0;
+    height: 172px;
     display: grid;
     place-items: center;
     overflow: hidden;
-    border-radius: 28px;
+    border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background:
       radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.3), transparent 45%),
@@ -851,8 +766,8 @@ const pageStyles = `
 
   .big-monster-glow {
     position: absolute;
-    width: 170px;
-    height: 170px;
+    width: 140px;
+    height: 140px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.12);
     filter: blur(26px);
@@ -861,7 +776,7 @@ const pageStyles = `
   .big-monster {
     position: relative;
     z-index: 1;
-    font-size: 110px;
+    font-size: 92px;
     filter: drop-shadow(0 18px 28px rgba(0, 0, 0, 0.42));
   }
 
@@ -871,7 +786,7 @@ const pageStyles = `
   }
 
   .big-card p {
-    margin: 22px 20px 0;
+    margin: 18px 18px 0;
     color: #fde68a;
     font-size: 11px;
     font-weight: 1000;
@@ -881,7 +796,7 @@ const pageStyles = `
 
   .big-card h2 {
     margin: 8px 18px 0;
-    font-size: 30px;
+    font-size: 25px;
     line-height: 1.18;
     font-weight: 1000;
     text-align: center;
@@ -896,7 +811,7 @@ const pageStyles = `
     display: block;
     margin: 7px 18px 0;
     color: #cbd5e1;
-    font-size: 14px;
+    font-size: 12px;
     line-height: 1.35;
     font-weight: 900;
     text-align: center;
@@ -921,7 +836,7 @@ const pageStyles = `
     flex-wrap: wrap;
     justify-content: center;
     gap: 7px;
-    margin: 14px 18px 0;
+    margin: 12px 16px 0;
   }
 
   .big-card-growth span {
@@ -929,8 +844,8 @@ const pageStyles = `
     border: 1px solid rgba(34, 211, 238, 0.22);
     background: rgba(2, 6, 23, 0.32);
     color: #ecfeff;
-    padding: 7px 9px;
-    font-size: 11px;
+    padding: 6px 8px;
+    font-size: 10px;
     font-weight: 1000;
   }
 
@@ -938,14 +853,14 @@ const pageStyles = `
     grid-column: 1 / -1;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
+    gap: 10px;
   }
 
   .status-card {
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.055);
-    border-radius: 24px;
-    padding: 18px;
+    border-radius: 18px;
+    padding: 14px 16px;
   }
 
   .status-card.highlight {
@@ -962,25 +877,40 @@ const pageStyles = `
 
   .status-card strong {
     display: block;
-    margin-top: 8px;
-    font-size: 30px;
+    margin-top: 6px;
+    font-size: 24px;
     font-weight: 1000;
   }
 
   .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 22px;
-    margin-top: 24px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
   }
 
   .panel,
   .not-found-panel {
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 34px;
+    border-radius: 26px;
     padding: 24px;
-    background: rgba(15, 23, 42, 0.78);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.26);
+    background: rgba(8, 14, 35, 0.88);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  }
+
+  .card-info-panel {
+    border-color: rgba(251, 191, 36, 0.2);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(251, 191, 36, 0.2);
+  }
+
+  .growth-panel {
+    border-color: rgba(34, 211, 238, 0.2);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(34, 211, 238, 0.2);
+  }
+
+  .unlock-panel {
+    border-color: rgba(168, 85, 247, 0.2);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), inset 0 2px 0 rgba(168, 85, 247, 0.22);
   }
 
   .not-found-panel {
@@ -1003,6 +933,8 @@ const pageStyles = `
     justify-content: space-between;
     gap: 18px;
     margin-bottom: 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   }
 
   .panel-head p {
@@ -1013,21 +945,24 @@ const pageStyles = `
     letter-spacing: 0.24em;
   }
 
+  .card-info-panel .panel-head p { color: #fde68a; }
+  .unlock-panel .panel-head p { color: #d8b4fe; }
+
   .panel-head h2 {
-    margin: 8px 0 0;
-    font-size: 26px;
+    margin: 6px 0 0;
+    font-size: 22px;
     font-weight: 1000;
   }
 
   .panel-icon {
-    font-size: 40px;
+    font-size: 34px;
   }
 
   .info-grid,
   .growth-stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 10px;
   }
 
   .growth-stats {
@@ -1040,9 +975,9 @@ const pageStyles = `
   .message-box,
   .loading-box {
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 22px;
+    border-radius: 18px;
     background: rgba(255, 255, 255, 0.055);
-    padding: 16px;
+    padding: 14px;
   }
 
   .info-grid span,
@@ -1059,7 +994,7 @@ const pageStyles = `
   .growth-stats strong {
     display: block;
     margin-top: 7px;
-    font-size: 22px;
+    font-size: 16px;
     font-weight: 1000;
   }
 
@@ -1069,9 +1004,7 @@ const pageStyles = `
 
   .message-box p,
   .loading-box,
-  .awakening-box p,
-  .unlock-box p,
-  .unlock-box li {
+  .awakening-box p {
     color: #cbd5e1;
     line-height: 1.8;
     font-size: 14px;
@@ -1121,8 +1054,7 @@ const pageStyles = `
     font-size: 14px;
   }
 
-  .awakening-box,
-  .unlock-box {
+  .awakening-box {
     margin-top: 16px;
     border: 1px solid rgba(34, 211, 238, 0.16);
     border-radius: 22px;
@@ -1130,8 +1062,7 @@ const pageStyles = `
     padding: 16px;
   }
 
-  .awakening-box span,
-  .unlock-box span {
+  .awakening-box span {
     display: block;
     color: #94a3b8;
     font-size: 12px;
@@ -1146,28 +1077,101 @@ const pageStyles = `
     font-weight: 1000;
   }
 
-  .awakening-box p,
-  .unlock-box p {
+  .awakening-box p {
     margin: 8px 0 0;
   }
 
   .unlock-columns {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 14px;
   }
 
-  .unlock-box {
-    margin-top: 0;
+  .unlock-section {
+    border-radius: 18px;
+    padding: 16px;
   }
 
-  .unlock-box ul {
-    margin: 10px 0 0;
-    padding-left: 18px;
+  .unlock-done {
+    border: 1px solid rgba(52, 211, 153, 0.22);
+    background: rgba(52, 211, 153, 0.05);
   }
 
-  .unlock-box li + li {
-    margin-top: 6px;
+  .unlock-next {
+    border: 1px solid rgba(251, 191, 36, 0.22);
+    background: rgba(251, 191, 36, 0.04);
+  }
+
+  .unlock-section > span {
+    display: block;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .unlock-done > span { color: #34d399; }
+  .unlock-next > span { color: #fbbf24; }
+
+  .unlock-section ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .unlock-done li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #a7f3d0;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 9px 12px;
+    border-radius: 12px;
+    background: rgba(52, 211, 153, 0.08);
+    border: 1px solid rgba(52, 211, 153, 0.14);
+  }
+
+  .unlock-done li::before {
+    content: "✓";
+    flex-shrink: 0;
+    color: #34d399;
+    font-weight: 900;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .unlock-next li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    color: #fde68a;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 9px 12px;
+    border-radius: 12px;
+    background: rgba(251, 191, 36, 0.07);
+    border: 1px solid rgba(251, 191, 36, 0.16);
+  }
+
+  .unlock-next li::before {
+    content: "◎";
+    flex-shrink: 0;
+    color: #fbbf24;
+    font-weight: 900;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .unlock-section p {
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.7;
+    margin: 0;
   }
 
   .example-box + .example-box {
@@ -1197,42 +1201,6 @@ const pageStyles = `
     color: #94a3b8;
   }
 
-  .action-list {
-    display: grid;
-    gap: 12px;
-  }
-
-  .action-list a {
-    display: block;
-    text-decoration: none;
-    color: white;
-    border-radius: 22px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.055);
-    padding: 16px;
-    transition:
-      transform 0.18s ease,
-      background 0.18s ease;
-  }
-
-  .action-list a:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .action-list strong {
-    display: block;
-    font-size: 16px;
-    font-weight: 1000;
-  }
-
-  .action-list span {
-    display: block;
-    margin-top: 5px;
-    color: #94a3b8;
-    font-size: 13px;
-  }
-
   @keyframes shine {
     0% {
       transform: translateX(-75%) rotate(8deg);
@@ -1246,7 +1214,7 @@ const pageStyles = `
 
   @media (max-width: 1020px) {
     .detail-hero-panel {
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr !important;
     }
 
     .card-stage {
@@ -1273,8 +1241,7 @@ const pageStyles = `
     .main-actions,
     .status-strip,
     .info-grid,
-    .growth-stats,
-    .unlock-columns {
+    .growth-stats {
       grid-template-columns: 1fr;
     }
 
