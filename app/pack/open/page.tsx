@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import CommonGameNav from "../../components/CommonGameNav";
 import type { Rarity } from "../../../data/cards";
@@ -238,6 +238,8 @@ function PackOpenContent() {
   const [isGodPack, setIsGodPack] = useState(false);
   const [flashKey, setFlashKey] = useState(0);
   const [leftPanelReveal, setLeftPanelReveal] = useState<{ item: PackOpenItem; key: number } | null>(null);
+  const [dataReady, setDataReady] = useState(false);
+  const openAreaRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (mode === "ten") {
@@ -269,8 +271,7 @@ function PackOpenContent() {
       setItems(result.items);
       setIsGodPack(result.isGodPack);
       saveLastPackOpenResult(mode, result.isGodPack, result.items);
-      bgmPlayer.playSfxPackOpen();
-      setPhase("opening");
+      setDataReady(true);
     }, 260);
 
     return () => window.clearTimeout(timer);
@@ -289,6 +290,24 @@ function PackOpenContent() {
     window.addEventListener("pageshow", handlePageShow);
     return () => window.removeEventListener("pageshow", handlePageShow);
   }, [mode, openId, router]);
+
+  useEffect(() => {
+    if (!dataReady) return;
+
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+    if (isMobile && openAreaRef.current) {
+      openAreaRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      const timer = window.setTimeout(() => {
+        bgmPlayer.playSfxPackOpen();
+        setPhase("opening");
+      }, 450);
+      return () => window.clearTimeout(timer);
+    }
+
+    bgmPlayer.playSfxPackOpen();
+    setPhase("opening");
+  }, [dataReady]);
 
   const currentItem = items[index] ?? null;
   const currentRarity = currentItem?.card.rarity ?? "N";
@@ -407,7 +426,7 @@ function PackOpenContent() {
                 )}
               </aside>
 
-              <section className="cards-panel">
+              <section className="cards-panel" ref={openAreaRef}>
                 <header className="result-head">
                   <div>
                     <p>{mode === "ten" ? "10 PACK RESULT" : "PACK RESULT"}</p>
