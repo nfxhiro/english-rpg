@@ -947,6 +947,12 @@ export default function QuizPage() {
     window.scrollTo({ top: 0, behavior: "auto" });
   }, [gameStatus]);
 
+  // Reset all answer state when question changes
+  useEffect(() => {
+    setSelectedAnswer(null);
+    setAnswerEffect(null);
+  }, [currentIndex]);
+
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length || activeQuestConfig.questionCount;
 
@@ -2560,6 +2566,7 @@ function QuestionArea({
         </div>
 
         <AnswerChoices
+          key={currentQuestionNumber}
           choices={choices}
           currentQuestion={currentQuestion}
           furiganaEnabled={furiganaEnabled}
