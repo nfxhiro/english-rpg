@@ -88,11 +88,15 @@ function getStatusClass(status: string) {
   return "dc-status-none";
 }
 
+const INITIAL_LIMIT = 48;
+const PAGE_SIZE = 48;
+
 export default function CardsPage() {
   const [earnedCards, setEarnedCards] = useState<EarnedCard[]>([]);
   const [rarityFilter, setRarityFilter] = useState<"すべて" | Rarity>("すべて");
   const [ownedFilter, setOwnedFilter] = useState<OwnedFilter>("all");
   const [attributeFilter, setAttributeFilter] = useState("すべて");
+  const [displayCount, setDisplayCount] = useState(INITIAL_LIMIT);
 
   const deferredRarityFilter = useDeferredValue(rarityFilter);
   const deferredOwnedFilter = useDeferredValue(ownedFilter);
@@ -105,11 +109,23 @@ export default function CardsPage() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setEarnedCards(loadEarnedCards());
+      const loaded = loadEarnedCards();
+      if (process.env.NODE_ENV === "development") {
+        const validIds = new Set(monsterCards.map((c) => c.id));
+        const invalidCount = loaded.filter((c) => !validIds.has(c.cardId)).length;
+        console.log(`[cards] 所持: ${loaded.length}件 / master: ${monsterCards.length}件 / 不正: ${invalidCount}件`);
+      }
+      setEarnedCards(loaded);
     }, 0);
 
     return () => window.clearTimeout(timer);
   }, []);
+
+  // Reset pagination when filter changes (after deferred update settles)
+  const filterKey = `${deferredRarityFilter}|${deferredOwnedFilter}|${deferredAttributeFilter}`;
+  useEffect(() => {
+    setDisplayCount(INITIAL_LIMIT);
+  }, [filterKey]);
 
   const earnedCardMap = useMemo(() => {
     return new Map(earnedCards.map((card) => [card.cardId, card]));
@@ -151,6 +167,12 @@ export default function CardsPage() {
       return matchesRarity && matchesOwned && matchesAttribute;
     });
   }, [deferredRarityFilter, deferredOwnedFilter, deferredAttributeFilter, earnedCardMap]);
+
+  const displayedCards = useMemo(
+    () => filteredCards.slice(0, displayCount),
+    [filteredCards, displayCount],
+  );
+  const hasMore = displayCount < filteredCards.length;
 
 
   return (
@@ -274,7 +296,7 @@ export default function CardsPage() {
           <div className="cards-filter-stats">
             <div>
               <span>表示中</span>
-              <strong>{filteredCards.length} 件</strong>
+              <strong>{displayedCards.length} / {filteredCards.length} 件</strong>
             </div>
 
             <div>
@@ -302,7 +324,7 @@ export default function CardsPage() {
           </div>
         ) : (
           <div className={`card-grid dex-grid${isFilterPending ? " pending" : ""}`}>
-            {filteredCards.map((card) => {
+            {displayedCards.map((card) => {
               const earnedCard = earnedCardMap.get(card.id);
               const isOwned = Boolean(earnedCard);
               const status = getStatus(card, earnedCards);
@@ -403,6 +425,19 @@ export default function CardsPage() {
               );
             })}
           </div>
+        )}
+
+        {hasMore && (
+          <button
+            type="button"
+            className="cards-load-more"
+            onClick={() => setDisplayCount((c) => c + PAGE_SIZE)}
+          >
+            さらに {Math.min(PAGE_SIZE, filteredCards.length - displayCount)} 件表示
+            <span className="cards-load-more-count">
+              {displayCount} / {filteredCards.length}
+            </span>
+          </button>
         )}
       </section>
 
@@ -878,10 +913,10 @@ export default function CardsPage() {
         }
 
         .dex-card.unknown-card {
-          filter: saturate(0.38) brightness(0.58);
+          opacity: 0.45;
         }
         .dex-card.unknown-card:hover {
-          filter: saturate(0.52) brightness(0.72);
+          opacity: 0.62;
           transform: translateY(-3px) scale(1.01);
         }
         .dex-card.unknown-card .dc-rarity-aura {
@@ -889,6 +924,46 @@ export default function CardsPage() {
         }
         .dex-card.unknown-card::before {
           opacity: 0.06;
+        }
+
+        /* Disable hover lift on touch devices — avoids stuck :hover on mobile */
+        @media (hover: none) {
+          .dex-card:hover,
+          .dex-card.unknown-card:hover {
+            transform: none;
+            opacity: inherit;
+          }
+          .dex-card {
+            transition: none;
+          }
+        }
+
+        .cards-load-more {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          width: 100%;
+          margin-top: 16px;
+          padding: 14px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(255, 255, 255, 0.05);
+          color: #94a3b8;
+          font: inherit;
+          font-size: 14px;
+          font-weight: 800;
+          cursor: pointer;
+          transition: background 0.18s, color 0.18s;
+        }
+        .cards-load-more:hover {
+          background: rgba(255, 255, 255, 0.1);
+          color: #f1f5f9;
+        }
+        .cards-load-more-count {
+          font-size: 11px;
+          color: #64748b;
+          font-weight: 700;
         }
 
         /* Header row */
@@ -1258,6 +1333,10 @@ export default function CardsPage() {
         }
 
         @media (max-width: 720px) {
+          .dex-card {
+            isolation: auto;
+          }
+
           .cards-page .eq-hero {
             padding: 18px;
           }
