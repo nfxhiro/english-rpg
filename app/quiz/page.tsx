@@ -4,14 +4,15 @@ import type { CSSProperties } from "react";
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import SpeechButton from "../components/SpeechButton";
+import CommonGameNav from "../components/CommonGameNav";
 import { learningWords, LearningWord } from "../../data/words";
 import {
   wordGroupsByLevel,
@@ -258,6 +259,7 @@ const PARTNER_RARITY_ATK_MULT: Record<MonsterCard["rarity"], number> = {
   SR: 2.0,
   SSR: 2.5,
   UR: 3.0,
+  SAR: 3.3,
 };
 
 const questModeClassNames: Record<QuestMode, string> = {
@@ -469,10 +471,12 @@ function createLargeQuestConfig(questionCount: number): QuestConfig {
   };
 }
 
-function getQuestLimitLabel(mode: QuestMode, questionCount: number) {
-  return mode === "complete" ? `全${questionCount}問` : `最大${questionCount}問`;
-}
-
+const QUEST_MODE_BATTLE_LABELS: Record<QuestMode, string> = {
+  mini: "ショートバトル",
+  normal: "スタンダードバトル",
+  boss: "ヘビーバトル",
+  complete: "完全制覇",
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -845,6 +849,7 @@ export default function QuizPage() {
     useState<QuestConfig>(defaultQuestConfig);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [activeSourceWords, setActiveSourceWords] = useState<LearningWord[]>([]);
+  const [initialQuestionCount, setInitialQuestionCount] = useState(0);
   const [questProgress, setQuestProgress] = useState<BlockProgressMap>({});
   const [gameStatus, setGameStatus] = useState<GameStatus>("playing");
   const [bossHp, setBossHp] = useState(100);
@@ -886,27 +891,31 @@ export default function QuizPage() {
   const [gameOverReason, setGameOverReason] = useState<GameOverReason>(null);
   const prevGameStatusRef = useRef<GameStatus>("playing");
 
-  useLayoutEffect(() => {
-    try {
-      setQuestProgress(loadQuestProgress());
-      setHeroLevel(loadHeroStatus().level);
-      const loadedShopState = loadShopState();
-      const selectedMonsterCard = getSelectedMonsterCard(loadedShopState);
-      const loadedEarnedCards = loadEarnedCards();
-      const selectedEarnedCard = selectedMonsterCard
-        ? loadedEarnedCards.find((card) => card.cardId === selectedMonsterCard.id) ?? null
-        : null;
-      setBuddyCard(selectedMonsterCard);
-      setBuddyEarnedCard(selectedEarnedCard);
-    } catch (error) {
-      console.error("クエストモードの初期化に失敗しました:", error);
-      setQuestProgress({});
-      setHeroLevel(1);
-      setBuddyCard(null);
-      setBuddyEarnedCard(null);
-    } finally {
-      setIsReady(true);
-    }
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      try {
+        setQuestProgress(loadQuestProgress());
+        setHeroLevel(loadHeroStatus().level);
+        const loadedShopState = loadShopState();
+        const selectedMonsterCard = getSelectedMonsterCard(loadedShopState);
+        const loadedEarnedCards = loadEarnedCards();
+        const selectedEarnedCard = selectedMonsterCard
+          ? loadedEarnedCards.find((card) => card.cardId === selectedMonsterCard.id) ?? null
+          : null;
+        setBuddyCard(selectedMonsterCard);
+        setBuddyEarnedCard(selectedEarnedCard);
+      } catch (error) {
+        console.error("クエストモードの初期化に失敗しました:", error);
+        setQuestProgress({});
+        setHeroLevel(1);
+        setBuddyCard(null);
+        setBuddyEarnedCard(null);
+      } finally {
+        setIsReady(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Battle BGM loop
@@ -980,18 +989,6 @@ export default function QuizPage() {
     activeQuestBlock?.levelId ?? activeQuestWorld?.id
   );
   const activeWorldId = activeQuestBlock?.levelId ?? activeQuestWorld?.id ?? null;
-  const activeWorldName = activeQuestWorld?.worldName ?? "";
-  const activeDungeonName =
-    activeBlockId && questLevelKey
-      ? (wordGroupsByLevel[questLevelKey]?.find((g) => g.id === activeBlockId)?.stageName ?? "")
-      : "";
-  const activeContentType =
-    questType === "block" && activeBlockId
-      ? activeBlockId.includes("-ph-")
-        ? "熟語サブダンジョン"
-        : "単語ダンジョン"
-      : "";
-
   const toggleFurigana = () => {
     setStoredFuriganaEnabled(!furiganaEnabled);
   };
@@ -1084,6 +1081,7 @@ export default function QuizPage() {
       });
       setActiveBlockId(blockId);
       setActiveSourceWords(sourceWords);
+      setInitialQuestionCount(nextQuestions.length);
       setGameStatus("playing");
       setHeroMaxHp(battleStats.heroMaxHp);
       setEnemyMaxHp(battleStats.enemyMaxHp);
@@ -1198,7 +1196,6 @@ export default function QuizPage() {
       (enemyDefeatedThisAnswer ? currentQuestionNumberForResult : null);
     const hasDefeatedBoss = nextBossDefeatedQuestionNumber !== null;
     const heroDied = nextHeroHp <= 0;
-    const timedOut = reachedFinalQuestion && !hasDefeatedBoss;
 
     const nextStatus: GameStatus | null = heroDied
       ? "gameOver"
@@ -1208,9 +1205,7 @@ export default function QuizPage() {
           : null
         : hasDefeatedBoss
           ? "clear"
-          : timedOut
-            ? "gameOver"
-            : null;
+          : null;
     const nextGameOverReason: GameOverReason =
       nextStatus === "gameOver"
         ? heroDied ? "heroHpZero" : "bossSurvived"
@@ -1317,7 +1312,7 @@ export default function QuizPage() {
             nextMistakeCount === 0;
           const bossDefeatedAt =
             nextBossDefeatedQuestionNumber ?? currentQuestionNumberForResult;
-          const speedClearBonus = bossDefeatedAt < totalQuestions * 0.7;
+          const speedClearBonus = bossDefeatedAt < initialQuestionCount * 0.7;
           const noMissBonus = nextMistakeCount === 0;
           const baseGold = QUEST_BASE_GOLD[activeQuestConfig.mode];
           const levelMult = LEVEL_GOLD_MULTIPLIER[questLevelKey ?? ""] ?? DEFAULT_GOLD_MULTIPLIER;
@@ -1413,8 +1408,18 @@ export default function QuizPage() {
       }
 
       const nextIndex = currentIndex + 1;
-      const nextQuestion = questions[nextIndex];
 
+      let currentQuestions = questions;
+      if (nextIndex >= questions.length) {
+        const recentWords = new Set(questions.slice(-activeSourceWords.length).map((q) => q.word));
+        const freshPool = activeSourceWords.filter((w) => !recentWords.has(w.word));
+        const pool = freshPool.length > 0 ? freshPool : activeSourceWords;
+        const additional = createRandomQuestions(pool, pool.length);
+        currentQuestions = [...questions, ...additional];
+        setQuestions(currentQuestions);
+      }
+
+      const nextQuestion = currentQuestions[nextIndex];
       const nextChoices = createChoices(nextQuestion, lastCorrectPosition ?? undefined);
       setCurrentIndex(nextIndex);
       setSelectedAnswer(null);
@@ -1466,9 +1471,6 @@ export default function QuizPage() {
   if (gameStatus !== "playing") {
     return (
       <QuestResultScreen
-        activeContentType={activeContentType}
-        activeDungeonName={activeDungeonName}
-        activeWorldName={activeWorldName}
         answeredQuestionCount={answeredQuestionCount}
         bossDefeatedQuestionNumber={bossDefeatedQuestionNumber}
         canReview={wrongAnswers.length > 0}
@@ -1517,12 +1519,10 @@ export default function QuizPage() {
       heroLevel={heroLevel}
       heroMaxHp={heroMaxHp}
       onAnswer={handleAnswer}
-      onBackToSelect={backToSelect}
       onToggleFurigana={toggleFurigana}
       playerHp={playerHp}
       questMode={activeQuestConfig.mode}
       selectedAnswer={selectedAnswer}
-      totalQuestions={totalQuestions}
       worldId={activeWorldId}
     />
   );
@@ -1594,9 +1594,7 @@ function QuestSelectScreen({
     <main className={styles.root} style={getQuestWorldBackgroundStyle(selectedWorld?.id)}>
       <section className={styles.selectScreen}>
         <div className={styles.selectTopbar}>
-          <Link href="/" className={styles.backLink}>
-            ホームへ戻る
-          </Link>
+          <CommonGameNav />
           <div className={styles.selectTopbarActions}>
             <FuriganaToggle
               furiganaEnabled={furiganaEnabled}
@@ -1848,7 +1846,7 @@ function QuestBlockCard({
                 <span>
                   {config.mode === "complete"
                     ? `📜 全${questConfig.questionCount}問`
-                    : `📜 最大${questConfig.questionCount}問`}
+                    : `📜 ${QUEST_MODE_BATTLE_LABELS[config.mode]}`}
                 </span>
                 <span>
                   {config.mode === "complete" ? "⚔️ 撃破後も継続" : "⚔️ 撃破で即クリア"}
@@ -1898,12 +1896,10 @@ function QuestBattleMode({
   heroLevel,
   heroMaxHp,
   onAnswer,
-  onBackToSelect,
   onToggleFurigana,
   playerHp,
   questMode,
   selectedAnswer,
-  totalQuestions,
   worldId,
 }: {
   answerEffect: AnswerEffect | null;
@@ -1921,25 +1917,17 @@ function QuestBattleMode({
   heroLevel: number;
   heroMaxHp: number;
   onAnswer: (choice: string) => void;
-  onBackToSelect: () => void;
   onToggleFurigana: () => void;
   playerHp: number;
   questMode: QuestMode;
   selectedAnswer: string | null;
-  totalQuestions: number;
   worldId: EikenLevelId | null;
 }) {
   return (
     <main className={styles.root} style={getQuestWorldBackgroundStyle(worldId)}>
       <section className={styles.screen} aria-label="英検クエスト フロンティア">
         <div className={styles.battleTopbar}>
-          <button
-            type="button"
-            onClick={onBackToSelect}
-            className={styles.backButton}
-          >
-            クエスト選択へ
-          </button>
+          <CommonGameNav />
           <div className={styles.selectTopbarActions}>
             <FuriganaToggle
               furiganaEnabled={furiganaEnabled}
@@ -1958,6 +1946,7 @@ function QuestBattleMode({
           buddyCard={buddyCard}
           choices={choices}
           currentQuestion={currentQuestion}
+          currentQuestionNumber={currentQuestionNumber}
           currentStreak={currentStreak}
           furiganaEnabled={furiganaEnabled}
           heroLevel={heroLevel}
@@ -2010,6 +1999,7 @@ function BattleQuizScreen({
   buddyCard,
   choices,
   currentQuestion,
+  currentQuestionNumber,
   currentStreak,
   furiganaEnabled,
   heroLevel,
@@ -2028,6 +2018,7 @@ function BattleQuizScreen({
   buddyCard: MonsterCard | null;
   choices: string[];
   currentQuestion: LearningWord;
+  currentQuestionNumber: number;
   currentStreak: number;
   furiganaEnabled: boolean;
   heroLevel: number;
@@ -2056,6 +2047,7 @@ function BattleQuizScreen({
       <QuestionArea
         choices={choices}
         currentQuestion={currentQuestion}
+        currentQuestionNumber={currentQuestionNumber}
         furiganaEnabled={furiganaEnabled}
         locationLabel={boss.stage}
         onAnswer={onAnswer}
@@ -2237,9 +2229,12 @@ function HeroSpriteDisplay({
 
   return (
     <div className={styles.heroSpriteWrapper} aria-hidden="true">
-      <img
+      <Image
         src={HERO_SPRITES[sprite]}
         alt=""
+        width={1254}
+        height={1254}
+        sizes="180px"
         className={styles.heroSpriteImage}
         style={{ transform: `translateX(${offsetX}px)` }}
         onError={() => setImgFailed(true)}
@@ -2536,6 +2531,7 @@ function HpMeter({
 function QuestionArea({
   choices,
   currentQuestion,
+  currentQuestionNumber,
   furiganaEnabled,
   locationLabel,
   onAnswer,
@@ -2543,6 +2539,7 @@ function QuestionArea({
 }: {
   choices: string[];
   currentQuestion: LearningWord;
+  currentQuestionNumber: number;
   furiganaEnabled: boolean;
   locationLabel: string;
   onAnswer: (choice: string) => void;
@@ -2555,6 +2552,7 @@ function QuestionArea({
           <div className={styles.questLocation}>
             {currentQuestion.level}：{locationLabel}
           </div>
+          <div className={styles.questionNumber}>Q.{currentQuestionNumber}</div>
           <SpeechButton
             text={currentQuestion.word}
             label="単語を聞く"
@@ -2628,9 +2626,6 @@ function AnswerChoices({
 }
 
 function QuestResultScreen({
-  activeContentType,
-  activeDungeonName,
-  activeWorldName,
   answeredQuestionCount,
   bossDefeatedQuestionNumber,
   canReview,
@@ -2658,9 +2653,6 @@ function QuestResultScreen({
   worldId,
   wrongAnswers,
 }: {
-  activeContentType: string;
-  activeDungeonName: string;
-  activeWorldName: string;
   answeredQuestionCount: number;
   bossDefeatedQuestionNumber: number | null;
   canReview: boolean;
@@ -2767,17 +2759,6 @@ function QuestResultScreen({
             <p className={styles.resultQuestName}>{questTitle}</p>
             <p className={styles.resultMessage}>{resultMessage}</p>
 
-            {(activeWorldName || activeDungeonName || activeContentType) && (
-              <div className={styles.resultQuestMeta}>
-                {activeWorldName && <span>{activeWorldName}</span>}
-                {activeDungeonName && <span>{activeDungeonName}</span>}
-                {activeContentType && <span>{activeContentType}</span>}
-                <span>{getQuestLimitLabel(questMode, totalQuestions)}</span>
-                {gameStatus === "clear" && bossDefeatedQuestionNumber && (
-                  <span>撃破タイミング：{bossDefeatedQuestionNumber}問目</span>
-                )}
-              </div>
-            )}
           </div>
 
           {partClearReward && (
@@ -2880,14 +2861,20 @@ function QuestResultScreen({
               <section className={cx(styles.resultDetailCard, styles.resultHeroCard)}>
                 <div className={styles.resultCardTop}>
                   <span className={styles.resultSectionLabel}>主人公</span>
-                  <img
+                  <Image
                     src="/images/hero/hero_ready.png"
                     alt="勇者"
+                    width={1254}
+                    height={1254}
+                    sizes="96px"
                     className={styles.resultHeroSprite}
                   />
                 </div>
                 <h3>{heroStatusAfter.title}</h3>
                 <strong>Lv{heroLevelAfter}</strong>
+                {totalHeroExpGained > 0 && !heroExpProgress?.isMaxLevel && (
+                  <p>EXP +{totalHeroExpGained}</p>
+                )}
                 <div className={styles.resultHeroStatus}>
                   {heroExpProgress?.isMaxLevel
                     ? "MAX"

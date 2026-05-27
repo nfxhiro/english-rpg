@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import CommonGameNav from "../components/CommonGameNav";
 import {
-  EarnedCard,
-  gachaRarityRates,
-  getOwnedCount,
   monsterCards,
   MonsterCard,
-  pickCardByRarity,
   Rarity,
-  rollGodPack,
-  createGodPackCards,
 } from "../../data/cards";
-import { addGold, loadGold, spendGold } from "../../data/hero";
+import { loadGold, spendGold } from "../../data/hero";
 import { bgmPlayer } from "../../data/bgm";
+import {
+  clearLastPackOpenResult,
+  loadLastPackOpenResult,
+  openStoredPack,
+  queueForcedGodPack,
+} from "../../data/packStorage";
 
 const TICKET_PRICE_ONE = 100;
 const TICKET_PRICE_TEN = 900;
@@ -25,22 +26,6 @@ type TenPackItem = {
   isNew: boolean;
 };
 
-type StoredEarnedCard = EarnedCard & {
-  cardId: string;
-  correctCount: number;
-  exp: number;
-  obtainedAt: string;
-  updatedAt?: string;
-  ownedCount?: number;
-};
-
-function getCollectionRate(ownedCount: number, totalCount: number) {
-  if (totalCount <= 0) return 0;
-  if (ownedCount >= totalCount) return 100;
-
-  return Math.floor((ownedCount / totalCount) * 100);
-}
-
 function loadPackTickets(): number {
   if (typeof window === "undefined") return 0;
 
@@ -48,41 +33,21 @@ function loadPackTickets(): number {
   return Number.isFinite(value) ? value : 0;
 }
 
-function loadEarnedCards(): StoredEarnedCard[] {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const savedCardsText = localStorage.getItem("earnedCards");
-    const parsedCards = savedCardsText ? JSON.parse(savedCardsText) : [];
-
-    if (!Array.isArray(parsedCards)) return [];
-
-    return parsedCards.filter((card) => {
-      return typeof card.cardId === "string";
-    });
-  } catch {
-    localStorage.removeItem("earnedCards");
-    return [];
-  }
-}
-
-function saveEarnedCards(cards: StoredEarnedCard[]) {
-  localStorage.setItem("earnedCards", JSON.stringify(cards));
-}
-
 function getRarityLabel(rarity: Rarity) {
-  if (rarity === "UR")  return "ULTIMATE";
-  if (rarity === "SSR") return "LEGEND";
-  if (rarity === "SR")  return "EPIC";
-  if (rarity === "R")   return "RARE";
-  return "NORMAL";
+  if (rarity === "SAR") return "スペシャルアート";
+  if (rarity === "UR")  return "アルティメット";
+  if (rarity === "SSR") return "レジェンド";
+  if (rarity === "SR")  return "スーパーレア";
+  if (rarity === "R")   return "レア";
+  return "ノーマル";
 }
 
 function isPrizeRarity(rarity: Rarity) {
-  return rarity === "UR" || rarity === "SSR" || rarity === "SR";
+  return rarity === "SAR" || rarity === "UR" || rarity === "SSR" || rarity === "SR";
 }
 
 function getPrizeRevealClass(rarity: Rarity) {
+  if (rarity === "SAR") return " prize-reveal prize-sar";
   if (rarity === "UR")  return " prize-reveal prize-ur";
   if (rarity === "SSR") return " prize-reveal prize-ssr";
   if (rarity === "SR")  return " prize-reveal prize-sr";
@@ -90,6 +55,7 @@ function getPrizeRevealClass(rarity: Rarity) {
 }
 
 function getDropCallout(rarity: Rarity) {
+  if (rarity === "SAR") return "ULTIMATE DROP";
   if (rarity === "UR")  return "ULTIMATE DROP";
   if (rarity === "SSR") return "LEGEND DROP";
   if (rarity === "SR")  return "EPIC DROP";
@@ -97,6 +63,7 @@ function getDropCallout(rarity: Rarity) {
 }
 
 function getTenPackFlipDelay(rarity: Rarity) {
+  if (rarity === "SAR") return 1500;
   if (rarity === "UR") return 1350;
   if (rarity === "SSR") return 1120;
   if (rarity === "SR") return 860;
@@ -105,6 +72,7 @@ function getTenPackFlipDelay(rarity: Rarity) {
 }
 
 function getTenPackRevealHoldDelay(rarity: Rarity) {
+  if (rarity === "SAR") return 3100;
   if (rarity === "UR") return 2750;
   if (rarity === "SSR") return 2300;
   if (rarity === "SR") return 1650;
@@ -113,7 +81,7 @@ function getTenPackRevealHoldDelay(rarity: Rarity) {
 }
 
 function renderCardRevealEffects(rarity: Rarity) {
-  const sparkCount = rarity === "UR" ? 20 : rarity === "SSR" ? 14 : 10;
+  const sparkCount = rarity === "SAR" ? 24 : rarity === "UR" ? 20 : rarity === "SSR" ? 14 : 10;
   return (
     <div className={`card-reveal-effects rarity-${rarity.toLowerCase()}`} aria-hidden="true">
       {Array.from({ length: sparkCount }, (_, index) => (
@@ -124,7 +92,7 @@ function renderCardRevealEffects(rarity: Rarity) {
 }
 
 function renderPrizeRays(rarity: Rarity) {
-  const rayCount = rarity === "UR" ? 12 : rarity === "SSR" ? 8 : 6;
+  const rayCount = rarity === "SAR" ? 14 : rarity === "UR" ? 12 : rarity === "SSR" ? 8 : 6;
   return (
     <div className={`pack-prize-effects rays-${rarity.toLowerCase()}`} aria-hidden="true">
       {Array.from({ length: rayCount }, (_, i) => <span key={i} />)}
@@ -132,67 +100,10 @@ function renderPrizeRays(rarity: Rarity) {
   );
 }
 
-const rarityRank: Record<Rarity, number> = {
-  N: 0,
-  R: 1,
-  SR: 2,
-  SSR: 3,
-  UR: 4,
-};
-
-function upsertEarnedCard(
-  earnedCards: StoredEarnedCard[],
-  card: MonsterCard
-): {
-  nextEarnedCards: StoredEarnedCard[];
-  isNewCard: boolean;
-  ownedCopies: number;
-} {
-  const now = new Date().toISOString();
-  const existingCard = earnedCards.find((earnedCard) => earnedCard.cardId === card.id);
-
-  if (!existingCard) {
-    const newEarnedCard: StoredEarnedCard = {
-      cardId: card.id,
-      correctCount: 0,
-      exp: 0,
-      obtainedAt: now,
-      updatedAt: now,
-      ownedCount: 1,
-    } as StoredEarnedCard;
-
-    return {
-      nextEarnedCards: [...earnedCards, newEarnedCard],
-      isNewCard: true,
-      ownedCopies: 1,
-    };
-  }
-
-  const currentOwnedCount = getOwnedCount(existingCard);
-  const nextOwnedCount = currentOwnedCount + 1;
-
-  const nextEarnedCards = earnedCards.map((earnedCard) => {
-    if (earnedCard.cardId !== card.id) return earnedCard;
-
-    return {
-      ...earnedCard,
-      ownedCount: nextOwnedCount,
-      updatedAt: now,
-    };
-  });
-
-  return {
-    nextEarnedCards,
-    isNewCard: false,
-    ownedCopies: nextOwnedCount,
-  };
-}
-
 export default function PackPage() {
-  const [isReady, setIsReady] = useState(false);
+  const router = useRouter();
   const [packTickets, setPackTickets] = useState(0);
   const [gold, setGold] = useState(0);
-  const [earnedCards, setEarnedCards] = useState<StoredEarnedCard[]>([]);
   const [openedCard, setOpenedCard] = useState<MonsterCard | null>(null);
   const [isNewCard, setIsNewCard] = useState(false);
   const [openedCopies, setOpenedCopies] = useState(0);
@@ -202,19 +113,47 @@ export default function PackPage() {
   const [tenPackCurrentIndex, setTenPackCurrentIndex] = useState(0);
   const [tenPackCardFlipped, setTenPackCardFlipped] = useState(false);
   const [revealFlash, setRevealFlash] = useState<{ rarity: Rarity; key: number } | null>(null);
-  const [isGodPack, setIsGodPack] = useState(false);
-  const [godPackPhase, setGodPackPhase] = useState(0);
+  const isGodPack = false;
+  const godPackPhase = 0;
   const [cheatToast, setCheatToast] = useState(false);
+  const [prizeOverlay, setPrizeOverlay] = useState<{
+    rarity: Rarity;
+    emoji: string;
+    name: string;
+    isNew: boolean;
+    key: number;
+  } | null>(null);
 
-  useLayoutEffect(() => {
-    setPackTickets(loadPackTickets());
-    setGold(loadGold());
-    setEarnedCards(loadEarnedCards());
-    setIsReady(true);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPackTickets(loadPackTickets());
+      setGold(loadGold());
+      const lastResult = loadLastPackOpenResult();
+      if (lastResult) {
+        if (lastResult.mode === "single" && !lastResult.isGodPack) {
+          const resolvedItems = lastResult.items
+            .map((item) => {
+              const card = monsterCards.find((monsterCard) => monsterCard.id === item.cardId);
+              return card ? { card, isNew: item.isNew, ownedCopies: item.ownedCopies } : null;
+            })
+            .filter((item): item is TenPackItem & { ownedCopies: number } => item !== null);
+
+          const [singleItem] = resolvedItems;
+          if (singleItem) {
+            setOpenedCard(singleItem.card);
+            setIsNewCard(singleItem.isNew);
+            setOpenedCopies(singleItem.ownedCopies);
+          }
+        }
+        clearLastPackOpenResult();
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    const SECRET = "GOLD";
+    const SECRET = "GODPACK";
     let buf = "";
     let toastTimer: ReturnType<typeof setTimeout>;
 
@@ -222,8 +161,7 @@ export default function PackPage() {
       if (e.key.length !== 1) return;
       buf = (buf + e.key.toUpperCase()).slice(-SECRET.length);
       if (buf === SECRET) {
-        addGold(10000);
-        setGold(loadGold());
+        queueForcedGodPack();
         setCheatToast(true);
         clearTimeout(toastTimer);
         toastTimer = setTimeout(() => setCheatToast(false), 2800);
@@ -251,7 +189,7 @@ export default function PackPage() {
   useEffect(() => {
     if (!openedCard) return;
     bgmPlayer.playSfxReveal(openedCard.rarity);
-    if (openedCard.rarity === "SR" || openedCard.rarity === "SSR" || openedCard.rarity === "UR") {
+    if (isPrizeRarity(openedCard.rarity)) {
       const timer = window.setTimeout(() => {
         setRevealFlash({ rarity: openedCard.rarity, key: Date.now() });
       }, 0);
@@ -265,7 +203,7 @@ export default function PackPage() {
     const item = tenPackResult[tenPackCurrentIndex];
     if (!item) return;
     bgmPlayer.playSfxReveal(item.card.rarity);
-    if (item.card.rarity === "SR" || item.card.rarity === "SSR" || item.card.rarity === "UR") {
+    if (isPrizeRarity(item.card.rarity)) {
       const timer = window.setTimeout(() => {
         setRevealFlash({ rarity: item.card.rarity, key: Date.now() });
       }, 0);
@@ -273,6 +211,32 @@ export default function PackPage() {
     }
     return undefined;
   }, [tenPackCardFlipped, tenPackResult, tenPackCurrentIndex]);
+
+  useEffect(() => {
+    if (!tenPackCardFlipped || !tenPackResult) return;
+    const item = tenPackResult[tenPackCurrentIndex];
+    if (!item) return;
+    if (item.card.rarity === "SSR" || item.card.rarity === "UR" || item.card.rarity === "SAR") {
+      const timer = window.setTimeout(() => setPrizeOverlay({
+        rarity: item.card.rarity,
+        emoji: item.card.monsterEmoji,
+        name: item.card.name,
+        isNew: item.isNew,
+        key: Date.now(),
+      }), 0);
+
+      return () => window.clearTimeout(timer);
+    }
+
+    return undefined;
+  }, [tenPackCardFlipped, tenPackResult, tenPackCurrentIndex]);
+
+  useEffect(() => {
+    if (!prizeOverlay) return;
+    const dur = prizeOverlay.rarity === "SAR" ? 2600 : prizeOverlay.rarity === "UR" ? 2100 : 1750;
+    const t = window.setTimeout(() => setPrizeOverlay(null), dur);
+    return () => window.clearTimeout(t);
+  }, [prizeOverlay]);
 
   useEffect(() => {
     if (!tenPackCardFlipped || !tenPackResult) return;
@@ -289,12 +253,6 @@ export default function PackPage() {
     return () => window.clearTimeout(timer);
   }, [tenPackCardFlipped, tenPackResult, tenPackCurrentIndex]);
 
-  const ownedCount = earnedCards.length;
-  const totalCount = monsterCards.length;
-
-  const collectionRate =
-    getCollectionRate(ownedCount, totalCount);
-
   const isTenPackComplete = Boolean(
     tenPackResult && tenPackCurrentIndex >= tenPackResult.length
   );
@@ -306,8 +264,9 @@ export default function PackPage() {
   const tenPackProgressPercent = tenPackResult
     ? Math.round((revealedTenPackCount / tenPackResult.length) * 100)
     : 0;
-  const currentTenPackItem =
-    tenPackResult && !isTenPackComplete ? tenPackResult[tenPackCurrentIndex] : null;
+  const currentTenPackItem = (
+    tenPackResult && !isTenPackComplete ? tenPackResult[tenPackCurrentIndex] : null
+  ) as TenPackItem;
   const currentTenPackPrizeClass =
     currentTenPackItem && tenPackCardFlipped
       ? getPrizeRevealClass(currentTenPackItem.card.rarity)
@@ -320,79 +279,28 @@ export default function PackPage() {
   const tenPackNewCount = useMemo(() => {
     return tenPackResult?.filter((item) => item.isNew).length ?? 0;
   }, [tenPackResult]);
-  const tenPackPrizeCount = useMemo(() => {
-    return tenPackResult?.filter((item) => isPrizeRarity(item.card.rarity)).length ?? 0;
-  }, [tenPackResult]);
-  const tenPackBestItem = useMemo(() => {
-    if (!tenPackResult) return null;
-
-    const [firstItem, ...restItems] = tenPackResult;
-    if (!firstItem) return null;
-
-    return restItems.reduce((bestItem, currentItem) => {
-      return rarityRank[currentItem.card.rarity] > rarityRank[bestItem.card.rarity]
-        ? currentItem
-        : bestItem;
-    }, firstItem);
-  }, [tenPackResult]);
-
-  const isTenPackAutoRevealing = Boolean(tenPackResult && !isTenPackComplete);
+  const isTenPackAutoRevealing = false;
   const canOpenPack = packTickets > 0 && !isOpening && !isOpeningTen && !isTenPackAutoRevealing && godPackPhase === 0;
   const canOpenTenPack = packTickets >= 10 && !isOpening && !isOpeningTen && !isTenPackAutoRevealing && godPackPhase === 0;
 
   const openPack = () => {
     if (!canOpenPack) return;
-
-    bgmPlayer.playSfxPackOpen();
     setIsOpening(true);
     setOpenedCard(null);
     setTenPackResult(null);
     setTenPackCurrentIndex(0);
     setTenPackCardFlipped(false);
-    setIsGodPack(false);
-    setGodPackPhase(0);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    setTimeout(() => {
-      const nextTickets = Math.max(0, packTickets - 1);
-      localStorage.setItem("packTickets", String(nextTickets));
-      setPackTickets(nextTickets);
-
-      if (rollGodPack()) {
-        let currentEarnedCards = earnedCards;
-        const godCards = createGodPackCards();
-        const results: TenPackItem[] = [];
-        for (const card of godCards) {
-          const result = upsertEarnedCard(currentEarnedCards, card);
-          currentEarnedCards = result.nextEarnedCards;
-          results.push({ card, isNew: result.isNewCard });
-        }
-        saveEarnedCards(currentEarnedCards);
-        setEarnedCards(currentEarnedCards);
-        setIsOpening(false);
-        setIsGodPack(true);
-        setGodPackPhase(1);
-        const capturedResults = results;
-        setTimeout(() => setGodPackPhase(2), 700);
-        setTimeout(() => setGodPackPhase(3), 1400);
-        setTimeout(() => setGodPackPhase(4), 2200);
-        setTimeout(() => {
-          setGodPackPhase(0);
-          setTenPackCurrentIndex(0);
-          setTenPackCardFlipped(false);
-          setTenPackResult(capturedResults);
-        }, 3500);
-      } else {
-        const selectedCard = pickCardByRarity();
-        const result = upsertEarnedCard(earnedCards, selectedCard);
-        saveEarnedCards(result.nextEarnedCards);
-        setEarnedCards(result.nextEarnedCards);
-        setOpenedCard(selectedCard);
-        setIsNewCard(result.isNewCard);
-        setOpenedCopies(result.ownedCopies);
-        setIsOpening(false);
-      }
-    }, 720);
+    window.setTimeout(() => {
+      bgmPlayer.playSfxPackOpen();
+      const result = openStoredPack("single");
+      setIsOpening(false);
+      if (!result.ok || !result.items[0]) return;
+      const item = result.items[0];
+      setPackTickets(result.remainingTickets);
+      setOpenedCard(item.card);
+      setIsNewCard(item.isNew);
+      setOpenedCopies(item.ownedCopies);
+    }, 700);
   };
 
   const skipTenPack = () => {
@@ -403,56 +311,12 @@ export default function PackPage() {
 
   const openTenPack = () => {
     if (!canOpenTenPack) return;
-
-    bgmPlayer.playSfxPackOpen();
     setIsOpeningTen(true);
-    setOpenedCard(null);
-    setTenPackResult(null);
-    setTenPackCurrentIndex(0);
-    setTenPackCardFlipped(false);
-    setIsGodPack(false);
-    setGodPackPhase(0);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    setTimeout(() => {
-      const nextTickets = Math.max(0, packTickets - 10);
-      localStorage.setItem("packTickets", String(nextTickets));
-      setPackTickets(nextTickets);
-
-      const isGodPackTriggered = rollGodPack();
-      const cards = isGodPackTriggered
-        ? createGodPackCards()
-        : Array.from({ length: 10 }, () => pickCardByRarity());
-
-      let currentEarnedCards = earnedCards;
-      const results: TenPackItem[] = [];
-      for (const card of cards) {
-        const result = upsertEarnedCard(currentEarnedCards, card);
-        currentEarnedCards = result.nextEarnedCards;
-        results.push({ card, isNew: result.isNewCard });
-      }
-
-      saveEarnedCards(currentEarnedCards);
-      setEarnedCards(currentEarnedCards);
-      setTenPackCurrentIndex(0);
-      setTenPackCardFlipped(false);
-      setIsOpeningTen(false);
-
-      if (isGodPackTriggered) {
-        setIsGodPack(true);
-        setGodPackPhase(1);
-        const capturedResults = results;
-        setTimeout(() => setGodPackPhase(2), 700);
-        setTimeout(() => setGodPackPhase(3), 1400);
-        setTimeout(() => setGodPackPhase(4), 2200);
-        setTimeout(() => {
-          setGodPackPhase(0);
-          setTenPackResult(capturedResults);
-        }, 3500);
-      } else {
-        setTenPackResult(results);
-      }
-    }, 920);
+    window.setTimeout(() => {
+      const openId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      sessionStorage.setItem(`pack-open-ready:${openId}`, "1");
+      router.replace(`/pack/open?mode=ten&openId=${encodeURIComponent(openId)}`);
+    }, 420);
   };
 
   const buyTickets = (count: 1 | 10) => {
@@ -467,98 +331,10 @@ export default function PackPage() {
     setPackTickets(nextTickets);
   };
 
-  const renderTenPackPanelGrid = (variant: "stage" | "panel" = "panel") => {
-    if (!tenPackResult) return null;
-    const revealedUpTo = isTenPackComplete
-      ? tenPackResult.length
-      : tenPackCurrentIndex + (tenPackCardFlipped ? 1 : 0);
-
-    return (
-      <div className={`tenpack-grid tenpack-grid-${variant}${isGodPack ? " god-pack-grid" : ""}`}>
-        {tenPackResult.map((item, i) => {
-          const isRevealed = i < revealedUpTo;
-          const isPrize = isRevealed && isPrizeRarity(item.card.rarity);
-          const isLatest = isRevealed && !isTenPackComplete && i === revealedUpTo - 1;
-
-          return (
-            <div
-              key={`${item.card.id}-${i}`}
-              className={`tenpack-item${isPrize ? " is-prize" : ""}${isGodPack ? " god-pack-item" : ""}`}
-            >
-              {isRevealed ? (
-                <div
-                  className={`tenpack-card-face tenpack-card-front rarity-${item.card.rarity.toLowerCase()}${isLatest ? " latest" : ""}${isGodPack ? " god-pack-card" : ""}`}
-                >
-                  <div className="tenpack-slot-number">
-                    {String(i + 1).padStart(2, "0")}
-                  </div>
-                  {isPrize && (
-                    <div className="tenpack-prize-callout">
-                      {getDropCallout(item.card.rarity)}
-                    </div>
-                  )}
-                  {item.isNew
-                    ? <div className="tenpack-item-new">NEW</div>
-                    : isGodPack
-                      ? <div className="tenpack-item-dupe">覚醒素材+1</div>
-                      : null
-                  }
-                  <div className="tenpack-item-emoji">{item.card.monsterEmoji}</div>
-                  <div className="tenpack-item-rarity">
-                    {item.card.rarity} / {getRarityLabel(item.card.rarity)}
-                  </div>
-                  <div className="tenpack-item-name">{item.card.name}</div>
-                </div>
-              ) : (
-                <div className="tenpack-card-face tenpack-card-back">
-                  <div className="tenpack-slot-number">
-                    {String(i + 1).padStart(2, "0")}
-                  </div>
-                  <div className="tenpack-back-glyph">？</div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
-  if (!isReady) {
-    return (
-      <main className="eq-page pack-page">
-        <div className="eq-bg-orb eq-bg-orb-one" />
-        <div className="eq-bg-orb eq-bg-orb-two" />
-        <div className="eq-bg-orb eq-bg-orb-three" />
-
-        <section className="eq-shell">
-          <div className="eq-topbar">
-            <Link href="/" className="eq-back-link">
-              ホームへ戻る
-            </Link>
-          </div>
-
-          <div className="eq-hero">
-            <div className="eq-hero-copy">
-              <div className="eq-eyebrow">
-                <span>🎁</span>
-                <span>LOADING PACK</span>
-              </div>
-
-              <h1 className="eq-page-title">パック準備中...</h1>
-
-              <p className="eq-lead">
-                パックチケットとカードデータを読み込んでいます。
-              </p>
-            </div>
-          </div>
-        </section>
-      </main>
-    );
-  }
-
   return (
     <main className="eq-page pack-page">
+      <div className="pack-page-bg" aria-hidden="true" />
+      <div className="pack-page-bg-overlay" aria-hidden="true" />
       <div className="eq-bg-orb eq-bg-orb-one" />
       <div className="eq-bg-orb eq-bg-orb-two" />
       <div className="eq-bg-orb eq-bg-orb-three" />
@@ -581,7 +357,7 @@ export default function PackPage() {
             <p className="god-pack-kicker">神域解放</p>
             <h2 className="god-pack-name">GOD PACK</h2>
             <div className="god-pack-guarantees">
-              <span>✦ UR 1枚確定</span>
+              <span>✦ SARまたはUR 1枚確定</span>
               <span>✦ SSR 2枚以上確定</span>
               <span>✦ 10枚すべてSR以上</span>
             </div>
@@ -590,14 +366,42 @@ export default function PackPage() {
         </div>
       )}
 
+      {/* SSR / UR / SAR ドラマティック出現オーバーレイ */}
+      {prizeOverlay && (
+        <div
+          key={prizeOverlay.key}
+          className={`prize-overlay prize-overlay-${prizeOverlay.rarity.toLowerCase()}`}
+          aria-live="assertive"
+          aria-label={`${prizeOverlay.rarity} 出現`}
+        >
+          <div className="prize-overlay-bg" />
+          <div className="prize-overlay-rays" aria-hidden="true">
+            {Array.from({ length: prizeOverlay.rarity === "SAR" ? 20 : prizeOverlay.rarity === "UR" ? 16 : 12 }, (_, i) => (
+              <span key={i} />
+            ))}
+          </div>
+          <div className="prize-overlay-rings" aria-hidden="true">
+            <span /><span /><span />
+          </div>
+          <div className="prize-overlay-particles" aria-hidden="true">
+            {Array.from({ length: 30 }, (_, i) => <span key={i} />)}
+          </div>
+          <div className="prize-overlay-content">
+            <div className="prize-overlay-rarity-tag">{prizeOverlay.rarity}</div>
+            <div className="prize-overlay-emoji">{prizeOverlay.emoji}</div>
+            <div className="prize-overlay-label">{getRarityLabel(prizeOverlay.rarity)}</div>
+            <div className="prize-overlay-name">{prizeOverlay.name}</div>
+            {prizeOverlay.isNew && <div className="prize-overlay-new-badge">NEW CARD</div>}
+          </div>
+        </div>
+      )}
+
       <section className="eq-shell">
         <div className="eq-topbar">
-          <Link href="/" className="eq-back-link">
-            ホームへ戻る
-          </Link>
+          <CommonGameNav />
         </div>
 
-        <div className={`eq-hero${isTenPackComplete ? " pack-hero--tenpack" : ""}`}>
+        <div className="eq-hero">
           <div className="eq-hero-copy">
             <div className="eq-eyebrow">
               <span>🎁</span>
@@ -606,18 +410,17 @@ export default function PackPage() {
 
             <h1 className="eq-page-title">パック開封</h1>
 
-            <p className="eq-lead">
-              クエストでゴールドを稼ぎ、ショップでチケットを買ってパックを開封しよう。
-              新しいカードを集めて、カード図鑑を完成させよう。
+            <p className="eq-lead pack-lead">
+              クエストで集めたゴールドをチケットに交換して、仲間になるモンスターカードを召喚しよう。
+              10連ではレアな出会いに期待できます。
             </p>
 
             <div className="pack-gold-bar">
               <span className="pack-gold-label">💰 ゴールド</span>
-              <strong className="pack-gold-amount">{gold}G</strong>
+              <strong className="pack-gold-amount">{gold.toLocaleString()}G</strong>
             </div>
 
             <div className="pack-shop">
-              <p className="pack-shop-label">🛒 ショップ — ゴールドでチケットを買う</p>
               <div className="pack-shop-grid">
                 <button
                   type="button"
@@ -640,11 +443,6 @@ export default function PackPage() {
                   <small>{TICKET_PRICE_TEN}G（お得）</small>
                 </button>
               </div>
-            </div>
-
-            <div className="pack-tickets-bar">
-              <span>🎫 チケット保有数</span>
-              <strong>{packTickets}枚</strong>
             </div>
 
             <div className="eq-actions">
@@ -675,19 +473,14 @@ export default function PackPage() {
                 <span>{isOpeningTen ? "✨" : "🌟"}</span>
                 {isOpeningTen ? "開封中..." : "10連開封（チケット×10）"}
               </button>
-
-              <Link href="/quiz" className="eq-button eq-button-ghost pack-open-button">
-                <span>⚡</span>
-                クエストでゴールドを稼ぐ
-              </Link>
             </div>
           </div>
 
-          <div className={`pack-stage${isTenPackComplete ? " has-tenpack" : ""}`}>
-            {tenPackResult && !isTenPackComplete ? (
+          <div className="pack-stage">
+            {tenPackResult && !isTenPackComplete && false ? (
               <div className="tenpack-reveal-wrap">
                 <div className="tenpack-reveal-header">
-                  <span className="tenpack-reveal-label">10 PACK SUMMON</span>
+                  <span className="tenpack-reveal-label">10連召喚</span>
                   <span className="tenpack-reveal-counter">{tenPackCurrentIndex + 1} / 10</span>
                 </div>
                 <div className="tenpack-reveal-meter-bar">
@@ -703,11 +496,12 @@ export default function PackPage() {
                   aria-live="polite"
                 >
                   <div className="eq-display-shine" />
-                  {tenPackCardFlipped &&
-                    currentTenPackItem &&
-                    renderCardRevealEffects(currentTenPackItem.card.rarity)}
-                  {tenPackCardFlipped && currentTenPackCallout && currentTenPackItem &&
-                    renderPrizeRays(currentTenPackItem.card.rarity)}
+                  {tenPackCardFlipped && currentTenPackItem
+                    ? renderCardRevealEffects(currentTenPackItem!.card.rarity)
+                    : null}
+                  {tenPackCardFlipped && currentTenPackCallout && currentTenPackItem
+                    ? renderPrizeRays(currentTenPackItem!.card.rarity)
+                    : null}
                   {!tenPackCardFlipped ? (
                     <>
                       <div className="pack-gift">
@@ -735,7 +529,7 @@ export default function PackPage() {
                         {currentTenPackItem.card.rarity} / {getRarityLabel(currentTenPackItem.card.rarity)}
                       </div>
                       <div className="pack-result-emoji">{currentTenPackItem.card.monsterEmoji}</div>
-                      <p>{currentTenPackItem.isNew ? "NEW CARD" : "DUPLICATE CARD"}</p>
+                      <p>{currentTenPackItem.isNew ? "新しいカード" : "獲得済み"}</p>
                       <h2>{currentTenPackItem.card.name}</h2>
                       <div className={currentTenPackItem.isNew ? "pack-stage-chip new" : "pack-stage-chip"}>
                         {currentTenPackItem.isNew ? "新しいカード!" : "すでに所持"}
@@ -758,14 +552,14 @@ export default function PackPage() {
                   スキップ ▶▶
                 </button>
               </div>
-            ) : isTenPackComplete && tenPackResult ? (
+            ) : isTenPackComplete && tenPackResult && false ? (
               <div className={`tenpack-stage-display complete${isGodPack ? " god-pack-complete" : ""}`}>
                 <div className="eq-display-shine" />
                 {isGodPack && (
                   <div className="god-pack-stage-banner">
                     <div className="god-pack-stage-title">✧ GOD PACK ✧</div>
                     <div className="god-pack-stage-badges">
-                      <span className="gpbadge gpbadge-ur">UR 1枚確定</span>
+                      <span className="gpbadge gpbadge-ur">SAR/UR 1枚確定</span>
                       <span className="gpbadge gpbadge-ssr">SSR 2枚以上確定</span>
                       <span className="gpbadge gpbadge-sr">ALL SR+</span>
                     </div>
@@ -773,18 +567,13 @@ export default function PackPage() {
                 )}
                 <div className="tenpack-stage-head">
                   <div>
-                    <p>{isGodPack ? "GOD PACK RESULT" : "10 PACK RESULT"}</p>
+                    <p>{isGodPack ? "特別召喚の結果" : "10連召喚の結果"}</p>
                     <h2>{isGodPack ? "神域召喚完了!" : "10連開封完了!"}</h2>
                   </div>
                   <strong>NEW {tenPackNewCount}</strong>
                 </div>
                 <div className="tenpack-stage-meter">
                   <div style={{ width: "100%" }} />
-                </div>
-                {renderTenPackPanelGrid("stage")}
-                <div className="tenpack-stage-summary">
-                  <span>NEW {tenPackNewCount}</span>
-                  <span>BEST {tenPackBestItem?.card.rarity ?? "-"}</span>
                 </div>
               </div>
             ) : (
@@ -810,7 +599,7 @@ export default function PackPage() {
 
                     <div className="pack-result-emoji">{openedCard.monsterEmoji}</div>
 
-                    <p>{isNewCard ? "NEW CARD" : "DUPLICATE CARD"}</p>
+                    <p>{isNewCard ? "新しいカード" : "獲得済み"}</p>
                     <h2>{openedCard.name}</h2>
                     <span>
                       {openedCard.emoji} {openedCard.attribute}属性 /{" "}
@@ -835,7 +624,7 @@ export default function PackPage() {
                           aria-hidden="true"
                         />
                     </div>
-                    <p>{isOpening ? "SUMMONING" : "MAGIC PACK"}</p>
+                    <p>{isOpening ? "パック開封" : "パック召喚"}</p>
                     <h2>{isOpening ? "開封中..." : `${packTickets}枚`}</h2>
                     <span>
                       {isOpening ? "カードを呼び出しています" : "open a monster card"}
@@ -846,191 +635,8 @@ export default function PackPage() {
             )}
           </div>
 
-          <div className="eq-status-strip">
-            <div className="eq-status-card">
-              <span>所持チケット</span>
-              <strong>{packTickets}</strong>
-            </div>
-
-            <div className="eq-status-card">
-              <span>図鑑達成率</span>
-              <strong>{collectionRate}%</strong>
-            </div>
-
-            <div className="eq-status-card is-highlight">
-              <span>所持カード種類</span>
-              <strong>
-                {ownedCount} / {totalCount}
-              </strong>
-            </div>
-          </div>
         </div>
 
-        <div className="pack-dashboard">
-          <div className="eq-panel pack-main-panel">
-            <div className="eq-panel-head">
-              <div>
-                <p className="eq-panel-kicker">PACK RESULT</p>
-                <h2 className="eq-panel-title">開封結果</h2>
-              </div>
-              <span className="eq-panel-icon">✨</span>
-            </div>
-
-            {tenPackResult ? (
-              <div className="tenpack-panel-result">
-                <div className="tenpack-panel-summary">
-                  <span>10 PACK RESULT</span>
-                  <strong>
-                    {isTenPackComplete
-                      ? `全${tenPackResult.length}枚`
-                      : `${revealedTenPackCount} / ${tenPackResult.length}`}
-                  </strong>
-                </div>
-                {isTenPackComplete && isGodPack && (
-                  <div className="god-pack-panel-banner">
-                    <div className="god-pack-result-title">✧ GOD PACK ✧</div>
-                    <div className="god-pack-result-badges">
-                      <span className="gpbadge gpbadge-ur">UR 1枚確定</span>
-                      <span className="gpbadge gpbadge-ssr">SSR 2枚以上確定</span>
-                      <span className="gpbadge gpbadge-sr">ALL SR+</span>
-                    </div>
-                  </div>
-                )}
-                {isTenPackComplete ? (
-                  <div className="tenpack-panel-finish">
-                    {tenPackBestItem && (
-                      <div
-                        className={`tenpack-best-card rarity-${tenPackBestItem.card.rarity.toLowerCase()}`}
-                      >
-                        <div className="tenpack-best-emoji">
-                          {tenPackBestItem.card.monsterEmoji}
-                        </div>
-                        <div className="tenpack-best-copy">
-                          <span>BEST DROP</span>
-                          <strong>
-                            {tenPackBestItem.card.rarity} /{" "}
-                            {getRarityLabel(tenPackBestItem.card.rarity)}
-                          </strong>
-                          <p>{tenPackBestItem.card.name}</p>
-                        </div>
-                      </div>
-                    )}
-                    <div className="tenpack-panel-stats">
-                      <div>
-                        <span>NEW</span>
-                        <strong>{tenPackNewCount}</strong>
-                      </div>
-                      <div>
-                        <span>SR+</span>
-                        <strong>{tenPackPrizeCount}</strong>
-                      </div>
-                      <div>
-                        <span>TOTAL</span>
-                        <strong>{tenPackResult.length}</strong>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  renderTenPackPanelGrid("panel")
-                )}
-                {isTenPackComplete && (
-                  <div className="tenpack-result-actions">
-                    <button
-                      type="button"
-                      onClick={openTenPack}
-                      disabled={!canOpenTenPack}
-                      className={
-                        canOpenTenPack
-                          ? "eq-button eq-button-tenpack"
-                          : "eq-button eq-button-ghost pack-open-button disabled"
-                      }
-                    >
-                      <span>🌟</span>
-                      もう1回10連
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setTenPackResult(null); setIsGodPack(false); setGodPackPhase(0); }}
-                      className="eq-button eq-button-ghost"
-                    >
-                      閉じる
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : openedCard ? (
-              <div className="pack-result-card">
-                <div
-                  key={openedCard.id}
-                  className={`pack-result-frame rarity-${openedCard.rarity.toLowerCase()} animate-flip`}
-                >
-                  <div className="pack-result-glow" />
-                  <div className="pack-result-main">{openedCard.monsterEmoji}</div>
-                </div>
-
-                <div className="pack-result-info">
-                  <span className="pack-result-rarity">
-                    {openedCard.rarity} / {getRarityLabel(openedCard.rarity)}
-                  </span>
-
-                  <h3>{openedCard.name}</h3>
-
-                  <p>
-                    {openedCard.emoji} {openedCard.attribute}属性 /{" "}
-                    {openedCard.species}
-                  </p>
-
-                  <div className={isNewCard ? "result-chip new" : "result-chip"}>
-                    {isNewCard
-                      ? "新しいカードを獲得しました！"
-                      : `すでに所持しています。所持 ${openedCopies}枚になりました。`}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="pack-empty-result">
-                <div className="pack-empty-icon">
-                  <Image
-                    src="/home-icons/pack.png"
-                    alt=""
-                    width={709}
-                    height={1179}
-                    className="pack-empty-image"
-                    sizes="52px"
-                    aria-hidden="true"
-                  />
-                </div>
-                <h3>まだパックを開封していません</h3>
-                <p>
-                  チケット1枚で1回開封できます。チケット10枚まとめ購入は1枚ずつ買うより100Gお得です。
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="eq-panel">
-            <div className="eq-panel-head">
-              <div>
-                <p className="eq-panel-kicker">RARITY RATE</p>
-                <h2 className="eq-panel-title">出現レア度</h2>
-              </div>
-              <span className="eq-panel-icon">🌟</span>
-            </div>
-
-            <div className="rarity-rate-list">
-              {gachaRarityRates.map((item) => (
-                <div key={item.rarity}>
-                  <span>{item.rarity} / {getRarityLabel(item.rarity)}</span>
-                  <strong>{item.rate.toFixed(1)}%</strong>
-                </div>
-              ))}
-            </div>
-
-            <div className="rarity-guaranteed-note">
-              <p>✦ 0.3%の確率で <strong>GOD PACK</strong> が発動。UR確定＋全カードSR以上になります</p>
-            </div>
-          </div>
-        </div>
       </section>
 
       {revealFlash && (
@@ -1041,29 +647,54 @@ export default function PackPage() {
       )}
 
       <style jsx>{`
+        .pack-page {
+          background:
+            radial-gradient(circle at 20% 42%, rgba(168, 85, 247, 0.22), transparent 38%),
+            radial-gradient(circle at 82% 58%, rgba(34, 211, 238, 0.18), transparent 36%),
+            linear-gradient(180deg, rgba(2, 6, 23, 0.58), rgba(2, 6, 23, 0.78)),
+            url("/ten-pack-result-bg.png") center / cover no-repeat fixed !important;
+        }
+
+        .pack-page-bg,
+        .pack-page-bg-overlay {
+          display: none;
+        }
+
+        .pack-page .eq-bg-orb {
+          opacity: 0.16;
+        }
+
         .pack-page .eq-shell {
-          max-width: 1360px !important;
+          max-width: 1180px !important;
         }
 
         .pack-page .eq-hero {
-          gap: 24px;
-          padding: 28px;
+          gap: 30px;
+          padding: 38px;
+          align-items: start;
+          border-color: rgba(255, 255, 255, 0.1);
+          background:
+            radial-gradient(circle at 20% 22%, rgba(168, 85, 247, 0.12), transparent 34%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.66), rgba(2, 6, 23, 0.78));
+          box-shadow:
+            0 32px 96px rgba(0, 0, 0, 0.48),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(8px);
         }
 
-        .pack-page .eq-actions {
-          grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-          gap: 10px;
-          max-width: none;
-        }
-
-        .pack-page .eq-button {
-          padding-inline: 16px;
-          min-height: 48px;
+        .pack-lead {
+          max-width: 620px;
+          margin-top: 16px;
         }
 
         .pack-page .eq-panel {
           padding: 18px;
           border-radius: 20px;
+          border-color: rgba(255, 255, 255, 0.1);
+          background:
+            radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.08), transparent 38%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.7), rgba(2, 6, 23, 0.82));
+          backdrop-filter: blur(8px);
         }
 
         .pack-page .eq-panel-head {
@@ -1074,19 +705,168 @@ export default function PackPage() {
           font-size: 22px;
         }
 
-        .pack-page .eq-status-strip {
-          gap: 10px;
+        .pack-open-button {
+          width: 100%;
         }
 
-        .pack-page .eq-status-card {
-          min-height: 78px;
-          padding: 13px 14px;
-          border-radius: 16px;
+        /* ゴールド残高バー */
+        .pack-gold-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          border: 1px solid rgba(45, 212, 191, 0.3);
+          border-radius: 14px;
+          background: linear-gradient(90deg, rgba(45, 212, 191, 0.07), rgba(20, 184, 166, 0.03));
+          padding: 12px 16px;
+          margin-top: 18px;
+          margin-bottom: 16px;
         }
 
-        .pack-page .eq-status-card strong {
-          margin-top: 6px;
-          font-size: 23px;
+        .pack-gold-label {
+          color: #99f6e4;
+          font-size: 14px;
+          font-weight: 900;
+          letter-spacing: 0.06em;
+        }
+
+        .pack-gold-amount {
+          color: #f0fdfa;
+          font-size: 17px;
+          font-weight: 1000;
+          text-shadow: 0 0 16px rgba(45, 212, 191, 0.35);
+        }
+
+        /* ショップエリア */
+        .pack-shop {
+          margin-bottom: 0;
+          width: 100%;
+        }
+
+        .pack-shop-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+        }
+
+        .pack-page .eq-actions {
+          max-width: 100%;
+          width: 100%;
+          margin-top: 20px;
+        }
+
+        .pack-page .eq-button.pack-open-button {
+          font-size: 15px;
+          min-height: 58px;
+        }
+
+        /* ---- 1枚買うボタン（ティール） ---- */
+        .pack-shop-btn {
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          border: 1.5px solid rgba(45, 212, 191, 0.42);
+          border-radius: 14px;
+          background: linear-gradient(160deg, rgba(45, 212, 191, 0.12) 0%, rgba(20, 184, 166, 0.06) 100%);
+          color: white;
+          padding: 16px 8px;
+          font: inherit;
+          cursor: pointer;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+          box-shadow: 0 4px 16px rgba(45, 212, 191, 0.08);
+        }
+
+        .pack-shop-btn:hover:not(.disabled) {
+          transform: translateY(-3px);
+          background: linear-gradient(160deg, rgba(45, 212, 191, 0.22) 0%, rgba(20, 184, 166, 0.14) 100%);
+          box-shadow: 0 8px 28px rgba(45, 212, 191, 0.24);
+          border-color: rgba(45, 212, 191, 0.72);
+        }
+
+        .pack-shop-btn.disabled {
+          opacity: 0.35;
+          cursor: not-allowed;
+        }
+
+        .pack-shop-btn span {
+          font-size: 21px;
+          filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+        }
+
+        .pack-shop-btn strong {
+          font-size: 12px;
+          font-weight: 900;
+          color: #f0fdfa;
+        }
+
+        .pack-shop-btn small {
+          color: #99f6e4;
+          font-size: 11px;
+          font-weight: 900;
+        }
+
+        /* ---- 10枚買うボタン（パープル） ---- */
+        .pack-shop-btn-ten {
+          border-color: rgba(168, 85, 247, 0.52);
+          background: linear-gradient(160deg, rgba(168, 85, 247, 0.14) 0%, rgba(99, 102, 241, 0.08) 100%);
+          box-shadow: 0 4px 20px rgba(168, 85, 247, 0.1);
+        }
+
+        .pack-shop-btn-ten strong {
+          color: #e9d5ff;
+        }
+
+        .pack-shop-btn-ten small {
+          color: #c4b5fd;
+        }
+
+        .pack-shop-btn-ten:hover:not(.disabled) {
+          transform: translateY(-3px);
+          background: linear-gradient(160deg, rgba(168, 85, 247, 0.28) 0%, rgba(99, 102, 241, 0.18) 100%);
+          box-shadow: 0 8px 30px rgba(168, 85, 247, 0.32);
+          border-color: rgba(168, 85, 247, 0.82);
+        }
+
+        /* 開封ボタン群 — 背景に馴染む半透明スタイル */
+        .pack-page .eq-button-primary.pack-open-button {
+          border-color: rgba(45, 212, 191, 0.45) !important;
+          background: rgba(45, 212, 191, 0.1) !important;
+          color: #99f6e4 !important;
+          box-shadow: none !important;
+        }
+
+        .pack-page .eq-button-primary.pack-open-button:hover {
+          background: rgba(45, 212, 191, 0.18) !important;
+          box-shadow: 0 0 18px rgba(45, 212, 191, 0.15) !important;
+        }
+
+        .pack-page .eq-button-tenpack.pack-open-button {
+          border-color: rgba(168, 85, 247, 0.45) !important;
+          background: rgba(168, 85, 247, 0.1) !important;
+          color: #d8b4fe !important;
+          box-shadow: none !important;
+          text-shadow: none !important;
+          animation: none !important;
+        }
+
+        .pack-page .eq-button-tenpack.pack-open-button::after {
+          display: none !important;
+        }
+
+        .pack-page .eq-button-tenpack.pack-open-button:hover {
+          background: rgba(168, 85, 247, 0.18) !important;
+          box-shadow: 0 0 18px rgba(168, 85, 247, 0.15) !important;
+        }
+
+        .pack-open-button.disabled {
+          cursor: not-allowed;
+          opacity: 0.55;
+          transform: none;
+        }
+
+        .pack-open-button.disabled:hover {
+          transform: none;
         }
 
         /* ================================
@@ -1468,192 +1248,6 @@ export default function PackPage() {
           100%     { transform: translateX(120%); opacity: 0; }
         }
 
-        .pack-open-button {
-          width: 100%;
-        }
-
-        /* ゴールド残高バー */
-        .pack-gold-bar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border: 1px solid rgba(45, 212, 191, 0.3);
-          border-radius: 14px;
-          background: linear-gradient(90deg, rgba(45, 212, 191, 0.07), rgba(20, 184, 166, 0.03));
-          padding: 9px 14px;
-          margin-bottom: 8px;
-        }
-
-        .pack-gold-label {
-          color: #99f6e4;
-          font-size: 12px;
-          font-weight: 900;
-          letter-spacing: 0.06em;
-        }
-
-        .pack-gold-amount {
-          color: #f0fdfa;
-          font-size: 20px;
-          font-weight: 1000;
-          text-shadow: 0 0 16px rgba(45, 212, 191, 0.35);
-        }
-
-        /* ショップエリア */
-        .pack-shop {
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 16px;
-          padding: 12px;
-          background: rgba(8, 12, 30, 0.7);
-          margin-bottom: 10px;
-        }
-
-        .pack-shop-label {
-          margin: 0 0 8px;
-          color: #7dd3fc;
-          font-size: 10px;
-          font-weight: 900;
-          letter-spacing: 0.14em;
-          text-transform: uppercase;
-        }
-
-        .pack-shop-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 8px;
-        }
-
-        /* ---- 1枚買うボタン（ティール） ---- */
-        .pack-shop-btn {
-          position: relative;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 4px;
-          border: 1.5px solid rgba(45, 212, 191, 0.42);
-          border-radius: 14px;
-          background: linear-gradient(160deg, rgba(45, 212, 191, 0.12) 0%, rgba(20, 184, 166, 0.06) 100%);
-          color: white;
-          padding: 10px 8px;
-          font: inherit;
-          cursor: pointer;
-          transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-          box-shadow: 0 4px 16px rgba(45, 212, 191, 0.08);
-        }
-
-        .pack-shop-btn:hover:not(.disabled) {
-          transform: translateY(-3px);
-          background: linear-gradient(160deg, rgba(45, 212, 191, 0.22) 0%, rgba(20, 184, 166, 0.14) 100%);
-          box-shadow: 0 8px 28px rgba(45, 212, 191, 0.24);
-          border-color: rgba(45, 212, 191, 0.72);
-        }
-
-        .pack-shop-btn.disabled {
-          opacity: 0.35;
-          cursor: not-allowed;
-        }
-
-        .pack-shop-btn span {
-          font-size: 21px;
-          filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
-        }
-
-        .pack-shop-btn strong {
-          font-size: 12px;
-          font-weight: 900;
-          color: #f0fdfa;
-        }
-
-        .pack-shop-btn small {
-          color: #99f6e4;
-          font-size: 11px;
-          font-weight: 900;
-        }
-
-        /* ---- 10枚買うボタン（パープル） ---- */
-        .pack-shop-btn-ten {
-          border-color: rgba(168, 85, 247, 0.52);
-          background: linear-gradient(160deg, rgba(168, 85, 247, 0.14) 0%, rgba(99, 102, 241, 0.08) 100%);
-          box-shadow: 0 4px 20px rgba(168, 85, 247, 0.1);
-        }
-
-        .pack-shop-btn-ten strong {
-          color: #e9d5ff;
-        }
-
-        .pack-shop-btn-ten small {
-          color: #c4b5fd;
-        }
-
-        .pack-shop-btn-ten:hover:not(.disabled) {
-          transform: translateY(-3px);
-          background: linear-gradient(160deg, rgba(168, 85, 247, 0.28) 0%, rgba(99, 102, 241, 0.18) 100%);
-          box-shadow: 0 8px 30px rgba(168, 85, 247, 0.32);
-          border-color: rgba(168, 85, 247, 0.82);
-        }
-
-        /* チケット枚数表示 */
-        .pack-tickets-bar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 14px;
-          background: rgba(255, 255, 255, 0.04);
-          padding: 9px 14px;
-          margin-bottom: 12px;
-          color: #94a3b8;
-          font-size: 12px;
-          font-weight: 900;
-          letter-spacing: 0.06em;
-        }
-
-        .pack-tickets-bar strong {
-          color: #f0f9ff;
-          font-size: 18px;
-          font-weight: 1000;
-        }
-
-        /* 開封ボタン群 — 背景に馴染む半透明スタイル */
-        .pack-page .eq-button-primary.pack-open-button {
-          border-color: rgba(45, 212, 191, 0.45) !important;
-          background: rgba(45, 212, 191, 0.1) !important;
-          color: #99f6e4 !important;
-          box-shadow: none !important;
-        }
-
-        .pack-page .eq-button-primary.pack-open-button:hover {
-          background: rgba(45, 212, 191, 0.18) !important;
-          box-shadow: 0 0 18px rgba(45, 212, 191, 0.15) !important;
-        }
-
-        .pack-page .eq-button-tenpack.pack-open-button {
-          border-color: rgba(168, 85, 247, 0.45) !important;
-          background: rgba(168, 85, 247, 0.1) !important;
-          color: #d8b4fe !important;
-          box-shadow: none !important;
-          text-shadow: none !important;
-          animation: none !important;
-        }
-
-        .pack-page .eq-button-tenpack.pack-open-button::after {
-          display: none !important;
-        }
-
-        .pack-page .eq-button-tenpack.pack-open-button:hover {
-          background: rgba(168, 85, 247, 0.18) !important;
-          box-shadow: 0 0 18px rgba(168, 85, 247, 0.15) !important;
-        }
-
-        .pack-open-button.disabled {
-          cursor: not-allowed;
-          opacity: 0.55;
-          transform: none;
-        }
-
-        .pack-open-button.disabled:hover {
-          transform: none;
-        }
-
         .pack-stage {
           display: flex;
           align-items: center;
@@ -1673,12 +1267,18 @@ export default function PackPage() {
         .pack-display {
           position: relative;
           width: 252px;
-          height: 352px;
+          min-height: 352px;
           overflow: hidden;
           border-radius: 32px;
-          padding: 4px;
+          padding: 4px 4px 20px;
           background: linear-gradient(135deg, #facc15, #a855f7, #22d3ee);
           box-shadow: 0 0 70px rgba(168, 85, 247, 0.28);
+        }
+
+        .pack-page .pack-display {
+          box-shadow:
+            0 0 70px rgba(168, 85, 247, 0.32),
+            0 28px 80px rgba(0, 0, 0, 0.45);
         }
 
         .pack-display::before {
@@ -2288,6 +1888,18 @@ export default function PackPage() {
           align-items: start;
         }
 
+        .pack-dashboard.is-tenpack-revealing {
+          display: none;
+        }
+
+        .pack-dashboard--rarity-only {
+          grid-template-columns: 1fr;
+        }
+
+        .pack-dashboard--rarity-only > .eq-panel {
+          max-width: 680px;
+        }
+
         .pack-dashboard > .eq-panel {
           min-width: 0;
         }
@@ -2421,15 +2033,15 @@ export default function PackPage() {
         .rarity-rate-list span {
           display: block;
           color: #94a3b8;
-          font-size: 12px;
+          font-size: 11px;
           font-weight: 800;
         }
 
         .rarity-rate-list strong {
           display: block;
-          margin-top: 7px;
+          margin-top: 4px;
           color: #fde68a;
-          font-size: 22px;
+          font-size: 16px;
           line-height: 1;
           font-weight: 1000;
         }
@@ -2459,30 +2071,30 @@ export default function PackPage() {
 
         .rarity-rate-list {
           display: grid;
-          grid-template-columns: repeat(2, minmax(min(100%, 110px), 1fr));
-          gap: 12px;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 8px;
         }
 
         .rarity-rate-list div {
           min-width: 0;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 16px;
+          border-radius: 12px;
           background: rgba(255, 255, 255, 0.055);
-          padding: 12px;
+          padding: 8px 10px;
         }
 
         .rarity-guaranteed-note {
-          margin-top: 14px;
+          margin-top: 10px;
           border: 1px solid rgba(168, 85, 247, 0.35);
           background: rgba(168, 85, 247, 0.1);
-          border-radius: 16px;
-          padding: 12px 14px;
+          border-radius: 12px;
+          padding: 8px 12px;
         }
 
         .rarity-guaranteed-note p {
           margin: 0;
           color: #e9d5ff;
-          font-size: 13px;
+          font-size: 11px;
           font-weight: 900;
         }
 
@@ -2715,7 +2327,6 @@ export default function PackPage() {
 
         .tenpack-stage-head,
         .tenpack-stage-meter,
-        .tenpack-stage-summary,
         .tenpack-grid {
           position: relative;
           z-index: 1;
@@ -2771,26 +2382,6 @@ export default function PackPage() {
           transition: width 0.3s ease;
         }
 
-        .tenpack-stage-summary {
-          display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          gap: 8px;
-          margin-top: 12px;
-        }
-
-        .tenpack-stage-summary span {
-          min-width: 0;
-          border-radius: 999px;
-          padding: 7px 8px;
-          background: rgba(255, 255, 255, 0.07);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          color: #e2e8f0;
-          font-size: 11px;
-          font-weight: 1000;
-          text-align: center;
-          white-space: normal;
-          line-height: 1.25;
-        }
 
         .tenpack-panel-result {
           display: grid;
@@ -3215,13 +2806,22 @@ export default function PackPage() {
         }
 
         .tenpack-reveal-wrap {
-          display: flex;
-          flex-direction: column;
+          width: min(100%, 920px);
+          display: grid;
+          grid-template-columns: 286px minmax(0, 1fr);
+          grid-template-areas:
+            "header grid"
+            "meter grid"
+            "card grid"
+            "note grid"
+            "skip grid";
           align-items: center;
-          gap: 14px;
+          justify-content: center;
+          gap: 12px 18px;
         }
 
         .tenpack-reveal-header {
+          grid-area: header;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -3247,6 +2847,7 @@ export default function PackPage() {
         }
 
         .tenpack-reveal-meter-bar {
+          grid-area: meter;
           width: 286px;
           height: 8px;
           overflow: hidden;
@@ -3277,6 +2878,7 @@ export default function PackPage() {
         }
 
         .tenpack-auto-note {
+          grid-area: note;
           width: 286px;
           min-height: 44px;
           display: grid;
@@ -3292,6 +2894,7 @@ export default function PackPage() {
         }
 
         .tenpack-skip-btn {
+          grid-area: skip;
           width: 286px;
           padding: 10px 20px;
           border-radius: 18px;
@@ -3310,6 +2913,12 @@ export default function PackPage() {
           background: rgba(148, 163, 184, 0.18);
           color: #e2e8f0;
         }
+
+        .tenpack-reveal-wrap > .pack-display {
+          grid-area: card;
+          justify-self: center;
+        }
+
 
         .tenpack-next-btn {
           width: 286px;
@@ -3374,7 +2983,7 @@ export default function PackPage() {
 
           .pack-display {
             width: 240px;
-            height: 340px;
+            min-height: 340px;
           }
 
           .tenpack-reveal-header,
@@ -3384,6 +2993,21 @@ export default function PackPage() {
           .tenpack-next-btn {
             width: 240px;
           }
+
+          .tenpack-reveal-wrap {
+            width: 100%;
+            grid-template-columns: 1fr;
+            grid-template-areas:
+              "header"
+              "meter"
+              "card"
+              "note"
+              "grid"
+              "skip";
+            justify-items: center;
+            gap: 10px;
+          }
+
 
           .pack-gift {
             width: 126px;
@@ -3446,6 +3070,423 @@ export default function PackPage() {
           .rarity-rate-list {
             grid-template-columns: 1fr;
           }
+        }
+
+        /* ================================================
+           PRIZE OVERLAY — SSR/UR/SAR ドラマティック演出
+        ================================================ */
+        .prize-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 8950;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          pointer-events: none;
+        }
+
+        .prize-overlay-ssr { animation: prizeOverlayOut 0.5s ease-out 1.25s both; }
+        .prize-overlay-ur  { animation: prizeOverlayOut 0.5s ease-out 1.6s  both; }
+        .prize-overlay-sar { animation: prizeOverlayOut 0.6s ease-out 2.0s  both; }
+
+        @keyframes prizeOverlayOut {
+          from { opacity: 1; transform: scale(1); }
+          to   { opacity: 0; transform: scale(1.06); }
+        }
+
+        /* Background */
+        .prize-overlay-bg {
+          position: absolute;
+          inset: 0;
+          animation: prizeOverlayBgIn 0.22s ease-out both;
+        }
+
+        @keyframes prizeOverlayBgIn {
+          from { opacity: 0; transform: scale(0.75); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+
+        .prize-overlay-ssr .prize-overlay-bg {
+          background: radial-gradient(ellipse at 50% 42%,
+            rgba(250,204,21,0.97) 0%,
+            rgba(251,113,133,0.65) 38%,
+            rgba(0,0,0,0.88) 72%);
+        }
+
+        .prize-overlay-ur .prize-overlay-bg {
+          background: conic-gradient(from 0deg,
+            rgba(255,255,255,0.92),
+            rgba(251,191,36,0.9),
+            rgba(251,113,133,0.9),
+            rgba(168,85,247,0.9),
+            rgba(34,211,238,0.9),
+            rgba(134,239,172,0.8),
+            rgba(255,255,255,0.92));
+          animation: prizeOverlayBgIn 0.22s ease-out both, prizeOverlayBgSpin 2.8s linear 0.22s infinite;
+        }
+
+        .prize-overlay-sar .prize-overlay-bg {
+          background: conic-gradient(from 0deg,
+            #fff, #fde047, #fb7185, #a855f7, #22d3ee, #86efac, #fde047, #fff);
+          animation: prizeOverlayBgIn 0.15s ease-out both, prizeOverlayBgSpin 1.8s linear 0.15s infinite;
+        }
+
+        @keyframes prizeOverlayBgSpin {
+          from { transform: rotate(0deg) scale(1.6); }
+          to   { transform: rotate(360deg) scale(1.6); }
+        }
+
+        /* Rays */
+        .prize-overlay-rays {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .prize-overlay-rays span {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 7px;
+          height: 80vh;
+          border-radius: 999px;
+          transform-origin: 50% 0;
+          opacity: 0;
+          animation: prizeOverlayRay 0.9s ease-out 0.08s both;
+        }
+
+        .prize-overlay-ssr .prize-overlay-rays span {
+          background: linear-gradient(180deg, rgba(250,204,21,0.95), rgba(251,113,133,0.5) 55%, transparent);
+        }
+        .prize-overlay-ur .prize-overlay-rays span {
+          width: 9px;
+          background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(34,211,238,0.6) 55%, transparent);
+        }
+        .prize-overlay-sar .prize-overlay-rays span {
+          width: 11px;
+          background: linear-gradient(180deg, rgba(255,255,255,1), rgba(253,230,138,0.7) 40%, transparent);
+        }
+
+        .prize-overlay-rays span:nth-child(1)  { transform: rotate(0deg)   translateY(-50%); animation-delay: 0.05s; }
+        .prize-overlay-rays span:nth-child(2)  { transform: rotate(30deg)  translateY(-50%); animation-delay: 0.09s; }
+        .prize-overlay-rays span:nth-child(3)  { transform: rotate(60deg)  translateY(-50%); animation-delay: 0.06s; }
+        .prize-overlay-rays span:nth-child(4)  { transform: rotate(90deg)  translateY(-50%); animation-delay: 0.11s; }
+        .prize-overlay-rays span:nth-child(5)  { transform: rotate(120deg) translateY(-50%); animation-delay: 0.07s; }
+        .prize-overlay-rays span:nth-child(6)  { transform: rotate(150deg) translateY(-50%); animation-delay: 0.12s; }
+        .prize-overlay-rays span:nth-child(7)  { transform: rotate(180deg) translateY(-50%); animation-delay: 0.05s; }
+        .prize-overlay-rays span:nth-child(8)  { transform: rotate(210deg) translateY(-50%); animation-delay: 0.10s; }
+        .prize-overlay-rays span:nth-child(9)  { transform: rotate(240deg) translateY(-50%); animation-delay: 0.07s; }
+        .prize-overlay-rays span:nth-child(10) { transform: rotate(270deg) translateY(-50%); animation-delay: 0.13s; }
+        .prize-overlay-rays span:nth-child(11) { transform: rotate(300deg) translateY(-50%); animation-delay: 0.06s; }
+        .prize-overlay-rays span:nth-child(12) { transform: rotate(330deg) translateY(-50%); animation-delay: 0.09s; }
+        .prize-overlay-rays span:nth-child(13) { transform: rotate(15deg)  translateY(-50%); animation-delay: 0.14s; }
+        .prize-overlay-rays span:nth-child(14) { transform: rotate(45deg)  translateY(-50%); animation-delay: 0.08s; }
+        .prize-overlay-rays span:nth-child(15) { transform: rotate(75deg)  translateY(-50%); animation-delay: 0.11s; }
+        .prize-overlay-rays span:nth-child(16) { transform: rotate(105deg) translateY(-50%); animation-delay: 0.04s; }
+        .prize-overlay-rays span:nth-child(17) { transform: rotate(135deg) translateY(-50%); animation-delay: 0.13s; }
+        .prize-overlay-rays span:nth-child(18) { transform: rotate(165deg) translateY(-50%); animation-delay: 0.07s; }
+        .prize-overlay-rays span:nth-child(19) { transform: rotate(195deg) translateY(-50%); animation-delay: 0.15s; }
+        .prize-overlay-rays span:nth-child(20) { transform: rotate(225deg) translateY(-50%); animation-delay: 0.05s; }
+
+        @keyframes prizeOverlayRay {
+          0%   { opacity: 0; height: 0; }
+          25%  { opacity: 0.9; }
+          100% { opacity: 0.35; height: 80vh; }
+        }
+
+        /* Expanding rings */
+        .prize-overlay-rings {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+        }
+
+        .prize-overlay-rings span {
+          position: absolute;
+          border-radius: 50%;
+          border: 3px solid rgba(255, 255, 255, 0.75);
+          animation: prizeOverlayRingExpand 1.1s ease-out both;
+        }
+
+        .prize-overlay-rings span:nth-child(1) { animation-delay: 0.04s; }
+        .prize-overlay-rings span:nth-child(2) { animation-delay: 0.18s; border-color: rgba(255,255,255,0.55); }
+        .prize-overlay-rings span:nth-child(3) { animation-delay: 0.34s; border-color: rgba(255,255,255,0.35); }
+
+        @keyframes prizeOverlayRingExpand {
+          0%   { width: 0;      height: 0;      opacity: 0.95; }
+          100% { width: 250vmax; height: 250vmax; opacity: 0; }
+        }
+
+        /* Particles */
+        .prize-overlay-particles {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+        }
+
+        .prize-overlay-particles span {
+          --px: 50%; --py: 50%;
+          --pdx: 0px; --pdy: -120px;
+          --pc: #fde68a;
+          position: absolute;
+          left: var(--px);
+          top: var(--py);
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: var(--pc);
+          box-shadow: 0 0 10px var(--pc), 0 0 20px var(--pc);
+          opacity: 0;
+          animation: prizeOverlayParticle 0.9s ease-out both;
+        }
+
+        @keyframes prizeOverlayParticle {
+          0%   { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+          100% { transform: translate(calc(-50% + var(--pdx)), calc(-50% + var(--pdy))) scale(0); opacity: 0; }
+        }
+
+        .prize-overlay-particles span:nth-child(1)  { --pdx:   0px; --pdy:-170px; --pc:#fde047; animation-delay:0.08s; }
+        .prize-overlay-particles span:nth-child(2)  { --pdx:  54px; --pdy:-160px; --pc:#fb7185; animation-delay:0.12s; }
+        .prize-overlay-particles span:nth-child(3)  { --pdx: 105px; --pdy:-132px; --pc:#a855f7; animation-delay:0.07s; }
+        .prize-overlay-particles span:nth-child(4)  { --pdx: 147px; --pdy: -85px; --pc:#22d3ee; animation-delay:0.14s; }
+        .prize-overlay-particles span:nth-child(5)  { --pdx: 170px; --pdy: -26px; --pc:#86efac; animation-delay:0.09s; }
+        .prize-overlay-particles span:nth-child(6)  { --pdx: 166px; --pdy:  40px; --pc:#fde047; animation-delay:0.16s; }
+        .prize-overlay-particles span:nth-child(7)  { --pdx: 130px; --pdy:  96px; --pc:#fb7185; animation-delay:0.06s; }
+        .prize-overlay-particles span:nth-child(8)  { --pdx:  74px; --pdy: 143px; --pc:#a855f7; animation-delay:0.13s; }
+        .prize-overlay-particles span:nth-child(9)  { --pdx:   8px; --pdy: 165px; --pc:#22d3ee; animation-delay:0.08s; }
+        .prize-overlay-particles span:nth-child(10) { --pdx: -60px; --pdy: 160px; --pc:#fde047; animation-delay:0.17s; }
+        .prize-overlay-particles span:nth-child(11) { --pdx:-118px; --pdy: 124px; --pc:#fb7185; animation-delay:0.05s; }
+        .prize-overlay-particles span:nth-child(12) { --pdx:-158px; --pdy:  70px; --pc:#a855f7; animation-delay:0.14s; }
+        .prize-overlay-particles span:nth-child(13) { --pdx:-170px; --pdy:   5px; --pc:#22d3ee; animation-delay:0.09s; }
+        .prize-overlay-particles span:nth-child(14) { --pdx:-158px; --pdy: -60px; --pc:#86efac; animation-delay:0.18s; }
+        .prize-overlay-particles span:nth-child(15) { --pdx:-120px; --pdy:-118px; --pc:#fde047; animation-delay:0.07s; }
+        .prize-overlay-particles span:nth-child(16) { --pdx: -62px; --pdy:-158px; --pc:#fb7185; animation-delay:0.15s; }
+        .prize-overlay-particles span:nth-child(17) { --pdx:  30px; --pdy:-200px; --pc:#a855f7; animation-delay:0.10s; }
+        .prize-overlay-particles span:nth-child(18) { --pdx: 120px; --pdy:-190px; --pc:#fde047; animation-delay:0.06s; }
+        .prize-overlay-particles span:nth-child(19) { --pdx: 190px; --pdy:-110px; --pc:#22d3ee; animation-delay:0.13s; }
+        .prize-overlay-particles span:nth-child(20) { --pdx: 210px; --pdy:  20px; --pc:#fb7185; animation-delay:0.08s; }
+        .prize-overlay-particles span:nth-child(21) { --pdx: 170px; --pdy: 150px; --pc:#86efac; animation-delay:0.16s; }
+        .prize-overlay-particles span:nth-child(22) { --pdx:  80px; --pdy: 200px; --pc:#fde047; animation-delay:0.05s; }
+        .prize-overlay-particles span:nth-child(23) { --pdx: -40px; --pdy: 205px; --pc:#a855f7; animation-delay:0.12s; }
+        .prize-overlay-particles span:nth-child(24) { --pdx:-140px; --pdy: 168px; --pc:#22d3ee; animation-delay:0.07s; }
+        .prize-overlay-particles span:nth-child(25) { --pdx:-200px; --pdy:  80px; --pc:#fb7185; animation-delay:0.17s; }
+        .prize-overlay-particles span:nth-child(26) { --pdx:-210px; --pdy: -40px; --pc:#fde047; animation-delay:0.09s; }
+        .prize-overlay-particles span:nth-child(27) { --pdx:-172px; --pdy:-146px; --pc:#86efac; animation-delay:0.14s; }
+        .prize-overlay-particles span:nth-child(28) { --pdx: -90px; --pdy:-200px; --pc:#a855f7; animation-delay:0.06s; }
+        .prize-overlay-particles span:nth-child(29) { --pdx:  50px; --pdy:-130px; --pc:#fde047; animation-delay:0.11s; }
+        .prize-overlay-particles span:nth-child(30) { --pdx: 140px; --pdy: -60px; --pc:#22d3ee; animation-delay:0.04s; }
+
+        /* Content */
+        .prize-overlay-content {
+          position: relative;
+          z-index: 5;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          text-align: center;
+          padding: 0 20px;
+        }
+
+        .prize-overlay-rarity-tag {
+          font-size: clamp(13px, 3.5vw, 17px);
+          font-weight: 1000;
+          letter-spacing: 0.55em;
+          color: rgba(255, 255, 255, 0.9);
+          text-shadow: 0 0 24px rgba(255, 255, 255, 0.9);
+          animation: prizeOverlayTextSlam 0.38s cubic-bezier(0.2, 1.4, 0.34, 1) 0.12s both;
+        }
+
+        .prize-overlay-emoji {
+          font-size: clamp(92px, 24vw, 148px);
+          line-height: 1;
+          filter: drop-shadow(0 0 50px rgba(255, 255, 255, 0.85)) drop-shadow(0 10px 30px rgba(0,0,0,0.6));
+          animation: prizeOverlayEmojiBurst 0.58s cubic-bezier(0.18, 1.35, 0.34, 1) 0.06s both;
+        }
+
+        .prize-overlay-sar .prize-overlay-emoji {
+          animation:
+            prizeOverlayEmojiBurst 0.58s cubic-bezier(0.18, 1.35, 0.34, 1) 0.06s both,
+            prizeOverlayEmojiSpin 4s linear 0.65s infinite;
+        }
+
+        .prize-overlay-label {
+          font-size: clamp(26px, 7.5vw, 52px);
+          font-weight: 1000;
+          letter-spacing: 0.06em;
+          line-height: 1;
+          color: white;
+          text-shadow: 0 0 40px rgba(255, 255, 255, 0.9), 0 4px 18px rgba(0,0,0,0.55);
+          animation: prizeOverlayTextSlam 0.44s cubic-bezier(0.2, 1.4, 0.34, 1) 0.2s both;
+        }
+
+        .prize-overlay-ssr .prize-overlay-label {
+          background: linear-gradient(135deg, #fef3c7, #fde047, #fb923c);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-shadow: none;
+          filter: drop-shadow(0 0 24px rgba(250,204,21,0.9));
+        }
+
+        .prize-overlay-ur .prize-overlay-label {
+          background: linear-gradient(135deg, #fff, #fde047, #fb7185, #a855f7, #22d3ee);
+          background-size: 200% 200%;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-shadow: none;
+          animation:
+            prizeOverlayTextSlam 0.44s cubic-bezier(0.2, 1.4, 0.34, 1) 0.2s both,
+            godNameShimmer 2s linear 0.65s infinite;
+        }
+
+        .prize-overlay-sar .prize-overlay-label {
+          background: linear-gradient(90deg, #fde68a, #fb7185, #a855f7, #22d3ee, #fef3c7);
+          background-size: 300% 300%;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-shadow: none;
+          animation:
+            prizeOverlayTextSlam 0.44s cubic-bezier(0.2, 1.4, 0.34, 1) 0.2s both,
+            godNameShimmer 1.4s linear 0.65s infinite;
+        }
+
+        .prize-overlay-name {
+          font-size: clamp(18px, 4.5vw, 30px);
+          font-weight: 1000;
+          color: rgba(255, 255, 255, 0.94);
+          text-shadow: 0 2px 14px rgba(0,0,0,0.65);
+          animation: prizeOverlayTextRise 0.42s ease 0.34s both;
+        }
+
+        .prize-overlay-new-badge {
+          padding: 6px 18px;
+          border-radius: 999px;
+          background: rgba(251, 191, 36, 0.25);
+          border: 1px solid rgba(251, 191, 36, 0.65);
+          color: #fde68a;
+          font-size: 13px;
+          font-weight: 1000;
+          letter-spacing: 0.16em;
+          animation: prizeOverlayTextRise 0.42s ease 0.46s both;
+        }
+
+        @keyframes prizeOverlayEmojiBurst {
+          0%   { transform: scale(0.1) rotate(-18deg); filter: brightness(6) drop-shadow(0 0 60px rgba(255,255,255,1)); }
+          55%  { transform: scale(1.18) rotate(6deg);  filter: brightness(1.6); }
+          100% { transform: scale(1)    rotate(0deg);  filter: drop-shadow(0 0 40px rgba(255,255,255,0.7)); }
+        }
+
+        @keyframes prizeOverlayEmojiSpin {
+          from { filter: drop-shadow(0 0 40px rgba(255,255,255,0.7)) hue-rotate(0deg); }
+          to   { filter: drop-shadow(0 0 40px rgba(255,255,255,0.7)) hue-rotate(360deg); }
+        }
+
+        @keyframes prizeOverlayTextSlam {
+          0%   { opacity: 0; transform: scale(2.2) translateY(-16px); }
+          65%  { opacity: 1; transform: scale(0.97) translateY(2px); }
+          100% { opacity: 1; transform: scale(1)    translateY(0); }
+        }
+
+        @keyframes prizeOverlayTextRise {
+          from { opacity: 0; transform: translateY(18px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ================================================
+           サスペンス演出強化 — テンションリング & チャージバー
+        ================================================ */
+        .suspense-tension-rings {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 0;
+          pointer-events: none;
+        }
+
+        .suspense-tension-rings span {
+          position: absolute;
+          border-radius: 50%;
+          border: 2px solid rgba(34, 211, 238, 0.35);
+          animation: suspenseRingPulse 1.6s ease-in-out infinite;
+        }
+
+        .suspense-tension-rings span:nth-child(1) { width: 100px;  height: 100px;  animation-delay: 0s;    border-color: rgba(34,211,238,0.5); }
+        .suspense-tension-rings span:nth-child(2) { width: 165px;  height: 165px;  animation-delay: 0.28s; border-color: rgba(168,85,247,0.4); }
+        .suspense-tension-rings span:nth-child(3) { width: 230px;  height: 230px;  animation-delay: 0.54s; border-color: rgba(250,204,21,0.3); }
+        .suspense-tension-rings span:nth-child(4) { width: 300px;  height: 300px;  animation-delay: 0.82s; border-color: rgba(34,211,238,0.18); }
+
+        @keyframes suspenseRingPulse {
+          0%, 100% { transform: scale(0.88); opacity: 0; }
+          50%      { transform: scale(1);    opacity: 1; }
+        }
+
+        .suspense-card-back {
+          animation: suspenseCardBeat 0.88s ease-in-out infinite alternate !important;
+          filter: drop-shadow(0 0 18px rgba(34, 211, 238, 0.4)) drop-shadow(0 20px 28px rgba(0, 0, 0, 0.42));
+        }
+
+        @keyframes suspenseCardBeat {
+          from { transform: translateY(0)   scale(1)    rotate(-1.5deg); filter: drop-shadow(0 0 18px rgba(34,211,238,0.35)); }
+          to   { transform: translateY(-8px) scale(1.04) rotate(1.5deg);  filter: drop-shadow(0 0 36px rgba(250,204,21,0.55)) drop-shadow(0 24px 32px rgba(0,0,0,0.4)); }
+        }
+
+        .suspense-summon-label {
+          position: relative;
+          z-index: 2;
+          animation: suspenseLabelPulse 1.1s ease-in-out infinite alternate !important;
+        }
+
+        @keyframes suspenseLabelPulse {
+          from { opacity: 0.6; letter-spacing: 0.18em; }
+          to   { opacity: 1;   letter-spacing: 0.24em; color: #fde68a; }
+        }
+
+        .suspense-card-num {
+          position: relative;
+          z-index: 2;
+          font-size: 32px !important;
+          letter-spacing: 0.18em;
+          animation: suspenseNumPop 0.42s cubic-bezier(0.2, 1.4, 0.34, 1) both !important;
+        }
+
+        @keyframes suspenseNumPop {
+          from { transform: scale(0.6) translateY(8px); opacity: 0; }
+          to   { transform: scale(1)   translateY(0);   opacity: 1; }
+        }
+
+        .suspense-charge-bar {
+          position: relative;
+          z-index: 2;
+          width: 180px;
+          height: 5px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.1);
+          overflow: hidden;
+          margin-top: 4px;
+        }
+
+        .suspense-charge-fill {
+          height: 100%;
+          border-radius: inherit;
+          background: linear-gradient(90deg, #22d3ee, #a855f7, #fde047);
+          animation: suspenseChargeFill var(--charge-dur, 1s) ease-in-out both;
+          box-shadow: 0 0 10px rgba(34, 211, 238, 0.7);
+        }
+
+        @keyframes suspenseChargeFill {
+          from { width: 0%; }
+          to   { width: 100%; }
         }
       `}</style>
       <style jsx global>{`
@@ -3600,6 +3641,22 @@ export default function PackPage() {
             rarityGlowGoldGlobal 1.6s ease 0.2s both;
         }
 
+        .pack-page .tenpack-card-front.rarity-sar,
+        .pack-page .pack-display.opened.rarity-sar {
+          border-color: rgba(253, 230, 138, 0.95);
+          background:
+            radial-gradient(circle at 50% 14%, rgba(255, 255, 255, 0.5), transparent 26%),
+            conic-gradient(from 0deg, rgba(253, 230, 138, 0.36), rgba(251, 113, 133, 0.28), rgba(168, 85, 247, 0.28), rgba(34, 211, 238, 0.24), rgba(253, 230, 138, 0.36)),
+            rgba(8, 13, 32, 0.96);
+          box-shadow:
+            0 0 46px rgba(253, 230, 138, 0.62),
+            0 0 104px rgba(251, 113, 133, 0.34),
+            0 0 132px rgba(34, 211, 238, 0.22);
+          animation:
+            tenpackRevealSSRGlobal 0.66s cubic-bezier(0.34, 1.3, 0.64, 1) both,
+            rarityGlowGoldGlobal 1.6s ease 0.2s both;
+        }
+
         .pack-page .tenpack-item.is-prize .tenpack-card-front::before {
           content: "";
           position: absolute;
@@ -3744,13 +3801,15 @@ export default function PackPage() {
         }
 
         .pack-page .card-reveal-effects.rarity-ssr span,
-        .pack-page .card-reveal-effects.rarity-ur span {
+        .pack-page .card-reveal-effects.rarity-ur span,
+        .pack-page .card-reveal-effects.rarity-sar span {
           color: #fde68a;
           background: linear-gradient(135deg, #fff, #fde047, #fb7185, #22d3ee);
           animation-duration: 1.24s;
         }
 
-        .pack-page .card-reveal-effects.rarity-ur span {
+        .pack-page .card-reveal-effects.rarity-ur span,
+        .pack-page .card-reveal-effects.rarity-sar span {
           --spark-size: 10px;
           box-shadow: 0 0 22px #fff, 0 0 36px #22d3ee;
         }
@@ -3825,6 +3884,14 @@ export default function PackPage() {
         }
 
         @media (max-width: 900px) {
+          .pack-page {
+            background:
+              radial-gradient(circle at 30% 24%, rgba(168, 85, 247, 0.2), transparent 36%),
+              radial-gradient(circle at 80% 58%, rgba(34, 211, 238, 0.16), transparent 34%),
+              linear-gradient(180deg, rgba(2, 6, 23, 0.68), rgba(2, 6, 23, 0.82)),
+              url("/ten-pack-result-bg.png") center top / cover no-repeat fixed !important;
+          }
+
           .pack-page .tenpack-grid {
             grid-template-columns: repeat(5, minmax(0, 1fr));
           }
@@ -3876,14 +3943,89 @@ export default function PackPage() {
           from { opacity: 0; transform: translateX(-50%) scale(0.72) translateY(20px); }
           to   { opacity: 1; transform: translateX(-50%) scale(1)    translateY(0); }
         }
+
+        .pack-page .tenpack-stage-display.complete {
+          width: min(100%, 1120px) !important;
+          margin: 0 auto !important;
+          padding: clamp(16px, 2vw, 24px) !important;
+        }
+
+        .pack-page .tenpack-stage-display.complete .tenpack-grid,
+        .pack-page .tenpack-grid-panel {
+          width: min(100%, 1080px) !important;
+          max-width: 1080px !important;
+          margin: 0 auto !important;
+          grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+          gap: 12px !important;
+        }
+
+        .pack-page .tenpack-stage-display.complete .tenpack-item,
+        .pack-page .tenpack-grid-panel .tenpack-item {
+          height: auto !important;
+          aspect-ratio: 3 / 4 !important;
+          min-height: 0 !important;
+        }
+
+        .pack-page .tenpack-stage-display.complete .tenpack-card-face,
+        .pack-page .tenpack-grid-panel .tenpack-card-face {
+          border-radius: 16px !important;
+          padding: 34px 10px 14px !important;
+          justify-content: center !important;
+          gap: 7px !important;
+        }
+
+        .pack-page .tenpack-stage-display.complete .tenpack-card-front:hover,
+        .pack-page .tenpack-grid-panel .tenpack-card-front:hover {
+          transform: none !important;
+        }
+
+        .pack-page .tenpack-stage-display.complete .tenpack-prize-callout,
+        .pack-page .tenpack-grid-panel .tenpack-prize-callout {
+          top: 32px !important;
+          max-width: calc(100% - 24px) !important;
+          padding: 4px 9px !important;
+          font-size: 10px !important;
+          letter-spacing: 0 !important;
+        }
+
+        .pack-page .tenpack-stage-display.complete .tenpack-item-emoji,
+        .pack-page .tenpack-grid-panel .tenpack-item-emoji {
+          font-size: clamp(42px, 4.5vw, 68px) !important;
+          line-height: 1 !important;
+        }
+
+        .pack-page .tenpack-stage-display.complete .tenpack-item-rarity,
+        .pack-page .tenpack-grid-panel .tenpack-item-rarity {
+          font-size: clamp(11px, 1vw, 13px) !important;
+          letter-spacing: 0 !important;
+        }
+
+        .pack-page .tenpack-stage-display.complete .tenpack-item-name,
+        .pack-page .tenpack-grid-panel .tenpack-item-name {
+          font-size: clamp(12px, 1.1vw, 15px) !important;
+          line-height: 1.35 !important;
+          padding: 0 4px !important;
+        }
+
+        .pack-page .tenpack-stage-head p {
+          letter-spacing: 0 !important;
+        }
+
+        @media (max-width: 760px) {
+          .pack-page .tenpack-stage-display.complete .tenpack-grid,
+          .pack-page .tenpack-grid-panel {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            width: min(100%, 430px) !important;
+          }
+        }
       `}</style>
 
       {cheatToast && (
         <div className="cheat-toast">
-          <span>💰</span>
+          <span>G</span>
           <div>
             <strong>SECRET COMMAND</strong>
-            <p>10,000 ゴールドゲット！</p>
+            <p>GOD PACK READY</p>
           </div>
         </div>
       )}

@@ -1,11 +1,13 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import AppLoading from "../../components/AppLoading";
+import CommonGameNav from "../../components/CommonGameNav";
 import {
   EarnedCard,
+  getAttributeLabel,
   getAttributeColor,
   getMonsterCardById,
   getOwnedCount,
@@ -59,6 +61,7 @@ function loadEarnedCards(): EarnedCard[] {
 }
 
 function getRarityLabel(rarity: Rarity) {
+  if (rarity === "SAR") return "SPECIAL ART";
   if (rarity === "UR") return "ULTIMATE";
   if (rarity === "SSR") return "LEGEND";
   if (rarity === "SR") return "EPIC";
@@ -74,6 +77,7 @@ function getStatusClass(status: string) {
 }
 
 function getRarityMessage(rarity: Rarity) {
+  if (rarity === "SAR") return "特別なアートと演出を持つ、とても貴重なスペシャルアートレアです。";
   if (rarity === "UR") return "究極級のとても貴重なモンスターカードです。";
   if (rarity === "SSR") return "伝説級のモンスターカードです。";
   if (rarity === "SR") return "かなり貴重な上級カードです。";
@@ -108,12 +112,16 @@ export default function CardDetailPage() {
     return getMonsterCardById(cardIdFromUrl);
   }, [cardIdFromUrl]);
 
-  useLayoutEffect(() => {
-    setEarnedCards(loadEarnedCards());
-    setShopState(loadShopState());
-    setHeroLevel(loadHeroStatus().level);
-    setQuestProgress(loadQuestProgressSnapshot());
-    setIsReady(true);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setEarnedCards(loadEarnedCards());
+      setShopState(loadShopState());
+      setHeroLevel(loadHeroStatus().level);
+      setQuestProgress(loadQuestProgressSnapshot());
+      setIsReady(true);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   if (!isReady) {
@@ -138,9 +146,7 @@ export default function CardDetailPage() {
 
         <section className="detail-shell">
           <nav className="eq-topbar">
-            <Link href="/cards" className="eq-back-link">
-              カード図鑑へ戻る
-            </Link>
+            <CommonGameNav />
           </nav>
 
           <div className="not-found-panel">
@@ -209,9 +215,7 @@ export default function CardDetailPage() {
 
       <section className="detail-shell">
         <nav className="eq-topbar">
-          <Link href="/cards" className="eq-back-link">
-            カード図鑑へ戻る
-          </Link>
+          <CommonGameNav />
         </nav>
 
         <div className="detail-hero-panel">
@@ -230,16 +234,6 @@ export default function CardDetailPage() {
             </p>
 
             <div className="main-actions">
-              <Link href="/quiz" className="primary-action">
-                <span>⚡</span>
-                クエスト開始
-              </Link>
-
-              <Link href="/pack" className="pack-action">
-                <span>🎁</span>
-                パック開封
-              </Link>
-
               {isOwned && (
                 <button
                   type="button"
@@ -283,7 +277,7 @@ export default function CardDetailPage() {
               <h2>{isOwned ? card.name : "未発見"}</h2>
               <small style={{ color: isOwned ? getAttributeColor(card.attribute) : undefined }}>
                 {isOwned
-                  ? `${card.emoji} ${card.attribute}属性 / ${card.species}`
+                  ? `${card.emoji} ${getAttributeLabel(card.attribute)}属性 / ${card.species}`
                   : "？？？"}
               </small>
 
@@ -325,7 +319,7 @@ export default function CardDetailPage() {
               <div>
                 <span>属性</span>
                 <strong style={{ color: isOwned ? getAttributeColor(card.attribute) : undefined }}>
-                  {isOwned ? `${card.emoji} ${card.attribute}` : "???"}
+                  {isOwned ? `${card.emoji} ${getAttributeLabel(card.attribute)}` : "???"}
                 </strong>
               </div>
 
@@ -356,7 +350,7 @@ export default function CardDetailPage() {
                 <p>GROWTH</p>
                 <h2>成長状況</h2>
               </div>
-              <span className="panel-icon">✨</span>
+              <span className="panel-icon">{isOwned ? card.emoji : "?"}</span>
             </div>
 
             {isOwned ? (
@@ -423,7 +417,7 @@ export default function CardDetailPage() {
                 <p>UNLOCK</p>
                 <h2>解放状況</h2>
               </div>
-              <span className="panel-icon">🌌</span>
+              <span className="panel-icon">{isOwned ? card.emoji : "?"}</span>
             </div>
 
             {isOwned ? (
@@ -667,6 +661,13 @@ const pageStyles = `
   .big-card.rarity-ssr {
     background: linear-gradient(135deg, #fde047, #f59e0b, #22d3ee);
     box-shadow: 0 0 78px rgba(251, 191, 36, 0.32);
+  }
+
+  .big-card.rarity-sar {
+    background: conic-gradient(from 15deg, #fef3c7, #fb7185, #a855f7, #22d3ee, #fde68a, #fef3c7);
+    box-shadow:
+      0 0 92px rgba(253, 230, 138, 0.38),
+      0 0 56px rgba(244, 114, 182, 0.24);
   }
 
   .big-card.rarity-sr {

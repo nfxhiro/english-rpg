@@ -481,7 +481,7 @@ export const UNLOCKABLE_BACKGROUNDS: UnlockableBackground[] = [
     conditionLabel: "火属性カード10種類所持",
     backgroundCss:
       "radial-gradient(circle at 50% 76%, rgba(239,68,68,0.34), transparent 32%), radial-gradient(circle at 78% 20%, rgba(250,204,21,0.2), transparent 32%), linear-gradient(145deg, #19070a 0%, #351018 54%, #050816 100%)",
-    isUnlocked: (context) => getOwnedAttributeTypeCount(context.earnedCards, ["火"]) >= 10,
+    isUnlocked: (context) => getOwnedAttributeTypeCount(context.earnedCards, ["fire"]) >= 10,
   },
   {
     id: "bg_deep_sea_temple",
@@ -492,7 +492,7 @@ export const UNLOCKABLE_BACKGROUNDS: UnlockableBackground[] = [
     conditionLabel: "海属性カード10種類所持",
     backgroundCss:
       "radial-gradient(circle at 20% 20%, rgba(34,211,238,0.26), transparent 36%), radial-gradient(circle at 78% 78%, rgba(59,130,246,0.24), transparent 38%), linear-gradient(145deg, #021021 0%, #07304a 52%, #050816 100%)",
-    isUnlocked: (context) => getOwnedAttributeTypeCount(context.earnedCards, ["海", "水"]) >= 10,
+    isUnlocked: (context) => getOwnedAttributeTypeCount(context.earnedCards, ["water"]) >= 10,
   },
   {
     id: "bg_starfall_tower",
@@ -503,7 +503,7 @@ export const UNLOCKABLE_BACKGROUNDS: UnlockableBackground[] = [
     conditionLabel: "星属性カード5種類所持",
     backgroundCss:
       "radial-gradient(circle at 50% 18%, rgba(250,204,21,0.22), transparent 34%), radial-gradient(circle at 80% 72%, rgba(34,211,238,0.2), transparent 34%), linear-gradient(145deg, #050816 0%, #111744 52%, #08091e 100%)",
-    isUnlocked: (context) => getOwnedAttributeTypeCount(context.earnedCards, ["星"]) >= 5,
+    isUnlocked: (context) => getOwnedAttributeTypeCount(context.earnedCards, ["light"]) >= 5,
   },
   {
     id: "bg_rainbow_circle",
@@ -611,6 +611,7 @@ export function getPartnerLevelGoldBonusRate(level: number) {
 }
 
 export function getPartnerRarityGoldBonusRate(rarity: Rarity | null | undefined) {
+  if (rarity === "SAR") return 0.3;
   if (rarity === "UR") return 0.25;
   if (rarity === "SSR") return 0.15;
   if (rarity === "SR") return 0.1;
@@ -914,6 +915,7 @@ function isRarityAtLeast(rarity: Rarity, target: Rarity) {
     SR: 3,
     SSR: 4,
     UR: 5,
+    SAR: 6,
   };
 
   return rank[rarity] >= rank[target];

@@ -2,8 +2,19 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import CommonGameNav from "../components/CommonGameNav";
+import { gachaRarityRates, Rarity } from "../../data/cards";
 
 type ResetPhase = "idle" | "confirming" | "done";
+
+function getRarityLabel(rarity: Rarity) {
+  if (rarity === "SAR") return "SPECIAL ART";
+  if (rarity === "UR") return "ULTIMATE";
+  if (rarity === "SSR") return "LEGEND";
+  if (rarity === "SR") return "EPIC";
+  if (rarity === "R") return "RARE";
+  return "NORMAL";
+}
 
 const ALL_STORAGE_KEYS = [
   "earnedCards",
@@ -51,9 +62,7 @@ export default function SettingsPage() {
 
       <section className="eq-shell">
         <nav className="eq-topbar">
-          <Link href="/" className="eq-back-link">
-            ホームへ戻る
-          </Link>
+          <CommonGameNav />
         </nav>
 
         <div className="settings-hero">
@@ -155,6 +164,27 @@ export default function SettingsPage() {
               )}
             </div>
           )}
+
+          <div className="eq-panel settings-rarity-panel">
+            <div className="eq-panel-head">
+              <div>
+                <p className="eq-panel-kicker">RARITY RATE</p>
+                <h2 className="eq-panel-title">出現レア度</h2>
+              </div>
+              <span className="eq-panel-icon">🌟</span>
+            </div>
+            <div className="settings-rarity-grid">
+              {gachaRarityRates.map((item) => (
+                <div key={item.rarity} className="settings-rarity-item">
+                  <span>{item.rarity} / {getRarityLabel(item.rarity)}</span>
+                  <strong>{item.rate.toFixed(1)}%</strong>
+                </div>
+              ))}
+            </div>
+            <div className="settings-rarity-note">
+              <p>✦ 0.3%の確率で <strong>GOD PACK</strong> が発動。SARまたはURが1枚確定し、さらにSSRが2枚以上登場します。</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -188,6 +218,58 @@ export default function SettingsPage() {
 
         .settings-content {
           max-width: 980px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .settings-rarity-panel {
+          padding: 22px 24px;
+        }
+
+        .settings-rarity-grid {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 8px;
+          margin-top: 4px;
+        }
+
+        .settings-rarity-item {
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.05);
+          padding: 8px 12px;
+        }
+
+        .settings-rarity-item span {
+          display: block;
+          color: #94a3b8;
+          font-size: 11px;
+          font-weight: 800;
+        }
+
+        .settings-rarity-item strong {
+          display: block;
+          margin-top: 4px;
+          color: #fde68a;
+          font-size: 18px;
+          font-weight: 1000;
+          line-height: 1;
+        }
+
+        .settings-rarity-note {
+          margin-top: 10px;
+          border: 1px solid rgba(168, 85, 247, 0.35);
+          background: rgba(168, 85, 247, 0.08);
+          border-radius: 12px;
+          padding: 8px 14px;
+        }
+
+        .settings-rarity-note p {
+          margin: 0;
+          color: #e9d5ff;
+          font-size: 12px;
+          font-weight: 900;
         }
 
         /* ===== Danger panel ===== */

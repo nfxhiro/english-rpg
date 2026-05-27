@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import CommonGameNav from "../components/CommonGameNav";
 import {
   addGold,
   addHeroExp,
@@ -652,12 +653,7 @@ export default function WordsPage() {
 
       <section className="eq-shell">
         <nav className="eq-topbar">
-          <Link href="/" className="eq-back-link">
-            ホームへ戻る
-          </Link>
-          <Link href="/quiz" className="eq-back-link wordbook-quest-link">
-            クエストへ
-          </Link>
+          <CommonGameNav />
           <button
             type="button"
             className={`wordbook-furigana-toggle${
@@ -1257,17 +1253,6 @@ export default function WordsPage() {
             border-color 0.16s ease,
             background 0.16s ease,
             color 0.16s ease;
-        }
-
-        .wordbook-quest-link {
-          border-color: rgba(45, 212, 191, 0.32) !important;
-          background: rgba(45, 212, 191, 0.08) !important;
-          color: #ccfbf1 !important;
-        }
-
-        .wordbook-quest-link:hover {
-          border-color: rgba(45, 212, 191, 0.5) !important;
-          background: rgba(45, 212, 191, 0.14) !important;
         }
 
         .wordbook-furigana-toggle.is-on {

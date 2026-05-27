@@ -1082,6 +1082,13 @@ a {
     0 0 24px rgba(255, 255, 255, 0.18);
 }
 
+.rarity-sar {
+  border-color: rgba(253, 230, 138, 0.9);
+  box-shadow:
+    0 0 68px rgba(253, 230, 138, 0.28),
+    0 0 34px rgba(244, 114, 182, 0.18);
+}
+
 .rarity-ssr {
   border-color: rgba(251, 191, 36, 0.65);
   box-shadow: 0 0 42px rgba(251, 191, 36, 0.18);
@@ -1904,6 +1911,7 @@ a {
 .cards-page .monster-card.dex-card.rarity-sr,
 .cards-page .monster-card.dex-card.rarity-ssr,
 .cards-page .monster-card.dex-card.rarity-ur,
+.cards-page .monster-card.dex-card.rarity-sar,
 .cards-page .monster-card.dex-card.awakening-1,
 .cards-page .monster-card.dex-card.awakening-2,
 .cards-page .monster-card.dex-card.awakening-3 {
@@ -2317,6 +2325,11 @@ a {
   box-shadow: none !important;
 }
 
+:where(.eq-topbar:has(.common-game-nav)) {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.075) !important;
+}
+
 :where(.eq-back-link, .back-link, .wordbook-back) {
   border-color: rgba(255, 255, 255, 0.12) !important;
   background: rgba(255, 255, 255, 0.06) !important;
@@ -2698,6 +2711,156 @@ a {
 /* ================================
    Global BGM Button (layout-level)
 ================================ */
+
+/* ================================
+   Common Game Nav (layout-level)
+================================ */
+
+.common-game-nav {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: repeat(7, 30px);
+  gap: 3px;
+  width: max-content;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background:
+    linear-gradient(145deg, rgba(30, 48, 66, 0.94), rgba(8, 14, 28, 0.92)),
+    rgba(8, 13, 32, 0.94);
+  box-shadow:
+    0 10px 26px rgba(0, 0, 0, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.common-game-nav__item {
+  min-width: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #dbeafe;
+  text-decoration: none;
+  cursor: pointer;
+  outline-offset: 3px;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease,
+    color 0.16s ease;
+}
+
+.common-game-nav__item:hover,
+.common-game-nav__item:focus-visible {
+  transform: translateY(-1px) scale(1.06);
+  border-color: rgba(103, 232, 249, 0.5);
+  background: rgba(34, 211, 238, 0.12);
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(34, 211, 238, 0.16);
+}
+
+.common-game-nav__item.is-active {
+  border-color: transparent;
+  background: transparent;
+  color: #fef3c7;
+  box-shadow: none;
+  filter: brightness(1.2);
+}
+
+.common-game-nav__icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 5px 7px rgba(0, 0, 0, 0.48));
+  pointer-events: none;
+}
+
+.common-game-nav__image {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 24px;
+  max-height: 24px;
+  object-fit: contain;
+}
+
+.common-game-nav__item[aria-label^="ホーム"] .common-game-nav__image {
+  filter: brightness(1.08) saturate(1.12);
+}
+
+@media (max-width: 720px) {
+  .common-game-nav {
+    grid-template-columns: repeat(7, 27px);
+    gap: 3px;
+    max-width: calc(100vw - 16px);
+    padding: 5px;
+  }
+
+  .common-game-nav__item {
+    width: 27px;
+    height: 27px;
+  }
+
+  .common-game-nav__item:hover,
+  .common-game-nav__item:focus-visible {
+    transform: translateY(-1px) scale(1.02);
+  }
+
+  .common-game-nav__icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .common-game-nav__image {
+    height: 22px;
+    max-height: 22px;
+  }
+}
+
+@media (max-width: 380px) {
+  .common-game-nav {
+    grid-template-columns: repeat(7, 25px);
+    gap: 2px;
+    padding: 4px;
+  }
+
+  .common-game-nav__item {
+    width: 25px;
+    height: 25px;
+  }
+
+  .common-game-nav__icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .common-game-nav__image {
+    height: 20px;
+    max-height: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .common-game-nav__item {
+    transition: none;
+  }
+
+  .common-game-nav__item:hover,
+  .common-game-nav__item:focus-visible {
+    transform: none;
+  }
+}
 
 .global-bgm-btn {
   position: fixed;

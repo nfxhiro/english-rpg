@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import Image from "next/image";
+import CommonGameNav from "../components/CommonGameNav";
 import {
-  getHeroExpProgress,
   HeroStatus,
   loadHeroStatus,
 } from "../../data/hero";
@@ -65,10 +65,6 @@ export default function HeroPage() {
     return () => window.clearTimeout(timer);
   }, []);
 
-
-
-  const progress = hero ? getHeroExpProgress(hero) : null;
-
   const currentLevel = hero?.level ?? 1;
   const currentTitle = hero?.title ?? "はじまりの勇者";
   const progressionContext = useMemo<ProgressionContext>(
@@ -103,9 +99,7 @@ export default function HeroPage() {
 
       <section className="eq-shell">
         <nav className="eq-topbar">
-          <Link href="/" className="eq-back-link">
-            ホームへ戻る
-          </Link>
+          <CommonGameNav />
         </nav>
 
         <div
@@ -124,17 +118,6 @@ export default function HeroPage() {
               英単語を覚えるほど、冒険者として成長します。
             </p>
 
-            <div className="eq-actions">
-              <Link href="/quiz" className="eq-button eq-button-primary">
-                <span>⚡</span>
-                クエスト開始
-              </Link>
-
-              <Link href="/words" className="eq-button eq-button-secondary">
-                <span>📚</span>
-                単語帳を見る
-              </Link>
-            </div>
           </div>
 
           <div className="hero-stage">
@@ -146,9 +129,12 @@ export default function HeroPage() {
                     {buddyEmoji}
                   </span>
                 )}
-                <img
+                <Image
                   src="/images/hero/hero_ready.png"
                   alt="勇者"
+                  width={1254}
+                  height={1254}
+                  sizes="220px"
                   className="hero-card-sprite"
                 />
               </div>
@@ -165,29 +151,10 @@ export default function HeroPage() {
           <div className="eq-panel hero-main-card">
             <div className="eq-panel-head">
               <div>
-                <p className="eq-panel-kicker">CURRENT STATUS</p>
-                <h2 className="eq-panel-title">現在の成長</h2>
+                <p className="eq-panel-kicker">BUDDY STATUS</p>
+                <h2 className="eq-panel-title">相棒の成長</h2>
               </div>
               <span className="eq-panel-icon">✨</span>
-            </div>
-
-            <div className="hero-exp-area">
-              <div className="hero-exp-label">
-                <span>EXP — Lv.{currentLevel} {displayTitle}</span>
-                <strong>
-                  {progress
-                    ? `${progress.currentExp} / ${progress.requiredExp}`
-                    : "0 / 100"}
-                </strong>
-              </div>
-
-              <div className="eq-progress-track">
-                <div
-                  className="eq-progress-bar"
-                  style={{ width: `${progress?.percent ?? 0}%` }}
-                />
-              </div>
-
             </div>
 
             <div className="hero-buddy-status">
@@ -398,20 +365,8 @@ export default function HeroPage() {
           gap: 14px;
         }
 
-        .hero-exp-area p {
-          margin: 8px 0 0;
-          color: #cbd5e1;
-          line-height: 1.6;
-          font-size: 14px;
-          font-weight: 800;
-        }
-
-        .hero-exp-area {
-          margin-top: 0;
-        }
-
         .hero-buddy-status {
-          margin-top: 12px;
+          margin-top: 0;
           display: grid;
           grid-template-columns: 70px 1fr;
           gap: 14px;
@@ -459,20 +414,6 @@ export default function HeroPage() {
           font-size: 13px;
           line-height: 1.55;
           font-weight: 800;
-        }
-
-        .hero-exp-label {
-          display: flex;
-          justify-content: space-between;
-          gap: 14px;
-          margin-bottom: 10px;
-          color: #cbd5e1;
-          font-size: 13px;
-          font-weight: 1000;
-        }
-
-        .hero-exp-label strong {
-          color: #fde68a;
         }
 
         .hero-title-tabs {

@@ -2,16 +2,17 @@
 
 import {
   useDeferredValue,
-  useLayoutEffect,
+  useEffect,
   useMemo,
   useState,
 } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import AppLoading from "../components/AppLoading";
+import CommonGameNav from "../components/CommonGameNav";
 import {
   allAttributes,
   attributeEmojiMap,
+  getAttributeLabel,
   EarnedCard,
   getAttributeColor,
   getOwnedCount,
@@ -50,6 +51,7 @@ function loadEarnedCards(): EarnedCard[] {
 }
 
 function getRarityLabel(rarity: Rarity) {
+  if (rarity === "SAR") return "SPECIAL ART";
   if (rarity === "UR") return "ULTIMATE";
   if (rarity === "SSR") return "LEGEND";
   if (rarity === "SR") return "EPIC";
@@ -58,6 +60,7 @@ function getRarityLabel(rarity: Rarity) {
 }
 
 function getRarityRank(rarity: Rarity) {
+  if (rarity === "SAR") return 6;
   if (rarity === "UR") return 5;
   if (rarity === "SSR") return 4;
   if (rarity === "SR") return 3;
@@ -66,6 +69,7 @@ function getRarityRank(rarity: Rarity) {
 }
 
 function getRarityMeterActiveStyle(rarity: Rarity): React.CSSProperties {
+  if (rarity === "SAR") return { background: "linear-gradient(90deg, #fde68a, #fb7185, #a855f7, #22d3ee)" };
   if (rarity === "UR") return { background: "linear-gradient(90deg, #ff50c8, #64c8ff, #facc15)" };
   if (rarity === "SSR") return { background: "linear-gradient(90deg, #facc15, #fb923c)" };
   if (rarity === "SR") return { background: "linear-gradient(90deg, #a855f7, #22d3ee)" };
@@ -74,7 +78,7 @@ function getRarityMeterActiveStyle(rarity: Rarity): React.CSSProperties {
 }
 
 function isSrOrHigher(rarity: Rarity) {
-  return rarity === "UR" || rarity === "SSR" || rarity === "SR";
+  return rarity === "SAR" || rarity === "UR" || rarity === "SSR" || rarity === "SR";
 }
 
 function getStatusClass(status: string) {
@@ -86,26 +90,25 @@ function getStatusClass(status: string) {
 
 export default function CardsPage() {
   const [earnedCards, setEarnedCards] = useState<EarnedCard[]>([]);
-  const [searchText, setSearchText] = useState("");
   const [rarityFilter, setRarityFilter] = useState<"すべて" | Rarity>("すべて");
   const [ownedFilter, setOwnedFilter] = useState<OwnedFilter>("all");
   const [attributeFilter, setAttributeFilter] = useState("すべて");
-  const [isReady, setIsReady] = useState(false);
 
-  const deferredSearchText = useDeferredValue(searchText);
   const deferredRarityFilter = useDeferredValue(rarityFilter);
   const deferredOwnedFilter = useDeferredValue(ownedFilter);
   const deferredAttributeFilter = useDeferredValue(attributeFilter);
 
   const isFilterPending =
-    deferredSearchText !== searchText ||
     deferredRarityFilter !== rarityFilter ||
     deferredOwnedFilter !== ownedFilter ||
     deferredAttributeFilter !== attributeFilter;
 
-  useLayoutEffect(() => {
-    setEarnedCards(loadEarnedCards());
-    setIsReady(true);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setEarnedCards(loadEarnedCards());
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, []);
 
   const earnedCardMap = useMemo(() => {
@@ -130,22 +133,9 @@ export default function CardsPage() {
   }, [earnedCardMap]);
 
   const filteredCards = useMemo(() => {
-    const keyword = deferredSearchText.trim().toLowerCase();
-    const rawKeyword = deferredSearchText.trim();
-
     return monsterCards.filter((card) => {
       const earnedCard = earnedCardMap.get(card.id);
       const isOwned = Boolean(earnedCard);
-
-      const matchesSearch =
-        keyword === "" ||
-        card.id.toLowerCase().includes(keyword) ||
-        card.name.toLowerCase().includes(keyword) ||
-        card.title.toLowerCase().includes(keyword) ||
-        card.species.toLowerCase().includes(keyword) ||
-        card.attribute.includes(rawKeyword) ||
-        (card.subAttribute?.includes(rawKeyword) ?? false) ||
-        card.rarity.toLowerCase().includes(keyword);
 
       const matchesRarity =
         deferredRarityFilter === "すべて" || card.rarity === deferredRarityFilter;
@@ -158,23 +148,10 @@ export default function CardsPage() {
       const matchesAttribute =
         deferredAttributeFilter === "すべて" || card.attribute === deferredAttributeFilter;
 
-      return matchesSearch && matchesRarity && matchesOwned && matchesAttribute;
+      return matchesRarity && matchesOwned && matchesAttribute;
     });
-  }, [deferredSearchText, deferredRarityFilter, deferredOwnedFilter, deferredAttributeFilter, earnedCardMap]);
+  }, [deferredRarityFilter, deferredOwnedFilter, deferredAttributeFilter, earnedCardMap]);
 
-
-  if (!isReady) {
-    return (
-      <AppLoading
-        icon="🃏"
-        iconSrc="/home-icons/cards.png"
-        iconWidth={1254}
-        iconHeight={787}
-        title="カード図鑑を読み込み中..."
-        message="所持カード・図鑑達成率・成長状況を確認しています。"
-      />
-    );
-  }
 
   return (
     <main className="eq-page cards-page">
@@ -184,9 +161,7 @@ export default function CardsPage() {
 
       <section className="eq-shell">
         <nav className="eq-topbar">
-          <Link href="/" className="eq-back-link">
-            ホームへ戻る
-          </Link>
+          <CommonGameNav />
         </nav>
 
         <div className="eq-hero">
@@ -203,17 +178,6 @@ export default function CardsPage() {
               同じカードが出ると所持枚数が増えていきます。
             </p>
 
-            <div className="eq-actions">
-              <Link href="/quiz" className="eq-button eq-button-primary">
-                <span>⚡</span>
-                クエスト開始
-              </Link>
-
-              <Link href="/pack" className="eq-button eq-button-secondary">
-                <span>🎁</span>
-                パック開封
-              </Link>
-            </div>
           </div>
 
           <div className="book-stage">
@@ -239,19 +203,10 @@ export default function CardsPage() {
 
         <div className="eq-panel cards-filter-panel">
           <div className="filter-grid">
-            <label className="search-box">
-              <span>検索</span>
-              <input
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                placeholder="ドラゴン / 火 / UR / ブレイズ など"
-              />
-            </label>
-
             <div className="rarity-filter">
               <span>レア度</span>
               <div className="rarity-buttons">
-                {(["すべて", "N", "R", "SR", "SSR", "UR"] as const).map((rarity) => (
+                {(["すべて", "N", "R", "SR", "SSR", "UR", "SAR"] as const).map((rarity) => (
                   <button
                     key={rarity}
                     type="button"
@@ -312,7 +267,7 @@ export default function CardsPage() {
                       : undefined
                   }
                 >
-                  {attr === "すべて" ? "すべて" : `${attributeEmojiMap[attr as MainAttribute]} ${attr}`}
+                  {attr === "すべて" ? "すべて" : `${attributeEmojiMap[attr as MainAttribute]} ${getAttributeLabel(attr as MainAttribute)}`}
                 </button>
               ))}
             </div>
@@ -405,7 +360,7 @@ export default function CardsPage() {
                   </div>
 
                   <div className="dc-rarity-meter" aria-hidden="true">
-                    {Array.from({ length: 5 }, (_, tierIndex) => {
+                    {Array.from({ length: 6 }, (_, tierIndex) => {
                       const isActive = isOwned && tierIndex < rarityRank;
                       return (
                         <span
@@ -423,7 +378,7 @@ export default function CardsPage() {
 
                   <p className="dc-attr" style={{ color: isOwned ? getAttributeColor(card.attribute) : undefined }}>
                     {isOwned
-                      ? `${card.emoji} ${card.attribute} · ${card.species}`
+                      ? `${card.emoji} ${getAttributeLabel(card.attribute)} · ${card.species}`
                       : "??? · ???"}
                   </p>
 
@@ -461,18 +416,16 @@ export default function CardsPage() {
 
         .cards-filter-panel .filter-grid {
           display: grid;
-          grid-template-columns: minmax(300px, 1.1fr) minmax(430px, 1.05fr) minmax(260px, 0.75fr);
+          grid-template-columns: minmax(430px, 1.4fr) minmax(260px, 0.75fr);
           gap: 14px;
           align-items: end;
         }
 
-        .cards-filter-panel .search-box,
         .cards-filter-panel .rarity-filter,
         .cards-filter-panel .owned-filter {
           min-width: 0;
         }
 
-        .cards-filter-panel .search-box span,
         .cards-filter-panel .rarity-filter > span,
         .cards-filter-panel .owned-filter > span,
         .cards-filter-panel .attr-filter > span {
@@ -484,12 +437,6 @@ export default function CardsPage() {
           letter-spacing: 0.08em;
         }
 
-        .cards-filter-panel .search-box input {
-          min-height: 46px;
-          border-radius: 16px;
-          font-size: 14px;
-        }
-
         .cards-filter-panel .rarity-buttons,
         .cards-filter-panel .owned-buttons {
           display: grid;
@@ -497,7 +444,7 @@ export default function CardsPage() {
         }
 
         .cards-filter-panel .rarity-buttons {
-          grid-template-columns: repeat(6, minmax(0, 1fr));
+          grid-template-columns: repeat(7, minmax(0, 1fr));
         }
 
         .cards-filter-panel .owned-buttons {
@@ -547,8 +494,14 @@ export default function CardsPage() {
         }
 
         .cards-page .eq-hero {
-          gap: 24px;
-          padding: 28px;
+          gap: 32px;
+          padding: 38px;
+        }
+
+        .book-stage {
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .cards-page .eq-display-card {
@@ -878,13 +831,51 @@ export default function CardsPage() {
           border-color: rgba(255, 255, 255, 0.42);
         }
 
+        .dex-card.rarity-sar {
+          --dc-main-rgb: 253 230 138;
+          --dc-accent-rgb: 244 114 182;
+          --dc-shadow-rgb: 124 58 237;
+          --dc-rare-text: #ffffff;
+          --dc-foil-opacity: 0.5;
+          border-width: 2px;
+          background:
+            radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.18), transparent 34%),
+            linear-gradient(140deg, rgb(55 35 8), rgb(67 20 64) 48%, rgb(11 20 50));
+        }
+        .dex-card.rarity-sar:hover {
+          border-color: rgba(253, 230, 138, 0.86);
+          box-shadow: 0 20px 42px rgba(0, 0, 0, 0.34);
+        }
+        .dex-card.rarity-sar .dc-frame {
+          background:
+            radial-gradient(circle at 50% 18%, rgba(253, 230, 138, 0.48), transparent 48%),
+            linear-gradient(135deg, rgba(244, 114, 182, 0.28), rgba(34, 211, 238, 0.22));
+          border-color: rgba(253, 230, 138, 0.62);
+          overflow: hidden;
+        }
+        .dex-card.rarity-sar .monster-glow {
+          width: 138px;
+          height: 138px;
+          background: rgba(253, 230, 138, 0.42);
+        }
+        .dex-card.rarity-sar .dc-rarity {
+          color: #1f1304;
+          background: linear-gradient(90deg, #fef3c7, #fb7185 44%, #a855f7 72%, #22d3ee);
+          border-color: rgba(255, 255, 255, 0.48);
+          box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.72),
+            0 0 24px rgba(253, 230, 138, 0.38);
+          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.34);
+        }
+
         .dc-rarity-aura {
           display: none;
         }
 
         .dex-card.rarity-sr .dc-rarity-aura,
         .dex-card.rarity-ssr .dc-rarity-aura,
-        .dex-card.rarity-ur .dc-rarity-aura {
+        .dex-card.rarity-ur .dc-rarity-aura,
+        .dex-card.rarity-sar .dc-rarity-aura {
           display: none;
         }
 
@@ -1039,9 +1030,15 @@ export default function CardsPage() {
           background-clip: text;
         }
 
+        .dex-card.rarity-sar .dc-rarity::before {
+          content: "SPECIAL ";
+          color: #1f1304;
+          font-size: 8px;
+        }
+
         .dc-rarity-meter {
           display: grid;
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: repeat(6, minmax(0, 1fr));
           gap: 4px;
           height: 7px;
           margin-top: 7px;
@@ -1069,12 +1066,20 @@ export default function CardsPage() {
           box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3);
         }
 
+        .dex-card.rarity-sar .dc-frame {
+          border: 2px solid transparent;
+          background:
+            linear-gradient(135deg, rgba(253, 230, 138, 0.22), rgba(244, 114, 182, 0.2)) padding-box,
+            conic-gradient(from 0deg, #fde68a, #fb7185, #a855f7, #22d3ee, #fef3c7, #fde68a) border-box;
+        }
+
         .cards-page .monster-card.dex-card,
         .cards-page .monster-card.dex-card.rarity-n,
         .cards-page .monster-card.dex-card.rarity-r,
         .cards-page .monster-card.dex-card.rarity-sr,
         .cards-page .monster-card.dex-card.rarity-ssr,
         .cards-page .monster-card.dex-card.rarity-ur,
+        .cards-page .monster-card.dex-card.rarity-sar,
         .cards-page .monster-card.dex-card.awakening-1,
         .cards-page .monster-card.dex-card.awakening-2,
         .cards-page .monster-card.dex-card.awakening-3 {
@@ -1249,10 +1254,6 @@ export default function CardsPage() {
             grid-template-columns: 1fr 1fr;
           }
 
-          .cards-filter-panel .search-box {
-            grid-column: 1 / -1;
-          }
-
           .cards-filter-stats {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
@@ -1265,6 +1266,14 @@ export default function CardsPage() {
 
           .cards-filter-panel .filter-grid,
           .cards-filter-panel .attr-filter {
+            grid-template-columns: 1fr;
+          }
+
+          .cards-filter-panel .rarity-buttons {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+          }
+
+          .cards-filter-panel .owned-buttons {
             grid-template-columns: 1fr;
           }
 

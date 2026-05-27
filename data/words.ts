@@ -43,19 +43,3 @@ export const learningWords: LearningWord[] = rawLearningWords.map(
   }
 );
 
-/**
- * 既存の quiz/page.tsx が WordCard / wordCards を参照しているため、
- * いったん互換用として残します。
- * 今後 quiz/page.tsx を learningWords に変更したら、この alias は消してOKです。
- */
-export type WordCard = LearningWord;
-
-export const wordCards: WordCard[] = learningWords;
-
-export function getLearningWordByWord(word: string): LearningWord | undefined {
-  return learningWords.find((item) => item.word === word);
-}
-
-export function getWordCardByWord(word: string): WordCard | undefined {
-  return wordCards.find((item) => item.word === word);
-}

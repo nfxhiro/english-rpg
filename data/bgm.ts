@@ -327,8 +327,8 @@ class BgmPlayer {
   }
 
   /** カード公開SE — レアリティ別 */
-  playSfxReveal(rarity: "N" | "R" | "SR" | "SSR" | "UR") {
-    const map = { N: REVEAL_N_SFX, R: REVEAL_R_SFX, SR: REVEAL_SR_SFX, SSR: REVEAL_SSR_SFX, UR: REVEAL_UR_SFX };
+  playSfxReveal(rarity: "N" | "R" | "SR" | "SSR" | "UR" | "SAR") {
+    const map = { N: REVEAL_N_SFX, R: REVEAL_R_SFX, SR: REVEAL_SR_SFX, SSR: REVEAL_SSR_SFX, UR: REVEAL_UR_SFX, SAR: REVEAL_UR_SFX };
     this.sfxPlay(map[rarity], 0.11);
   }
 

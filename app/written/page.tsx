@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import CommonGameNav from "../components/CommonGameNav";
 import {
   addGold,
   addHeroExp,
@@ -102,7 +102,7 @@ export default function WrittenPage() {
   const hasAnswered = selectedIndex !== null;
   const isCorrect =
     currentQuestion !== undefined && selectedIndex === currentQuestion.answerIndex;
-  const correctCount = Object.values(correctIds).filter(Boolean).length;
+  const correctCount = questions.filter((q) => correctIds[q.id]).length;
   const progressPercent =
     questions.length > 0
       ? Math.round((correctCount / questions.length) * 100)
@@ -212,7 +212,7 @@ export default function WrittenPage() {
       <main className="written-page">
         <section className="written-shell">
           <nav className="eq-topbar written-topbar">
-            <Link href="/" className="eq-back-link written-back">ホームへ戻る</Link>
+            <CommonGameNav />
           </nav>
           <div className="written-empty">問題がありません。</div>
         </section>
@@ -224,8 +224,7 @@ export default function WrittenPage() {
     <main className="written-page">
       <section className="written-shell">
         <nav className="eq-topbar written-topbar">
-          <Link href="/" className="eq-back-link written-back">ホームへ戻る</Link>
-          <Link href="/quiz" className="eq-back-link written-quest-link">クエストへ</Link>
+          <CommonGameNav />
         </nav>
 
         <header className="written-header">
@@ -394,8 +393,7 @@ export default function WrittenPage() {
           background: rgba(255, 255, 255, 0.055);
         }
 
-        .written-back,
-        .written-quest-link {
+        .written-back {
           min-height: 34px;
           display: inline-flex;
           align-items: center;
@@ -414,15 +412,10 @@ export default function WrittenPage() {
             color 0.16s ease;
         }
 
-        .written-back:hover,
-        .written-quest-link:hover {
+        .written-back:hover {
           border-color: rgba(45, 212, 191, 0.38);
           background: rgba(45, 212, 191, 0.08);
           color: #99f6e4;
-        }
-
-        .written-quest-link {
-          margin-left: auto;
         }
 
         .written-header {

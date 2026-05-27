@@ -6107,6 +6107,20 @@
   margin-left: auto;
 }
 
+.questionNumber {
+  flex: 0 0 auto;
+  border: 1px solid rgba(125, 211, 252, 0.2);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.56);
+  color: #bae6fd;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+}
+
 .hpLayer {
   position: absolute;
   z-index: 6;

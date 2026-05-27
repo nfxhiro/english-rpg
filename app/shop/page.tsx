@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { loadGold, spendGold } from "../../data/hero";
+import CommonGameNav from "../components/CommonGameNav";
+import { addGold, loadGold, spendGold } from "../../data/hero";
 import {
   EquipCategory,
   EquipItem,
@@ -70,6 +70,7 @@ export default function ShopPage() {
   const [equipState, setEquipState] = useState<EquipState>(DEFAULT_EQUIP_STATE);
   const [activeTab, setActiveTab] = useState<EquipCategory>("weapon");
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [isSecretFeedback, setIsSecretFeedback] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -77,6 +78,35 @@ export default function ShopPage() {
       setEquipState(loadEquipState());
     }, 0);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const SECRET = "GOLD";
+    let buf = "";
+    let feedbackTimer: ReturnType<typeof setTimeout>;
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key.length !== 1) return;
+      buf = (buf + e.key.toUpperCase()).slice(-SECRET.length);
+      if (buf === SECRET) {
+        addGold(10000);
+        setGold(loadGold());
+        setIsSecretFeedback(true);
+        setFeedback("10,000ゴールドゲット！");
+        clearTimeout(feedbackTimer);
+        feedbackTimer = setTimeout(() => {
+          setFeedback(null);
+          setIsSecretFeedback(false);
+        }, 2800);
+        buf = "";
+      }
+    }
+
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      clearTimeout(feedbackTimer);
+    };
   }, []);
 
   function handlePurchase(item: EquipItem) {
@@ -90,6 +120,7 @@ export default function ShopPage() {
     saveEquipState(newState);
     setEquipState(newState);
     setGold(loadGold());
+    setIsSecretFeedback(false);
     setFeedback(`「${item.name}」を購入しました！`);
     window.setTimeout(() => setFeedback(null), 2500);
   }
@@ -117,11 +148,25 @@ export default function ShopPage() {
       <div className="eq-bg-orb eq-bg-orb-two" />
       <div className="eq-bg-orb eq-bg-orb-three" />
 
-      {feedback && <div className="shop-feedback">✨ {feedback}</div>}
+      {feedback && (
+        <div className={isSecretFeedback ? "shop-feedback secret" : "shop-feedback"}>
+          {isSecretFeedback ? (
+            <>
+              <span className="shop-feedback-icon">G</span>
+              <div>
+                <strong>SECRET COMMAND</strong>
+                <p>{feedback}</p>
+              </div>
+            </>
+          ) : (
+            <>✨ {feedback}</>
+          )}
+        </div>
+      )}
 
       <section className="eq-shell">
         <div className="eq-topbar">
-          <Link href="/" className="eq-back-link">ホームへ戻る</Link>
+          <CommonGameNav />
         </div>
 
         <div className="shop-header">
@@ -140,7 +185,6 @@ export default function ShopPage() {
           <div className="shop-gold-box">
             <span>所持ゴールド</span>
             <strong>{gold.toLocaleString()}G</strong>
-            <Link href="/quiz" className="shop-earn-link">⚡ クエストで稼ぐ</Link>
           </div>
         </div>
 
@@ -330,25 +374,68 @@ export default function ShopPage() {
       <style jsx>{`
         .shop-feedback {
           position: fixed;
-          top: 24px;
+          bottom: 36px;
           left: 50%;
           transform: translateX(-50%);
-          z-index: 200;
-          padding: 13px 26px;
-          border-radius: 999px;
-          background: linear-gradient(135deg, rgba(34,197,94,0.32), rgba(21,128,61,0.42));
-          border: 1px solid rgba(34,197,94,0.55);
-          color: #86efac;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+          z-index: 9999;
+          padding: 16px 24px;
+          border-radius: 20px;
+          background: rgba(10, 14, 24, 0.96);
+          border: 1px solid rgba(250, 204, 21, 0.42);
+          color: white;
           font-size: 14px;
           font-weight: 900;
           white-space: nowrap;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-          animation: feedbackIn 0.3s ease both;
+          box-shadow: 0 24px 56px rgba(0, 0, 0, 0.55);
+          animation: feedbackIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .shop-feedback.secret {
+          border-color: rgba(250, 204, 21, 0.48);
+          background:
+            radial-gradient(circle at 18% 20%, rgba(250, 204, 21, 0.18), transparent 34%),
+            rgba(10, 14, 24, 0.96);
+          box-shadow:
+            0 24px 56px rgba(0, 0, 0, 0.55),
+            0 0 42px rgba(250, 204, 21, 0.2);
+        }
+
+        .shop-feedback-icon {
+          display: grid;
+          place-items: center;
+          width: 42px;
+          height: 42px;
+          flex: 0 0 auto;
+          border-radius: 14px;
+          background: linear-gradient(135deg, #fde047, #f59e0b);
+          color: #0a0e18;
+          font-size: 24px;
+          font-weight: 1000;
+          box-shadow: 0 0 24px rgba(250, 204, 21, 0.32);
+        }
+
+        .shop-feedback strong {
+          display: block;
+          color: #fde68a;
+          font-size: 11px;
+          font-weight: 900;
+          letter-spacing: 0.08em;
+        }
+
+        .shop-feedback p {
+          margin: 4px 0 0;
+          color: white;
+          font-size: 18px;
+          font-weight: 900;
         }
 
         @keyframes feedbackIn {
-          from { opacity: 0; transform: translateX(-50%) translateY(-12px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+          from { opacity: 0; transform: translateX(-50%) scale(0.72) translateY(20px); }
+          to   { opacity: 1; transform: translateX(-50%) scale(1)    translateY(0); }
         }
 
         .shop-header {
@@ -389,24 +476,6 @@ export default function ShopPage() {
           color: #fde047;
           font-size: 24px;
           font-weight: 900;
-        }
-
-        .shop-earn-link {
-          display: inline-block;
-          margin-top: 8px;
-          padding: 6px 12px;
-          border-radius: 999px;
-          border: 1px solid rgba(250,204,21,0.28);
-          background: rgba(250,204,21,0.08);
-          color: #fde68a;
-          font-size: 12px;
-          font-weight: 900;
-          text-decoration: none;
-          transition: background 0.15s ease;
-        }
-
-        .shop-earn-link:hover {
-          background: rgba(250,204,21,0.16);
         }
 
         /* Equipped strip */
