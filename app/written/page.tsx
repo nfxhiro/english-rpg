@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import CommonGameNav from "../components/CommonGameNav";
+import PageTopBar from "../components/PageTopBar";
 import {
   addGold,
   addHeroExp,
@@ -211,9 +211,7 @@ export default function WrittenPage() {
     return (
       <main className="written-page">
         <section className="written-shell">
-          <nav className="eq-topbar written-topbar">
-            <CommonGameNav />
-          </nav>
+          <PageTopBar className="written-topbar" />
           <div className="written-empty">問題がありません。</div>
         </section>
       </main>
@@ -223,9 +221,7 @@ export default function WrittenPage() {
   return (
     <main className="written-page">
       <section className="written-shell">
-        <nav className="eq-topbar written-topbar">
-          <CommonGameNav />
-        </nav>
+        <PageTopBar className="written-topbar" />
 
         <header className="written-header">
           <div>

@@ -4271,8 +4271,6 @@
     margin: 0 auto;
   }
 
-  .selectTopbar,
-  .battleTopbar,
   .levelHeader {
     align-items: stretch;
     flex-direction: column;
@@ -5977,11 +5975,6 @@
 @media (max-width: 720px) {
   .root {
     padding: 14px;
-  }
-
-  .selectTopbar,
-  .battleTopbar {
-    align-items: stretch;
   }
 
   .questBoardShell {

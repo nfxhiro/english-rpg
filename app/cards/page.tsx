@@ -8,7 +8,7 @@ import {
 } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import CommonGameNav from "../components/CommonGameNav";
+import PageTopBar from "../components/PageTopBar";
 import {
   allAttributes,
   attributeEmojiMap,
@@ -160,9 +160,7 @@ export default function CardsPage() {
       <div className="eq-bg-orb eq-bg-orb-three" />
 
       <section className="eq-shell">
-        <nav className="eq-topbar">
-          <CommonGameNav />
-        </nav>
+        <PageTopBar />
 
         <div className="eq-hero">
           <div className="eq-hero-copy">

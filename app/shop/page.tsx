@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import CommonGameNav from "../components/CommonGameNav";
+import PageTopBar from "../components/PageTopBar";
 import { addGold, loadGold, spendGold } from "../../data/hero";
 import {
   EquipCategory,
@@ -165,9 +165,7 @@ export default function ShopPage() {
       )}
 
       <section className="eq-shell">
-        <div className="eq-topbar">
-          <CommonGameNav />
-        </div>
+        <PageTopBar />
 
         <div className="shop-header">
           <div className="shop-header-text">

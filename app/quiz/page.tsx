@@ -12,7 +12,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import SpeechButton from "../components/SpeechButton";
-import CommonGameNav from "../components/CommonGameNav";
+import PageTopBar from "../components/PageTopBar";
 import { learningWords, LearningWord } from "../../data/words";
 import {
   wordGroupsByLevel,
@@ -1593,15 +1593,12 @@ function QuestSelectScreen({
   return (
     <main className={styles.root} style={getQuestWorldBackgroundStyle(selectedWorld?.id)}>
       <section className={styles.selectScreen}>
-        <div className={styles.selectTopbar}>
-          <CommonGameNav />
-          <div className={styles.selectTopbarActions}>
-            <FuriganaToggle
-              furiganaEnabled={furiganaEnabled}
-              onToggle={onToggleFurigana}
-            />
-          </div>
-        </div>
+        <PageTopBar className={styles.selectTopbar}>
+          <FuriganaToggle
+            furiganaEnabled={furiganaEnabled}
+            onToggle={onToggleFurigana}
+          />
+        </PageTopBar>
 
         <header className={cx(styles.frontierHero, styles[`frontierHero${levelSuffix}`])}>
           <div className={styles.frontierSky} aria-hidden="true">
@@ -1926,15 +1923,12 @@ function QuestBattleMode({
   return (
     <main className={styles.root} style={getQuestWorldBackgroundStyle(worldId)}>
       <section className={styles.screen} aria-label="英検クエスト フロンティア">
-        <div className={styles.battleTopbar}>
-          <CommonGameNav />
-          <div className={styles.selectTopbarActions}>
-            <FuriganaToggle
-              furiganaEnabled={furiganaEnabled}
-              onToggle={onToggleFurigana}
-            />
-          </div>
-        </div>
+        <PageTopBar className={styles.battleTopbar}>
+          <FuriganaToggle
+            furiganaEnabled={furiganaEnabled}
+            onToggle={onToggleFurigana}
+          />
+        </PageTopBar>
 
         <BattleQuizScreen
           answerEffect={answerEffect}

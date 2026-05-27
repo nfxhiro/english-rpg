@@ -170,6 +170,18 @@ a {
   backdrop-filter: blur(8px);
 }
 
+/* ── PageTopBar — アイコンナビ＋右スロットを1行固定 ── */
+.page-top-bar {
+  flex-wrap: nowrap;
+}
+
+.page-top-bar__right {
+  flex-shrink: 0;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
 /* ================================
    Back Link
 ================================ */

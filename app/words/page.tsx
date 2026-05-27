@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import CommonGameNav from "../components/CommonGameNav";
+import PageTopBar from "../components/PageTopBar";
 import {
   addGold,
   addHeroExp,
@@ -652,8 +652,7 @@ export default function WordsPage() {
       <div className="eq-bg-orb eq-bg-orb-three" />
 
       <section className="eq-shell">
-        <nav className="eq-topbar">
-          <CommonGameNav />
+        <PageTopBar>
           <button
             type="button"
             className={`wordbook-furigana-toggle${
@@ -664,7 +663,7 @@ export default function WordsPage() {
           >
             ふりがな {furiganaEnabled ? "ON" : "OFF"}
           </button>
-        </nav>
+        </PageTopBar>
 
         {studyMode === "list" && (
           <div className="eq-hero">
@@ -1238,7 +1237,6 @@ export default function WordsPage() {
 
       <style jsx>{`
         .wordbook-furigana-toggle {
-          margin-left: auto;
           min-height: 36px;
           border: 1px solid rgba(45, 212, 191, 0.3);
           border-radius: 999px;
@@ -2725,23 +2723,11 @@ export default function WordsPage() {
 
         @media (max-width: 720px) {
           .eq-topbar {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
             margin-bottom: 10px !important;
             padding: 6px 8px !important;
           }
 
-          .eq-back-link {
-            width: 100%;
-            min-width: 0;
-            justify-content: center;
-            padding-inline: 10px !important;
-          }
-
           .wordbook-furigana-toggle {
-            width: 100%;
-            min-width: 0;
-            margin-left: 0;
             min-height: 34px;
             padding: 0 11px;
             font-size: 12px;

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import CommonGameNav from "../components/CommonGameNav";
+import PageTopBar from "../components/PageTopBar";
 import {
   monsterCards,
   MonsterCard,
@@ -397,9 +397,7 @@ export default function PackPage() {
       )}
 
       <section className="eq-shell">
-        <div className="eq-topbar">
-          <CommonGameNav />
-        </div>
+        <PageTopBar />
 
         <div className="eq-hero">
           <div className="eq-hero-copy">

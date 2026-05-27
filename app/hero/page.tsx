@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import CommonGameNav from "../components/CommonGameNav";
+import PageTopBar from "../components/PageTopBar";
 import {
   HeroStatus,
   loadHeroStatus,
@@ -98,9 +98,7 @@ export default function HeroPage() {
       <div className="eq-bg-orb eq-bg-orb-three" />
 
       <section className="eq-shell">
-        <nav className="eq-topbar">
-          <CommonGameNav />
-        </nav>
+        <PageTopBar />
 
         <div
           className="eq-hero"
