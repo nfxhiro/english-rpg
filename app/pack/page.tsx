@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import PageTopBar from "../components/PageTopBar";
@@ -108,6 +109,7 @@ export default function PackPage() {
   const [isNewCard, setIsNewCard] = useState(false);
   const [openedCopies, setOpenedCopies] = useState(0);
   const [isOpening, setIsOpening] = useState(false);
+  const [singlePreludePhase, setSinglePreludePhase] = useState<"charge" | "summon" | null>(null);
   const [tenPackResult, setTenPackResult] = useState<TenPackItem[] | null>(null);
   const [isOpeningTen, setIsOpeningTen] = useState(false);
   const [tenPackCurrentIndex, setTenPackCurrentIndex] = useState(0);
@@ -286,13 +288,16 @@ export default function PackPage() {
   const openPack = () => {
     if (!canOpenPack) return;
     window.scrollTo({ top: 0, behavior: "smooth" });
+    setSinglePreludePhase("charge");
     window.setTimeout(() => {
+      setSinglePreludePhase("summon");
       setIsOpening(true);
       setOpenedCard(null);
       setTenPackResult(null);
       setTenPackCurrentIndex(0);
       setTenPackCardFlipped(false);
       window.setTimeout(() => {
+        setSinglePreludePhase(null);
         bgmPlayer.playSfxPackOpen();
         const result = openStoredPack("single");
         setIsOpening(false);
@@ -303,7 +308,7 @@ export default function PackPage() {
         setIsNewCard(item.isNew);
         setOpenedCopies(item.ownedCopies);
       }, 700);
-    }, 400);
+    }, 500);
   };
 
   const skipTenPack = () => {
@@ -336,6 +341,21 @@ export default function PackPage() {
 
   return (
     <main className="eq-page pack-page">
+      {singlePreludePhase && typeof document !== "undefined" && createPortal(
+        <div className={`sp-prelude sp-prelude-${singlePreludePhase}`} aria-hidden="true">
+          <div className="sp-prelude-bg" />
+          <div className="sp-circle" />
+          <div className="sp-ring sp-ring-1" />
+          <div className="sp-ring sp-ring-2" />
+          <div className="sp-ring sp-ring-3" />
+          <div className="sp-particles">
+            {Array.from({ length: 20 }, (_, i) => (
+              <span key={i} style={{ "--pi": i } as React.CSSProperties} />
+            ))}
+          </div>
+        </div>,
+        document.body
+      )}
       <div className="pack-page-bg" aria-hidden="true" />
       <div className="pack-page-bg-overlay" aria-hidden="true" />
       <div className="eq-bg-orb eq-bg-orb-one" />
@@ -3493,6 +3513,85 @@ export default function PackPage() {
         }
       `}</style>
       <style jsx global>{`
+        /* ── 1パック魔法陣プレリュード ── */
+        .sp-prelude {
+          position: fixed;
+          inset: 0;
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          pointer-events: none;
+        }
+        .sp-prelude-bg {
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(circle at 50% 50%, rgba(88, 28, 135, 0.55), transparent 60%),
+            rgba(4, 2, 20, 0.97);
+          animation: spBgIn 0.25s ease both;
+        }
+        @keyframes spBgIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        .sp-circle {
+          position: absolute;
+          inset: 0;
+          margin: auto;
+          width: 56vmin;
+          height: 56vmin;
+          border-radius: 50%;
+          border: 2px solid rgba(168, 85, 247, 0.8);
+          box-shadow: 0 0 60px rgba(168, 85, 247, 0.5), inset 0 0 40px rgba(34, 211, 238, 0.15);
+          animation: spCircleExpand 0.5s cubic-bezier(0.15, 1.1, 0.3, 1) both;
+        }
+        .sp-prelude-summon .sp-circle {
+          border-color: rgba(250, 204, 21, 0.9);
+          box-shadow: 0 0 90px rgba(250, 204, 21, 0.6), inset 0 0 60px rgba(250, 204, 21, 0.15);
+          animation: spCirclePulse 0.4s ease-in-out infinite alternate;
+        }
+        .sp-ring {
+          position: absolute;
+          inset: 0;
+          margin: auto;
+          border-radius: 50%;
+          border: 1px solid rgba(250, 204, 21, 0.4);
+          animation: spRingExpand 0.5s ease both;
+        }
+        .sp-ring-1 { width: 40vmin; height: 40vmin; animation-delay: 0.08s; }
+        .sp-ring-2 { width: 66vmin; height: 66vmin; border-color: rgba(34, 211, 238, 0.3); animation-delay: 0.16s; }
+        .sp-ring-3 { width: 84vmin; height: 84vmin; border-color: rgba(168, 85, 247, 0.2); animation-delay: 0.24s; }
+        .sp-particles { position: absolute; inset: 0; }
+        .sp-particles span {
+          position: absolute;
+          width: 3px; height: 3px;
+          border-radius: 50%;
+          background: rgba(250, 204, 21, 0.9);
+          top: 50%; left: 50%;
+          margin: -1.5px;
+          transform-origin: 0 0;
+          animation: spOrbit 1.8s linear infinite;
+          animation-delay: calc(var(--pi, 0) * -0.09s);
+        }
+        @keyframes spCircleExpand {
+          from { transform: scale(0.1) rotate(-120deg); opacity: 0.5; }
+          to   { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes spCirclePulse {
+          from { transform: scale(0.96); box-shadow: 0 0 50px rgba(250, 204, 21, 0.5); }
+          to   { transform: scale(1.04); box-shadow: 0 0 110px rgba(250, 204, 21, 0.8); }
+        }
+        @keyframes spRingExpand {
+          from { transform: scale(0.1); opacity: 0.5; }
+          to   { transform: scale(1); opacity: 1; }
+        }
+        @keyframes spOrbit {
+          from { transform: rotate(0deg)   translateX(22vmin); }
+          to   { transform: rotate(360deg) translateX(22vmin); }
+        }
+
         .pack-page .tenpack-grid {
           display: grid;
           grid-template-columns: repeat(5, minmax(0, 1fr));

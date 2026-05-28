@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { CSSProperties } from "react";
 import CommonGameNav from "../../components/CommonGameNav";
 import type { Rarity } from "../../../data/cards";
@@ -238,9 +239,8 @@ function PackOpenContent() {
   const [isGodPack, setIsGodPack] = useState(false);
   const [flashKey, setFlashKey] = useState(0);
   const [leftPanelReveal, setLeftPanelReveal] = useState<{ item: PackOpenItem; key: number } | null>(null);
-  const [dataReady, setDataReady] = useState(false);
   const [showGodOverlay, setShowGodOverlay] = useState(false);
-  const [showPrelude, setShowPrelude] = useState(false);
+  const [dataReady, setDataReady] = useState(false);
   const openAreaRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -296,42 +296,33 @@ function PackOpenContent() {
   useEffect(() => {
     if (!dataReady) return;
 
+    const isTen = mode === "ten";
+    const chargeMs = isTen ? 1600 : 0;
+    const summonMs = isTen ? 1400 : 0;
     const timers: number[] = [];
 
-    if (mode !== "ten") {
-      timers.push(window.setTimeout(() => {
+    timers.push(window.setTimeout(() => { setPhase("charge"); }, 0));
+
+    if (isTen) {
+      timers.push(window.setTimeout(() => { setPhase("summon"); }, chargeMs));
+    }
+
+    timers.push(window.setTimeout(() => {
+      if (isTen && isGodPack) {
+        setShowGodOverlay(true);
+        setPhase("godBurst");
+      } else {
         bgmPlayer.playSfxPackOpen();
         setPhase("opening");
-      }, 0));
-    } else {
-      // charge → summon → [godBurst] → opening
-      timers.push(window.setTimeout(() => {
-        setShowPrelude(true);
-        setPhase("charge");
-      }, 0));
-
-      timers.push(window.setTimeout(() => {
-        setPhase("summon");
-      }, 1600));
-
-      timers.push(window.setTimeout(() => {
-        setShowPrelude(false);
-        if (isGodPack) {
-          setShowGodOverlay(true);
-          setPhase("godBurst");
-        } else {
-          bgmPlayer.playSfxPackOpen();
-          setPhase("opening");
-        }
-      }, 3000));
-
-      if (isGodPack) {
-        timers.push(window.setTimeout(() => {
-          setShowGodOverlay(false);
-          bgmPlayer.playSfxPackOpen();
-          setPhase("opening");
-        }, 7200));
       }
+    }, chargeMs + summonMs));
+
+    if (isTen && isGodPack) {
+      timers.push(window.setTimeout(() => {
+        setShowGodOverlay(false);
+        bgmPlayer.playSfxPackOpen();
+        setPhase("opening");
+      }, chargeMs + summonMs + 4200));
     }
 
     return () => { timers.forEach((t) => window.clearTimeout(t)); };
@@ -403,8 +394,8 @@ function PackOpenContent() {
     <main className={`pack-open-page mode-${mode} rarity-${currentRarity.toLowerCase()} phase-${phase}${isGodPack ? " god-pack" : ""}${shouldShowTenPackBackground ? " tenpack-result-bg" : ""}`}>
       {flashKey > 0 && <div key={flashKey} className={`screen-flash rarity-${currentRarity.toLowerCase()}`} aria-hidden="true" />}
 
-      {/* ── 10連プレリュード（魔法陣チャージ） ── */}
-      {showPrelude && (
+      {/* ── プレリュード（魔法陣チャージ） — portal で body 直下にマウント ── */}
+      {(phase === "charge" || phase === "summon") && createPortal(
         <div className={`ten-prelude ten-prelude-${phase}`} aria-hidden="true">
           <div className="prelude-bg" />
           <div className="prelude-circle" />
@@ -419,11 +410,12 @@ function PackOpenContent() {
               <PackImage phase="loading" />
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* ── GODパック演出オーバーレイ ── */}
-      {showGodOverlay && (
+      {/* ── GODパック演出オーバーレイ — portal で body 直下にマウント ── */}
+      {showGodOverlay && createPortal(
         <div className="god-burst-overlay" aria-hidden="true">
           <div className="god-darkness" />
           <div className="god-magic-circle" />
@@ -452,7 +444,8 @@ function PackOpenContent() {
             <div className="god-text-en">GOD PACK</div>
             <div className="god-text-ja">神引き確定</div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <section className="open-shell" aria-live="polite">
@@ -648,11 +641,21 @@ function PackOpenContent() {
         .prelude-bg {
           position: absolute;
           inset: 0;
-          background: radial-gradient(circle at 50% 50%, rgba(10, 5, 40, 0.96), rgba(2, 6, 23, 0.99));
+          background:
+            radial-gradient(circle at 50% 50%, rgba(88, 28, 135, 0.55) 0%, transparent 60%),
+            radial-gradient(circle at 30% 70%, rgba(34, 211, 238, 0.18) 0%, transparent 45%),
+            rgba(4, 2, 20, 0.97);
+          animation: preludeBgIn 0.3s ease both;
+        }
+        @keyframes preludeBgIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
 
         .prelude-circle {
           position: absolute;
+          inset: 0;
+          margin: auto;
           width: 56vmin;
           height: 56vmin;
           border-radius: 50%;
@@ -671,6 +674,8 @@ function PackOpenContent() {
 
         .prelude-ring {
           position: absolute;
+          inset: 0;
+          margin: auto;
           border-radius: 50%;
           border: 1px solid rgba(250, 204, 21, 0.35);
           animation: ringExpand 1.4s ease both;
@@ -691,9 +696,10 @@ function PackOpenContent() {
           background: rgba(250, 204, 21, 0.8);
           top: 50%;
           left: 50%;
+          margin: -1.5px;
+          transform-origin: 0 0;
           animation: particleOrbit 2s linear infinite;
-          animation-delay: calc(var(--pi, 0) * -0.07s);
-          transform-origin: calc(20vmin + var(--pi, 0) * 0.5vmin) 0;
+          animation-delay: calc(var(--pi, 0) * -0.0714s);
           filter: blur(0.5px);
         }
 
@@ -714,7 +720,7 @@ function PackOpenContent() {
         }
 
         @keyframes magicCircleExpand {
-          from { transform: scale(0.05) rotate(-180deg); opacity: 0; }
+          from { transform: scale(0.08) rotate(-180deg); opacity: 0.6; }
           to   { transform: scale(1) rotate(0deg); opacity: 1; }
         }
         @keyframes magicCirclePulse {
@@ -722,7 +728,7 @@ function PackOpenContent() {
           to   { transform: scale(1.05) rotate(3deg);   box-shadow: 0 0 110px rgba(250, 204, 21, 0.7), inset 0 0 60px rgba(250, 204, 21, 0.18); }
         }
         @keyframes ringExpand {
-          from { transform: scale(0.1); opacity: 0; }
+          from { transform: scale(0.12); opacity: 0.5; }
           to   { transform: scale(1); opacity: 1; }
         }
         @keyframes ringPulse {
@@ -730,8 +736,8 @@ function PackOpenContent() {
           to   { transform: scale(1.03); opacity: 1; }
         }
         @keyframes particleOrbit {
-          from { transform: rotate(calc(var(--pi, 0) * 12.86deg)) translateX(0); }
-          to   { transform: rotate(calc(var(--pi, 0) * 12.86deg + 360deg)) translateX(0); }
+          from { transform: rotate(0deg)    translateX(22vmin); }
+          to   { transform: rotate(360deg)  translateX(22vmin); }
         }
         @keyframes packSummonShake {
           from { transform: rotate(-2deg) scale(1); }
@@ -773,6 +779,8 @@ function PackOpenContent() {
 
         .god-magic-circle {
           position: absolute;
+          inset: 0;
+          margin: auto;
           width: 78vmin;
           height: 78vmin;
           border-radius: 50%;
@@ -1053,6 +1061,30 @@ function PackOpenContent() {
 
         .pack-panel-frame.result-card .panel-card-name {
           font-size: 21px;
+        }
+
+        /* ── BEST CARD バッジ ── */
+        .pack-panel-frame.result-best::after {
+          content: "✦ BEST CARD ✦";
+          position: absolute;
+          top: 12px;
+          left: 50%;
+          transform: translateX(-50%);
+          background: linear-gradient(135deg, #fde047, #fb923c);
+          color: #111827;
+          font-size: 10px;
+          font-weight: 1000;
+          letter-spacing: 0.2em;
+          padding: 4px 14px;
+          border-radius: 999px;
+          white-space: nowrap;
+          z-index: 10;
+          box-shadow: 0 4px 18px rgba(250, 204, 21, 0.45);
+          animation: bestBadgePop 0.5s cubic-bezier(0.2, 1.5, 0.3, 1) 0.4s both;
+        }
+        @keyframes bestBadgePop {
+          from { transform: translateX(-50%) scale(0.4); opacity: 0; }
+          to   { transform: translateX(-50%) scale(1);   opacity: 1; }
         }
 
         /* ── レアリティ別パネル背景 ── */
