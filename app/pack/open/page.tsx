@@ -14,7 +14,7 @@ import {
   saveLastPackOpenResult,
 } from "../../../data/packStorage";
 
-type Phase = "loading" | "opening" | "done" | "error";
+type Phase = "loading" | "charge" | "summon" | "godBurst" | "opening" | "done" | "error";
 
 const rarityRank: Record<Rarity, number> = {
   N: 0,
@@ -239,6 +239,8 @@ function PackOpenContent() {
   const [flashKey, setFlashKey] = useState(0);
   const [leftPanelReveal, setLeftPanelReveal] = useState<{ item: PackOpenItem; key: number } | null>(null);
   const [dataReady, setDataReady] = useState(false);
+  const [showGodOverlay, setShowGodOverlay] = useState(false);
+  const [showPrelude, setShowPrelude] = useState(false);
   const openAreaRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -294,20 +296,46 @@ function PackOpenContent() {
   useEffect(() => {
     if (!dataReady) return;
 
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const timers: number[] = [];
 
-    if (isMobile && openAreaRef.current) {
-      openAreaRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
-      const timer = window.setTimeout(() => {
+    if (mode !== "ten") {
+      timers.push(window.setTimeout(() => {
         bgmPlayer.playSfxPackOpen();
         setPhase("opening");
-      }, 450);
-      return () => window.clearTimeout(timer);
+      }, 0));
+    } else {
+      // charge → summon → [godBurst] → opening
+      timers.push(window.setTimeout(() => {
+        setShowPrelude(true);
+        setPhase("charge");
+      }, 0));
+
+      timers.push(window.setTimeout(() => {
+        setPhase("summon");
+      }, 1600));
+
+      timers.push(window.setTimeout(() => {
+        setShowPrelude(false);
+        if (isGodPack) {
+          setShowGodOverlay(true);
+          setPhase("godBurst");
+        } else {
+          bgmPlayer.playSfxPackOpen();
+          setPhase("opening");
+        }
+      }, 3000));
+
+      if (isGodPack) {
+        timers.push(window.setTimeout(() => {
+          setShowGodOverlay(false);
+          bgmPlayer.playSfxPackOpen();
+          setPhase("opening");
+        }, 7200));
+      }
     }
 
-    bgmPlayer.playSfxPackOpen();
-    setPhase("opening");
-  }, [dataReady]);
+    return () => { timers.forEach((t) => window.clearTimeout(t)); };
+  }, [dataReady, isGodPack, mode]);
 
   const currentItem = items[index] ?? null;
   const currentRarity = currentItem?.card.rarity ?? "N";
@@ -374,6 +402,58 @@ function PackOpenContent() {
   return (
     <main className={`pack-open-page mode-${mode} rarity-${currentRarity.toLowerCase()} phase-${phase}${isGodPack ? " god-pack" : ""}${shouldShowTenPackBackground ? " tenpack-result-bg" : ""}`}>
       {flashKey > 0 && <div key={flashKey} className={`screen-flash rarity-${currentRarity.toLowerCase()}`} aria-hidden="true" />}
+
+      {/* ── 10連プレリュード（魔法陣チャージ） ── */}
+      {showPrelude && (
+        <div className={`ten-prelude ten-prelude-${phase}`} aria-hidden="true">
+          <div className="prelude-bg" />
+          <div className="prelude-circle" />
+          <div className="prelude-ring prelude-ring-1" />
+          <div className="prelude-ring prelude-ring-2" />
+          <div className="prelude-ring prelude-ring-3" />
+          <div className="prelude-particles">
+            {Array.from({ length: 28 }, (_, i) => <span key={i} style={{ "--pi": i } as CSSProperties} />)}
+          </div>
+          {phase === "summon" && (
+            <div className={`prelude-pack${isGodPack ? " god-charge" : ""}`}>
+              <PackImage phase="loading" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── GODパック演出オーバーレイ ── */}
+      {showGodOverlay && (
+        <div className="god-burst-overlay" aria-hidden="true">
+          <div className="god-darkness" />
+          <div className="god-magic-circle" />
+          <div className="god-magic-circle god-magic-circle-inner" />
+          <div className="god-cracks">
+            {Array.from({ length: 8 }, (_, i) => (
+              <span key={i} style={{ "--ci": i } as CSSProperties} />
+            ))}
+          </div>
+          <div className="god-pillars">
+            {Array.from({ length: 5 }, (_, i) => (
+              <span key={i} style={{ "--pi": i } as CSSProperties} />
+            ))}
+          </div>
+          {(["🐉","👹","💀","🦇","🐺","🐍","👿"] as const).map((emoji, i) => (
+            <div key={i} className={`god-monster god-monster-${i}`} style={{ "--mi": i } as CSSProperties}>
+              {emoji}
+            </div>
+          ))}
+          <div className="god-particles">
+            {Array.from({ length: 40 }, (_, i) => (
+              <span key={i} style={{ "--gi": i } as CSSProperties} />
+            ))}
+          </div>
+          <div className="god-text-container">
+            <div className="god-text-en">GOD PACK</div>
+            <div className="god-text-ja">神引き確定</div>
+          </div>
+        </div>
+      )}
 
       <section className="open-shell" aria-live="polite">
         {phase === "error" ? (
@@ -548,6 +628,335 @@ function PackOpenContent() {
         @keyframes gridDoneReveal {
           from { transform: scale(0.95) translateY(8px); opacity: 0.65; }
           to   { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        /* ============================================
+           TEN-PACK PRELUDE — 魔法陣チャージ演出
+        ============================================ */
+        .ten-prelude {
+          position: fixed;
+          inset: 0;
+          z-index: 150;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          pointer-events: none;
+        }
+
+        .prelude-bg {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 50% 50%, rgba(10, 5, 40, 0.96), rgba(2, 6, 23, 0.99));
+        }
+
+        .prelude-circle {
+          position: absolute;
+          width: 56vmin;
+          height: 56vmin;
+          border-radius: 50%;
+          border: 2px solid rgba(168, 85, 247, 0.7);
+          box-shadow:
+            0 0 60px rgba(168, 85, 247, 0.45),
+            0 0 120px rgba(168, 85, 247, 0.2),
+            inset 0 0 50px rgba(34, 211, 238, 0.15);
+          animation: magicCircleExpand 1.4s cubic-bezier(0.15, 1.1, 0.3, 1) both;
+        }
+        .ten-prelude-summon .prelude-circle {
+          animation: magicCirclePulse 0.55s ease-in-out infinite alternate;
+          border-color: rgba(250, 204, 21, 0.8);
+          box-shadow: 0 0 80px rgba(250, 204, 21, 0.5), 0 0 160px rgba(168, 85, 247, 0.3), inset 0 0 60px rgba(250, 204, 21, 0.1);
+        }
+
+        .prelude-ring {
+          position: absolute;
+          border-radius: 50%;
+          border: 1px solid rgba(250, 204, 21, 0.35);
+          animation: ringExpand 1.4s ease both;
+        }
+        .prelude-ring-1 { width: 42vmin; height: 42vmin; animation-delay: 0.18s; }
+        .prelude-ring-2 { width: 68vmin; height: 68vmin; border-color: rgba(34, 211, 238, 0.28); animation-delay: 0.35s; }
+        .prelude-ring-3 { width: 88vmin; height: 88vmin; border-color: rgba(168, 85, 247, 0.18); animation-delay: 0.55s; }
+        .ten-prelude-summon .prelude-ring {
+          animation: ringPulse 0.7s ease-in-out infinite alternate;
+        }
+
+        .prelude-particles { position: absolute; inset: 0; }
+        .prelude-particles span {
+          position: absolute;
+          width: 3px;
+          height: 3px;
+          border-radius: 50%;
+          background: rgba(250, 204, 21, 0.8);
+          top: 50%;
+          left: 50%;
+          animation: particleOrbit 2s linear infinite;
+          animation-delay: calc(var(--pi, 0) * -0.07s);
+          transform-origin: calc(20vmin + var(--pi, 0) * 0.5vmin) 0;
+          filter: blur(0.5px);
+        }
+
+        .prelude-pack {
+          position: relative;
+          z-index: 5;
+          width: 100px;
+          animation: packSummonShake 0.18s ease-in-out infinite alternate;
+          filter: drop-shadow(0 0 28px rgba(168, 85, 247, 0.6));
+        }
+        .prelude-pack.god-charge {
+          animation: packGodShake 0.12s ease-in-out infinite alternate;
+          filter: drop-shadow(0 0 40px rgba(250, 204, 21, 0.9)) drop-shadow(0 0 20px rgba(255, 100, 50, 0.6));
+        }
+
+        .prelude-text {
+          display: none;
+        }
+
+        @keyframes magicCircleExpand {
+          from { transform: scale(0.05) rotate(-180deg); opacity: 0; }
+          to   { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes magicCirclePulse {
+          from { transform: scale(0.95) rotate(0deg);   box-shadow: 0 0 40px rgba(250, 204, 21, 0.4), inset 0 0 30px rgba(250, 204, 21, 0.08); }
+          to   { transform: scale(1.05) rotate(3deg);   box-shadow: 0 0 110px rgba(250, 204, 21, 0.7), inset 0 0 60px rgba(250, 204, 21, 0.18); }
+        }
+        @keyframes ringExpand {
+          from { transform: scale(0.1); opacity: 0; }
+          to   { transform: scale(1); opacity: 1; }
+        }
+        @keyframes ringPulse {
+          from { transform: scale(0.97); opacity: 0.6; }
+          to   { transform: scale(1.03); opacity: 1; }
+        }
+        @keyframes particleOrbit {
+          from { transform: rotate(calc(var(--pi, 0) * 12.86deg)) translateX(0); }
+          to   { transform: rotate(calc(var(--pi, 0) * 12.86deg + 360deg)) translateX(0); }
+        }
+        @keyframes packSummonShake {
+          from { transform: rotate(-2deg) scale(1); }
+          to   { transform: rotate(2deg) scale(1.02); }
+        }
+        @keyframes packGodShake {
+          from { transform: rotate(-4deg) scale(0.97) translateX(-3px); }
+          to   { transform: rotate(4deg) scale(1.05) translateX(3px); }
+        }
+        @keyframes fadeInText {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 0.85; transform: translateY(0); }
+        }
+
+        /* ============================================
+           GOD PACK BURST OVERLAY
+        ============================================ */
+        .god-burst-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 200;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          overflow: hidden;
+          pointer-events: none;
+          animation: godOverlayFadeIn 0.35s ease both;
+        }
+        @keyframes godOverlayFadeIn {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+
+        .god-darkness {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 50% 50%, rgba(18, 4, 48, 0.97), rgba(1, 0, 8, 0.99));
+        }
+
+        .god-magic-circle {
+          position: absolute;
+          width: 78vmin;
+          height: 78vmin;
+          border-radius: 50%;
+          border: 3px solid rgba(250, 204, 21, 0.85);
+          box-shadow:
+            0 0 70px rgba(250, 204, 21, 0.5),
+            0 0 140px rgba(168, 85, 247, 0.35),
+            inset 0 0 70px rgba(250, 204, 21, 0.12);
+          animation: godCircleExpand 1.3s cubic-bezier(0.1, 1.15, 0.3, 1) both;
+        }
+        .god-magic-circle-inner {
+          width: 52vmin;
+          height: 52vmin;
+          border-color: rgba(34, 211, 238, 0.6);
+          box-shadow: 0 0 40px rgba(34, 211, 238, 0.4), inset 0 0 40px rgba(34, 211, 238, 0.08);
+          animation-delay: 0.2s;
+          animation-direction: reverse;
+        }
+        @keyframes godCircleExpand {
+          from { transform: scale(0.05) rotate(-270deg); opacity: 0; }
+          to   { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        /* クラック */
+        .god-cracks { position: absolute; inset: 0; z-index: 3; overflow: hidden; }
+        .god-cracks span {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          height: 2px;
+          width: 65vw;
+          background: linear-gradient(90deg, rgba(250, 204, 21, 0.95), rgba(255, 255, 255, 0.6) 15%, transparent 80%);
+          transform-origin: left center;
+          animation: godCrack 0.7s ease-out both;
+          animation-delay: calc(0.5s + var(--ci, 0) * 0.055s);
+          opacity: 0;
+        }
+        .god-cracks span:nth-child(1) { transform: rotate(0deg); }
+        .god-cracks span:nth-child(2) { transform: rotate(45deg); }
+        .god-cracks span:nth-child(3) { transform: rotate(90deg); }
+        .god-cracks span:nth-child(4) { transform: rotate(135deg); }
+        .god-cracks span:nth-child(5) { transform: rotate(180deg); }
+        .god-cracks span:nth-child(6) { transform: rotate(225deg); }
+        .god-cracks span:nth-child(7) { transform: rotate(270deg); }
+        .god-cracks span:nth-child(8) { transform: rotate(315deg); }
+        @keyframes godCrack {
+          from { opacity: 0; clip-path: inset(0 100% 0 0); }
+          30%  { opacity: 1; }
+          to   { opacity: 0.7; clip-path: inset(0 0% 0 0); }
+        }
+
+        /* 光の柱 */
+        .god-pillars { position: absolute; inset: 0; z-index: 4; overflow: hidden; }
+        .god-pillars span {
+          position: absolute;
+          bottom: 0;
+          width: 6px;
+          height: 100%;
+          background: linear-gradient(to top, transparent 0%, rgba(250, 204, 21, 0.5) 30%, rgba(255, 255, 255, 0.9) 50%, rgba(250, 204, 21, 0.5) 70%, transparent 100%);
+          filter: blur(4px);
+          animation: pillarRise 1.1s ease both;
+          animation-delay: calc(0.25s + var(--pi, 0) * 0.12s);
+          opacity: 0;
+          left: calc(10% + var(--pi, 0) * 20%);
+        }
+        @keyframes pillarRise {
+          from { opacity: 0; transform: scaleY(0); transform-origin: bottom; }
+          40%  { opacity: 1; }
+          to   { opacity: 0.8; transform: scaleY(1); transform-origin: bottom; }
+        }
+
+        /* モンスター */
+        .god-monster {
+          position: absolute;
+          font-size: 13vmin;
+          z-index: 6;
+          line-height: 1;
+          filter: drop-shadow(0 0 22px rgba(250, 204, 21, 0.7)) brightness(0.65) saturate(0.45) contrast(1.1);
+          animation: monsterBurst 1.1s cubic-bezier(0.15, 1.3, 0.3, 1) both;
+          animation-delay: calc(0.28s + var(--mi, 0) * 0.09s);
+          opacity: 0;
+        }
+        .god-monster-0 { top: 8%;    left: 4%;   transform-origin: 20% 20%; }
+        .god-monster-1 { top: 6%;    right: 5%;  transform-origin: 80% 20%; }
+        .god-monster-2 { bottom: 8%; left: 6%;   transform-origin: 18% 80%; }
+        .god-monster-3 { bottom: 6%; right: 4%;  transform-origin: 82% 80%; }
+        .god-monster-4 { top: 42%;   left: -2%;  transform-origin: 5%  50%; font-size: 11vmin; }
+        .god-monster-5 { top: 42%;   right: -2%; transform-origin: 95% 50%; font-size: 11vmin; }
+        .god-monster-6 {
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          font-size: 22vmin;
+          z-index: 5;
+          filter: drop-shadow(0 0 50px rgba(250, 204, 21, 1)) brightness(0.45) saturate(0.3) contrast(1.2);
+          animation-delay: 0.7s;
+          transform-origin: center center;
+        }
+        @keyframes monsterBurst {
+          from { opacity: 0; transform: scale(0.08) rotate(-20deg); filter: drop-shadow(0 0 50px rgba(250, 204, 21, 1)) brightness(0.35) saturate(0.25) blur(12px); }
+          55%  { opacity: 0.95; filter: drop-shadow(0 0 28px rgba(250, 204, 21, 0.8)) brightness(0.65) saturate(0.45) blur(0); }
+          to   { opacity: 0.82; transform: scale(1) rotate(0deg); }
+        }
+
+        /* パーティクル */
+        .god-particles { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+        .god-particles span {
+          position: absolute;
+          width: 4px;
+          height: 4px;
+          border-radius: 50%;
+          top: calc(30% + (var(--gi, 0) * 1.4%));
+          left: calc(5%  + (var(--gi, 0) * 2.3%));
+          background: rgba(250, 204, 21, 0.9);
+          animation: godParticle 2.4s ease both;
+          animation-delay: calc(var(--gi, 0) * 0.06s);
+          opacity: 0;
+          filter: blur(0.5px);
+        }
+        .god-particles span:nth-child(even) { background: rgba(168, 85, 247, 0.9); width: 3px; height: 3px; }
+        .god-particles span:nth-child(3n)   { background: rgba(34, 211, 238, 0.9); }
+        @keyframes godParticle {
+          0%   { opacity: 0; transform: translate(0, 0) scale(0); }
+          20%  { opacity: 1; transform: translate(calc(var(--gi, 0) * 1.5px - 30px), calc(var(--gi, 0) * -1.2px - 20px)) scale(1); }
+          100% { opacity: 0; transform: translate(calc(var(--gi, 0) * 4px - 80px), calc(var(--gi, 0) * -3px - 80px)) scale(0.3); }
+        }
+
+        /* GODテキスト */
+        .god-text-container {
+          position: absolute;
+          z-index: 10;
+          text-align: center;
+          animation: godTextPop 0.55s cubic-bezier(0.15, 1.6, 0.3, 1) 1.6s both;
+          opacity: 0;
+        }
+        .god-text-en {
+          font-size: clamp(42px, 13vw, 96px);
+          font-weight: 1000;
+          letter-spacing: 0.12em;
+          line-height: 1;
+          background: linear-gradient(135deg, #fde047 0%, #fb923c 40%, #fde047 80%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          filter: drop-shadow(0 0 28px rgba(250, 204, 21, 0.9));
+        }
+        .god-text-ja {
+          font-size: clamp(14px, 4vw, 26px);
+          font-weight: 900;
+          color: #e9d5ff;
+          letter-spacing: 0.35em;
+          margin-top: 10px;
+          animation: godTextPop 0.45s cubic-bezier(0.15, 1.6, 0.3, 1) 2.1s both;
+          opacity: 0;
+        }
+        @keyframes godTextPop {
+          from { opacity: 0; transform: scale(0.25) translateY(24px); filter: blur(14px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        }
+
+        /* ============================================
+           カードタイル — opening演出強化
+        ============================================ */
+        .pack-open-page.mode-ten.phase-opening .card-tile.sealed {
+          animation: cardTileAwaken 0.45s ease-in-out infinite alternate;
+        }
+        .pack-open-page.mode-ten.phase-opening .card-tile.current.sealed {
+          animation: cardTileCurrentPulse 0.28s ease-in-out infinite alternate;
+          z-index: 2;
+        }
+        @keyframes cardTileAwaken {
+          from { box-shadow: inset 0 0 8px rgba(168, 85, 247, 0.12); }
+          to   { box-shadow: inset 0 0 18px rgba(168, 85, 247, 0.4), 0 0 10px rgba(168, 85, 247, 0.18); }
+        }
+        @keyframes cardTileCurrentPulse {
+          from { transform: scale(1);    box-shadow: 0 0 12px rgba(250, 204, 21, 0.45), inset 0 0 10px rgba(250, 204, 21, 0.15); }
+          to   { transform: scale(1.03); box-shadow: 0 0 36px rgba(250, 204, 21, 0.85), inset 0 0 20px rgba(250, 204, 21, 0.3); }
+        }
+        /* GODパック時のカードタイル待機演出 */
+        .pack-open-page.mode-ten.phase-opening.god-pack .card-tile.sealed {
+          animation: cardTileGodAwaken 0.38s ease-in-out infinite alternate;
+        }
+        @keyframes cardTileGodAwaken {
+          from { box-shadow: inset 0 0 8px rgba(250, 204, 21, 0.1); }
+          to   { box-shadow: inset 0 0 24px rgba(250, 204, 21, 0.5), 0 0 14px rgba(250, 204, 21, 0.28); }
         }
 
         .open-shell {
