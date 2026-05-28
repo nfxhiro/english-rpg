@@ -88,8 +88,8 @@ function getStatusClass(status: string) {
   return "dc-status-none";
 }
 
-const INITIAL_LIMIT = 48;
-const PAGE_SIZE = 48;
+const INITIAL_LIMIT = 60;
+const PAGE_SIZE = 60;
 
 export default function CardsPage() {
   const [earnedCards, setEarnedCards] = useState<EarnedCard[]>([]);
@@ -1351,7 +1351,7 @@ export default function CardsPage() {
           }
 
           .cards-filter-panel .owned-buttons {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
           }
 
           .cards-filter-panel .owned-filter {
@@ -1359,7 +1359,7 @@ export default function CardsPage() {
           }
 
           .cards-filter-stats {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
           .dex-card {

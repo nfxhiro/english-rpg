@@ -341,7 +341,7 @@ export default function HeroPage() {
         /* ===================================
            ヒーロースプライト（PNG）
         =================================== */
-        .hero-card-sprite {
+        :global(.hero-card-sprite) {
           display: block;
           width: 132px;
           height: 154px;
@@ -526,6 +526,20 @@ export default function HeroPage() {
         @media (max-width: 1020px) {
           .hero-road-list {
             grid-template-columns: 1fr;
+          }
+
+          .hero-page .eq-hero {
+            grid-template-columns: 1fr;
+          }
+
+          .hero-page .eq-hero-copy {
+            width: 100%;
+            min-width: 0;
+          }
+
+          .hero-page .eq-lead {
+            max-width: 100%;
+            overflow-wrap: anywhere;
           }
         }
 

@@ -998,48 +998,42 @@ export default function ShopPage() {
           }
 
           .equipment-category-grid {
-            display: flex;
-            overflow-x: auto;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            overflow-x: visible;
             gap: 10px;
             max-width: 100%;
-            padding-bottom: 4px;
-            scroll-snap-type: x proximity;
-            scrollbar-width: none;
+            padding-bottom: 0;
           }
 
           .equipment-category-card {
-            flex: 0 0 132px;
-            min-height: 128px;
-            border-radius: 20px;
-            padding: 10px;
-            scroll-snap-align: start;
+            flex: unset;
+            min-height: 118px;
+            border-radius: 16px;
+            padding: 8px 6px;
+            scroll-snap-align: unset;
           }
 
           .equipment-category-image-frame {
-            width: 82px;
+            width: 64px;
           }
 
           .equipment-category-label {
-            font-size: 14px;
+            font-size: 12px;
           }
 
           .shop-equipped-strip {
-            display: flex;
-            overflow-x: auto;
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            overflow-x: visible;
             max-width: 100%;
-            padding-bottom: 4px;
-            scroll-snap-type: x proximity;
-            scrollbar-width: none;
-          }
-
-          .equipment-category-grid::-webkit-scrollbar,
-          .shop-equipped-strip::-webkit-scrollbar {
-            display: none;
+            padding-bottom: 0;
           }
 
           .strip-slot {
-            flex: 0 0 124px;
-            scroll-snap-align: start;
+            flex: unset;
+            padding: 8px 4px;
+            scroll-snap-align: unset;
           }
         }
       `}</style>

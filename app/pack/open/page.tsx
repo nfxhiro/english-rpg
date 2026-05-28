@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import CommonGameNav from "../../components/CommonGameNav";
 import type { Rarity } from "../../../data/cards";
@@ -240,6 +240,7 @@ function PackOpenContent() {
   const [leftPanelReveal, setLeftPanelReveal] = useState<{ item: PackOpenItem; key: number } | null>(null);
   const [dataReady, setDataReady] = useState(false);
   const openAreaRef = useRef<HTMLElement | null>(null);
+  const pageRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (mode === "ten") {
@@ -334,6 +335,17 @@ function PackOpenContent() {
     });
   }, [items.length]);
 
+  useLayoutEffect(() => {
+    if (phase === "opening" && window.innerWidth < 900) {
+      if (pageRef.current) {
+        pageRef.current.scrollTop = 0;
+      } else {
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+    }
+  }, [phase]);
+
   useEffect(() => {
     if (phase !== "opening" || !currentItem || revealed.has(index)) return;
 
@@ -371,7 +383,7 @@ function PackOpenContent() {
   }
 
   return (
-    <main className={`pack-open-page mode-${mode} rarity-${currentRarity.toLowerCase()} phase-${phase}${isGodPack ? " god-pack" : ""}${shouldShowTenPackBackground ? " tenpack-result-bg" : ""}`}>
+    <main ref={pageRef} className={`pack-open-page mode-${mode} rarity-${currentRarity.toLowerCase()} phase-${phase}${isGodPack ? " god-pack" : ""}${shouldShowTenPackBackground ? " tenpack-result-bg" : ""}`}>
       {flashKey > 0 && <div key={flashKey} className={`screen-flash rarity-${currentRarity.toLowerCase()}`} aria-hidden="true" />}
 
       <section className="open-shell" aria-live="polite">
@@ -2337,6 +2349,14 @@ function PackOpenContent() {
 
           .summon-layout {
             grid-template-columns: 1fr;
+          }
+
+          .pack-open-page.mode-ten .pack-panel {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: #020617;
+            padding-bottom: 8px;
           }
 
           .pack-panel-frame {

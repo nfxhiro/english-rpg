@@ -395,9 +395,9 @@ export const eiken5Written001_100: WrittenQuestion[] = [
     level: "英検5級",
     category: "phrase",
     question: "___ me. I made a mistake.",
-    choices: ["Sorry", "Thank", "Hello", "Good"],
+    choices: ["Excuse", "Thank", "Hello", "Good"],
     answerIndex: 0,
-    explanation: "Sorry はすまなさを伝える表現です。",
+    explanation: "Excuse me は「すみません」と謝ったり、注意を引くときの定型表現です。Sorry me とは言わず、謝るときは I'm sorry. または Excuse me. を使います。",
     japanese: "すみません。間違えました。"
   },
   {

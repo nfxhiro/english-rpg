@@ -168,7 +168,7 @@ export const eikenPre2Written001_100: WrittenQuestion[] = [
     choices: ["That sounds exciting! Where are you planning to go?", "I am fine.", "She is nice.", "It is cold."],
     answerIndex: 0,
     explanation: "留学を考えている相手への自然な返事は関心と質問を示すものです。",
-    japanese: "A: 留学を考えています。B: それはわくわきしますね！どこに行く予定ですか。"
+    japanese: "A: 留学を考えています。B: それはわくわくしますね！どこに行く予定ですか。"
   },
   {
     id: "eiken-pre2-written-017",

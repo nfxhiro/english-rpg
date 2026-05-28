@@ -73,8 +73,6 @@ export default function WrittenPage() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [answeredIds, setAnsweredIds] = useState<Record<string, boolean>>({});
   const [correctIds, setCorrectIds] = useState<Record<string, boolean>>({});
-  const [goldNotice, setGoldNotice] = useState<number | null>(null);
-  const [expNotice, setExpNotice] = useState<{ gained: number } | null>(null);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -108,25 +106,11 @@ export default function WrittenPage() {
       ? Math.round((correctCount / questions.length) * 100)
       : 0;
 
-  useEffect(() => {
-    if (goldNotice === null) return;
-    const t = setTimeout(() => setGoldNotice(null), 2000);
-    return () => clearTimeout(t);
-  }, [goldNotice]);
-
-  useEffect(() => {
-    if (expNotice === null) return;
-    const t = setTimeout(() => setExpNotice(null), 2000);
-    return () => clearTimeout(t);
-  }, [expNotice]);
-
   const changeLevel = (level: LevelFilter) => {
     setLevelFilter(level);
     setIsShuffled(false);
     setCurrentIndex(0);
     setSelectedIndex(null);
-    setGoldNotice(null);
-    setExpNotice(null);
   };
 
   const handleShuffle = () => {
@@ -134,24 +118,18 @@ export default function WrittenPage() {
     setIsShuffled(true);
     setCurrentIndex(0);
     setSelectedIndex(null);
-    setGoldNotice(null);
-    setExpNotice(null);
   };
 
   const clearShuffle = () => {
     setIsShuffled(false);
     setCurrentIndex(0);
     setSelectedIndex(null);
-    setGoldNotice(null);
-    setExpNotice(null);
   };
 
   const goToQuestion = (nextIndex: number) => {
     const boundedIndex = Math.max(0, Math.min(nextIndex, questions.length - 1));
     setCurrentIndex(boundedIndex);
     setSelectedIndex(null);
-    setGoldNotice(null);
-    setExpNotice(null);
   };
 
   const handleAnswer = (choiceIndex: number) => {
@@ -160,11 +138,9 @@ export default function WrittenPage() {
     setAnsweredIds((prev) => ({ ...prev, [currentQuestion.id]: true }));
     if (choiceIndex === currentQuestion.answerIndex) {
       setCorrectIds((prev) => ({ ...prev, [currentQuestion.id]: true }));
-      addGold(3);
-      setGoldNotice(3);
-      const heroResult = addHeroExp(loadHeroStatus(), 3);
+      addGold(10);
+      const heroResult = addHeroExp(loadHeroStatus(), 10);
       saveHeroStatus(heroResult.after);
-      setExpNotice({ gained: heroResult.gainedExp });
     }
   };
 
@@ -175,8 +151,6 @@ export default function WrittenPage() {
     setCurrentIndex(0);
     setLevelFilter("英検5級");
     setIsShuffled(false);
-    setGoldNotice(null);
-    setExpNotice(null);
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
   };
 
@@ -281,85 +255,69 @@ export default function WrittenPage() {
 
           <section className="written-question-panel">
             <div className="written-question-meta">
-              <div className="written-meta-left">
-                <span className="level-badge">{currentQuestion.level}</span>
-                <span>{categoryLabels[currentQuestion.category]}</span>
-                <span>{currentIndex + 1} / {questions.length}</span>
-              </div>
-              <div className="written-meta-right">
-              {hasAnswered && isCorrect && (
-                <div className="written-meta-notices">
-                  <div className="written-exp-notice" role="status">
-                    <strong>EXP +{expNotice?.gained ?? 3}</strong>
-                    <span>主人公EXP</span>
-                  </div>
-                  <div className="written-gold-notice" role="status">
-                    <strong>🪙 +3</strong>
-                    <span>ゴールド獲得</span>
-                  </div>
-                </div>
-              )}
-                <p className="written-keyboard-hint">A〜D で選択 · Enter/Space で次へ · ← → で移動</p>
-              </div>
+              <span className="level-badge">{currentQuestion.level}</span>
+              <span>{currentIndex + 1} / {questions.length}</span>
             </div>
 
             <div className="written-question-text">
               {currentQuestion.question}
             </div>
 
-            <div className="written-choice-grid">
-              {currentQuestion.choices.map((choice, index) => {
-                const isSelected = selectedIndex === index;
-                const isAnswer = currentQuestion.answerIndex === index;
-                const className = [
-                  "written-choice",
-                  hasAnswered && isAnswer ? "correct" : "",
-                  hasAnswered && isSelected && !isAnswer ? "wrong" : "",
-                  hasAnswered && !isSelected && !isAnswer ? "muted" : "",
-                ].filter(Boolean).join(" ");
+            <div className="written-answer-section">
+              <div className="written-choice-grid">
+                {currentQuestion.choices.map((choice, index) => {
+                  const isSelected = selectedIndex === index;
+                  const isAnswer = currentQuestion.answerIndex === index;
+                  const className = [
+                    "written-choice",
+                    hasAnswered && isAnswer ? "correct" : "",
+                    hasAnswered && isSelected && !isAnswer ? "wrong" : "",
+                    hasAnswered && !isSelected && !isAnswer ? "muted" : "",
+                  ].filter(Boolean).join(" ");
 
-                return (
-                  <button
-                    key={`${currentQuestion.id}-${choice}`}
-                    type="button"
-                    className={className}
-                    onClick={() => handleAnswer(index)}
-                    disabled={hasAnswered}
-                  >
-                    <span>{getAnswerLabel(index)}</span>
-                    <strong>{choice}</strong>
-                  </button>
-                );
-              })}
-            </div>
-
-            {hasAnswered && (
-              <div className={isCorrect ? "written-result correct" : "written-result wrong"}>
-                <strong>{isCorrect ? "正解です" : "もう一度確認しましょう"}</strong>
-                <p>{currentQuestion.explanation}</p>
-                <span>{currentQuestion.japanese}</span>
+                  return (
+                    <button
+                      key={`${currentQuestion.id}-${choice}`}
+                      type="button"
+                      className={className}
+                      onClick={() => handleAnswer(index)}
+                      disabled={hasAnswered}
+                    >
+                      <span>{getAnswerLabel(index)}</span>
+                      <strong>{choice}</strong>
+                    </button>
+                  );
+                })}
               </div>
-            )}
 
-            <div className="written-actions">
-              <button
-                type="button"
-                onClick={() => goToQuestion(currentIndex - 1)}
-                disabled={currentIndex === 0}
-              >
-                前へ
-              </button>
-              <button
-                type="button"
-                className="primary"
-                onClick={() => goToQuestion(currentIndex + 1)}
-                disabled={currentIndex >= questions.length - 1}
-              >
-                次へ
-              </button>
-              <button type="button" onClick={resetProgress}>
-                リセット
-              </button>
+              {hasAnswered && (
+                <div className={isCorrect ? "written-result correct" : "written-result wrong"}>
+                  <strong>{isCorrect ? "正解です" : "もう一度確認しましょう"}</strong>
+                  <p>{currentQuestion.explanation}</p>
+                  <span>{currentQuestion.japanese}</span>
+                </div>
+              )}
+
+              <div className="written-actions">
+                <button
+                  type="button"
+                  onClick={() => goToQuestion(currentIndex - 1)}
+                  disabled={currentIndex === 0}
+                >
+                  前へ
+                </button>
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() => goToQuestion(currentIndex + 1)}
+                  disabled={currentIndex >= questions.length - 1}
+                >
+                  次へ
+                </button>
+                <button type="button" onClick={resetProgress}>
+                  リセット
+                </button>
+              </div>
             </div>
           </section>
         </section>
@@ -546,15 +504,16 @@ export default function WrittenPage() {
 
         .written-workspace {
           display: grid;
-          grid-template-columns: 96px minmax(0, 1fr);
+          grid-template-columns: auto minmax(0, 1fr);
           gap: 14px;
           align-items: start;
         }
 
         .written-index {
           display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          grid-template-columns: repeat(10, 34px) !important;
           gap: 6px;
+          width: fit-content;
           max-height: calc(100svh - 198px);
           overflow: auto;
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -613,31 +572,18 @@ export default function WrittenPage() {
             inset 0 1px 0 rgba(255, 255, 255, 0.04);
         }
 
+        .written-answer-section {
+          margin-top: 12px;
+        }
+
         .written-question-meta {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          gap: 8px;
+          gap: 7px;
           margin-bottom: 10px;
         }
 
-        .written-meta-left {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 7px;
-        }
-
-        .written-meta-right {
-          min-width: 0;
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          gap: 8px;
-          margin-left: auto;
-        }
-
-        .written-meta-left span {
+        .written-question-meta span {
           min-height: 25px;
           display: inline-flex;
           align-items: center;
@@ -654,17 +600,6 @@ export default function WrittenPage() {
           border-color: rgba(45, 212, 191, 0.35) !important;
           background: rgba(45, 212, 191, 0.1) !important;
           color: #5eead4 !important;
-        }
-
-        .written-meta-notices {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          flex-shrink: 0;
-        }
-
-        .written-meta-notices + .written-keyboard-hint {
-          display: none;
         }
 
         .written-question-text {
@@ -777,57 +712,6 @@ export default function WrittenPage() {
           opacity: 0.44;
         }
 
-        .written-exp-notice,
-        .written-gold-notice {
-          width: fit-content;
-          min-height: 26px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          border-radius: 999px;
-          padding: 0 10px;
-          animation: writtenNoticeIn 0.28s ease both;
-        }
-
-        .written-exp-notice {
-          border: 1px solid rgba(250, 204, 21, 0.42);
-          background:
-            radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.22), transparent 68%),
-            rgba(113, 63, 18, 0.24);
-          color: #fef3c7;
-          box-shadow: 0 8px 24px rgba(250, 204, 21, 0.1);
-        }
-
-        .written-gold-notice {
-          border: 1px solid rgba(52, 211, 153, 0.42);
-          background:
-            radial-gradient(circle at 50% 0%, rgba(52, 211, 153, 0.22), transparent 68%),
-            rgba(6, 78, 59, 0.28);
-          color: #a7f3d0;
-          box-shadow: 0 8px 24px rgba(52, 211, 153, 0.1);
-        }
-
-        .written-exp-notice strong,
-        .written-gold-notice strong {
-          font-size: 12px;
-          line-height: 1;
-          font-weight: 1000;
-        }
-
-        .written-exp-notice span,
-        .written-gold-notice span {
-          color: #cbd5e1;
-          font-size: 11px;
-          line-height: 1.2;
-          font-weight: 900;
-        }
-
-        @keyframes writtenNoticeIn {
-          from { opacity: 0; transform: translateY(-6px) scale(0.9); }
-          to   { opacity: 1; transform: translateY(0)   scale(1);   }
-        }
-
         .written-result {
           margin-top: 10px;
           border-radius: 14px;
@@ -881,21 +765,6 @@ export default function WrittenPage() {
           font-weight: 800;
         }
 
-        .written-keyboard-hint {
-          margin: 0;
-          flex-shrink: 0;
-          text-align: right;
-          color: #64748b;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.03em;
-          white-space: nowrap;
-        }
-
-        @media (hover: none) {
-          .written-keyboard-hint { display: none; }
-        }
-
         .written-actions {
           display: flex;
           flex-wrap: wrap;
@@ -925,14 +794,29 @@ export default function WrittenPage() {
 
         @media (max-width: 820px) {
           .written-header,
-          .written-workspace,
-          .written-choice-grid {
+          .written-workspace {
             grid-template-columns: 1fr;
           }
 
+          .written-choice-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+
           .written-index {
-            grid-template-columns: repeat(10, minmax(38px, 1fr));
+            grid-template-columns: repeat(10, 34px) !important;
             max-height: none;
+            width: fit-content;
+          }
+
+          .written-answer-section {
+            position: sticky;
+            bottom: 0;
+            margin: 12px -16px -16px;
+            padding: 12px 16px 16px;
+            background: rgba(8, 13, 24, 0.97);
+            backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 0 0 20px 20px;
           }
         }
 
@@ -958,7 +842,13 @@ export default function WrittenPage() {
           }
 
           .written-index {
-            grid-template-columns: repeat(5, minmax(0, 1fr));
+            grid-template-columns: repeat(10, minmax(0, 1fr));
+            gap: 3px;
+          }
+
+          .written-index button {
+            font-size: 9px;
+            border-radius: 5px;
           }
         }
       `}</style>

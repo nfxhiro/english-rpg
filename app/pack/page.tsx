@@ -285,22 +285,25 @@ export default function PackPage() {
 
   const openPack = () => {
     if (!canOpenPack) return;
-    setIsOpening(true);
-    setOpenedCard(null);
-    setTenPackResult(null);
-    setTenPackCurrentIndex(0);
-    setTenPackCardFlipped(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
     window.setTimeout(() => {
-      bgmPlayer.playSfxPackOpen();
-      const result = openStoredPack("single");
-      setIsOpening(false);
-      if (!result.ok || !result.items[0]) return;
-      const item = result.items[0];
-      setPackTickets(result.remainingTickets);
-      setOpenedCard(item.card);
-      setIsNewCard(item.isNew);
-      setOpenedCopies(item.ownedCopies);
-    }, 700);
+      setIsOpening(true);
+      setOpenedCard(null);
+      setTenPackResult(null);
+      setTenPackCurrentIndex(0);
+      setTenPackCardFlipped(false);
+      window.setTimeout(() => {
+        bgmPlayer.playSfxPackOpen();
+        const result = openStoredPack("single");
+        setIsOpening(false);
+        if (!result.ok || !result.items[0]) return;
+        const item = result.items[0];
+        setPackTickets(result.remainingTickets);
+        setOpenedCard(item.card);
+        setIsNewCard(item.isNew);
+        setOpenedCopies(item.ownedCopies);
+      }, 700);
+    }, 400);
   };
 
   const skipTenPack = () => {
@@ -2973,10 +2976,12 @@ export default function PackPage() {
 
           .pack-stage {
             min-height: 360px;
+            padding: 24px 0;
           }
 
           .pack-stage.has-tenpack {
             min-height: auto;
+            padding: 0;
           }
 
           .pack-display {

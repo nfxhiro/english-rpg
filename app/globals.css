@@ -1057,7 +1057,7 @@ a {
 
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
   transition: opacity 0.18s ease;
 }
@@ -1707,7 +1707,7 @@ a {
 
 @media (max-width: 1200px) {
   .card-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
   .filter-grid {
@@ -1747,7 +1747,7 @@ a {
   }
 
   .card-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -1880,7 +1880,7 @@ a {
   }
 
   .card-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .wordbook-list {
@@ -1911,8 +1911,19 @@ a {
   }
 
   .card-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+/* Memory / Written index: fixed-size grid */
+.memory-index {
+  grid-template-columns: repeat(5, 38px) !important;
+  width: fit-content !important;
+}
+
+.written-index {
+  grid-template-columns: repeat(10, 34px) !important;
+  width: fit-content !important;
 }
 
 /* Cards index: keep every card shell flat, regardless of rarity or awakening. */
@@ -2103,7 +2114,6 @@ a {
   .status-strip,
   .collection-stats,
   .filter-stats,
-  .cards-filter-stats,
   .road-stats,
   .fb-road-stats,
   .result-grid,
@@ -2876,7 +2886,7 @@ a {
 
 .global-bgm-btn {
   position: fixed;
-  bottom: calc(88px + env(safe-area-inset-bottom));
+  bottom: calc(66px + env(safe-area-inset-bottom));
   right: 20px;
   z-index: 9999;
   min-width: 80px;
@@ -2929,7 +2939,7 @@ a {
 
 @media (max-width: 480px) {
   .global-bgm-btn {
-    bottom: calc(80px + env(safe-area-inset-bottom));
+    bottom: calc(60px + env(safe-area-inset-bottom));
     right: 14px;
     min-width: 68px;
     font-size: 11px;
@@ -3050,7 +3060,6 @@ body {
     .pack-shop-grid,
     .pack-stat-grid,
     .hero-dashboard,
-    .cards-filter-stats,
     .filter-grid,
     .words-level-tabs,
     .words-kind-tabs

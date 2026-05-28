@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import PageTopBar from "../components/PageTopBar";
 import {
@@ -9,7 +9,6 @@ import {
   addHeroExp,
   loadHeroStatus,
   saveHeroStatus,
-  type HeroExpResult,
 } from "../../data/hero";
 import { getReadingForLevel } from "../../data/readings";
 import {
@@ -26,10 +25,6 @@ const WORD_MEMORY_CHANGE_EVENT = "wordMemoryProgressChange";
 
 type StudyMode = "list" | "memory";
 type MemorySource = "all" | "review";
-type StudyExpNotice = Pick<
-  HeroExpResult,
-  "gainedExp" | "leveledUp" | "before" | "after"
->;
 type WordMemoryRecord = {
   no: string;
   correctCount: number;
@@ -272,6 +267,7 @@ function createMemoryAnswerChoices(
 }
 
 export default function WordsPage() {
+  const router = useRouter();
   const [searchText, setSearchText] = useState("");
   const [studyMode, setStudyMode] = useState<StudyMode>("list");
   const [memorySource, setMemorySource] = useState<MemorySource>("all");
@@ -292,9 +288,6 @@ export default function WordsPage() {
   const [memoryHistory, setMemoryHistory] = useState<LearningWord[]>([]);
   const [memoryIsReviewingHistory, setMemoryIsReviewingHistory] =
     useState(false);
-  const [studyExpNotice, setStudyExpNotice] =
-    useState<StudyExpNotice | null>(null);
-  const [studyGoldNotice, setStudyGoldNotice] = useState<number | null>(null);
   const [sessionWrongNos, setSessionWrongNos] = useState<Set<string>>(new Set());
   const [answerCorrectCount, setAnswerCorrectCount] = useState(0);
   const [answerTotalCount, setAnswerTotalCount] = useState(0);
@@ -310,18 +303,6 @@ export default function WordsPage() {
     loadWordMemoryProgress,
     () => EMPTY_WORD_MEMORY_PROGRESS
   );
-
-  useEffect(() => {
-    if (!studyExpNotice) return;
-    const t = setTimeout(() => setStudyExpNotice(null), 2000);
-    return () => clearTimeout(t);
-  }, [studyExpNotice]);
-
-  useEffect(() => {
-    if (studyGoldNotice === null) return;
-    const t = setTimeout(() => setStudyGoldNotice(null), 2000);
-    return () => clearTimeout(t);
-  }, [studyGoldNotice]);
 
   const filteredWords = useMemo(() => getFilteredWords(searchText, "all"), [searchText]);
 
@@ -458,8 +439,6 @@ export default function WordsPage() {
     setMemoryIsReviewingHistory(false);
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
-    setStudyExpNotice(null);
-    setStudyGoldNotice(null);
   };
 
   const resetMemorySession = () => {
@@ -509,8 +488,6 @@ export default function WordsPage() {
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
     setMemoryIsReviewingHistory(false);
-    setStudyExpNotice(null);
-    setStudyGoldNotice(null);
     if (mode === "memory") {
       resetMemorySessionForWords(memoryFilteredWords);
     }
@@ -526,8 +503,6 @@ export default function WordsPage() {
     });
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
-    setStudyExpNotice(null);
-    setStudyGoldNotice(null);
   };
 
   const toggleFurigana = () => {
@@ -554,20 +529,12 @@ export default function WordsPage() {
       setWrongNos((prev) => { const next = new Set(prev); next.delete(studiedWord.no); return next; });
       setAnswerCorrectCount((count) => count + 1);
       addGold(3);
-      setStudyGoldNotice(3);
       const gainedExp = getMemoryStudyXp();
       const heroResult = addHeroExp(loadHeroStatus(), gainedExp);
       saveHeroStatus(heroResult.after);
-      setStudyExpNotice({
-        gainedExp: heroResult.gainedExp,
-        leveledUp: heroResult.leveledUp,
-        before: heroResult.before,
-        after: heroResult.after,
-      });
     } else {
       setWrongNos((prev) => new Set([...prev, studiedWord.no]));
       setSessionWrongNos((prev) => new Set([...prev, studiedWord.no]));
-      setStudyExpNotice(null);
       setStudyGoldNotice(null);
     }
   };
@@ -587,8 +554,6 @@ export default function WordsPage() {
     setMemoryAnswered(false);
     setMemorySelectedIndex(null);
     setMemoryIsReviewingHistory(false);
-    setStudyExpNotice(null);
-    setStudyGoldNotice(null);
   };
 
   const handleMemoryPrev = () => {
@@ -604,8 +569,6 @@ export default function WordsPage() {
     setMemoryAnswered(true);
     setMemorySelectedIndex(prevChoices.indexOf(prevWord.meaning));
     setMemoryIsReviewingHistory(true);
-    setStudyExpNotice(null);
-    setStudyGoldNotice(null);
   };
 
   const handleRetryWrong = () => {
@@ -696,21 +659,12 @@ export default function WordsPage() {
 
                 <button
                   type="button"
-                  onClick={() => handleModeChange("memory")}
-                  aria-pressed="false"
-                  className="eq-button eq-button-secondary wordbook-mode-action"
-                >
-                  <span>⭐</span>
-                  暗記する
-                </button>
-
-                <Link
-                  href="/written"
+                  onClick={() => router.push("/written")}
                   className="eq-button eq-button-secondary wordbook-mode-action"
                 >
                   <span>✏️</span>
                   筆記で確認
-                </Link>
+                </button>
               </div>
 
               <div className="wordbook-stats-row">
@@ -768,25 +722,6 @@ export default function WordsPage() {
             </div>
 
             <div className="wordbook-memory-controls">
-              <div className="memory-source-tabs" aria-label="暗記する単語の種類を選ぶ">
-                <button
-                  type="button"
-                  onClick={() => handleMemorySourceChange("all")}
-                  className={memorySource === "all" ? "memory-source-tab active" : "memory-source-tab"}
-                >
-                  全単語
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleMemorySourceChange("review")}
-                  className={memorySource === "review" ? "memory-source-tab active" : "memory-source-tab"}
-                  disabled={reviewWordCount === 0}
-                >
-                  苦手復習
-                  {reviewWordCount > 0 ? ` ${reviewWordCount}` : ""}
-                </button>
-              </div>
-
               <div className="memory-level-tabs" aria-label="暗記する級を選ぶ">
                 <button
                   type="button"
@@ -813,7 +748,7 @@ export default function WordsPage() {
                   <button
                     type="button"
                     onClick={() => handleRangeChange(null)}
-                    className={rangeIndex === null ? "memory-range-tab active" : "memory-range-tab"}
+                    className={rangeIndex === null ? "memory-range-tab memory-range-tab-all active" : "memory-range-tab memory-range-tab-all"}
                   >
                     全体
                   </button>
@@ -952,25 +887,6 @@ export default function WordsPage() {
                         </span>
                       )}
                     </div>
-                    {memoryAnswered && memoryIsCorrect && !memoryIsReviewingHistory && (
-                      <div className="memory-meta-notices" role="status">
-                        <div className="memory-exp-notice">
-                          <strong>EXP +{studyExpNotice?.gainedExp ?? 3}</strong>
-                          <span>
-                            {studyExpNotice?.leveledUp
-                              ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
-                              : "主人公EXP"}
-                          </span>
-                        </div>
-                        <div className="memory-gold-notice">
-                          <strong>🪙 +{studyGoldNotice ?? 3}</strong>
-                          <span>ゴールド獲得</span>
-                        </div>
-                      </div>
-                    )}
-                    <p className="memory-keyboard-hint">
-                      A〜D で選択 · Enter/Space で次へ · ← → で移動
-                    </p>
                   </div>
 
                   <div
@@ -1069,22 +985,6 @@ export default function WordsPage() {
                         </p>
                       </div>
 
-                      {memoryIsCorrect && (
-                        <div className="memory-meta-notices" role="status">
-                          <div className="memory-exp-notice">
-                            <strong>EXP +{studyExpNotice?.gainedExp ?? 3}</strong>
-                            <span>
-                              {studyExpNotice?.leveledUp
-                                ? `Lv.${studyExpNotice.before.level} → Lv.${studyExpNotice.after.level}`
-                                : "主人公EXP"}
-                            </span>
-                          </div>
-                          <div className="memory-gold-notice">
-                            <strong>🪙 +{studyGoldNotice ?? 3}</strong>
-                            <span>ゴールド獲得</span>
-                          </div>
-                        </div>
-                      )}
                     </>
                   )}
 
@@ -1111,41 +1011,23 @@ export default function WordsPage() {
                 </article>
               </div>
             ) : (
-              <div className={`eq-panel memory-complete${memorySource === "review" && sessionWords.length === 0 ? " memory-complete-clear" : " memory-complete-done"}`}>
+              <div className="eq-panel memory-complete memory-complete-done">
                 <div className="memory-complete-stars" aria-hidden="true">
                   <span /><span /><span /><span /><span />
                 </div>
-                <div className="memory-complete-icon" aria-hidden="true">
-                  {memorySource === "review" && sessionWords.length === 0 ? "🎯" : "✨"}
-                </div>
+                <div className="memory-complete-icon" aria-hidden="true">✨</div>
                 <p className="memory-complete-kicker">MEMORY COMPLETE</p>
-                <h2>
-                  {memorySource === "review" && sessionWords.length === 0
-                    ? "復習する苦手単語はありません"
-                    : "今回の暗記が完了しました"}
-                </h2>
-                <span>
-                  {memorySource === "review" && sessionWords.length === 0
-                    ? "間違えた単語はここに集まり、2回連続で正解すると復習リストから外れます。"
-                    : "もう一度挑戦すると、同じ条件の単語を最初から確認できます。"}
-                </span>
+                <h2>今回の暗記が完了しました</h2>
+                <span>もう一度挑戦すると、同じ条件の単語を最初から確認できます。</span>
                 <div className="memory-complete-actions">
                   <button
                     type="button"
-                    onClick={() => {
-                      if (memorySource === "review" && sessionWords.length === 0) {
-                        handleMemorySourceChange("all");
-                        return;
-                      }
-                      resetMemorySession();
-                    }}
+                    onClick={resetMemorySession}
                     className="eq-button eq-button-primary"
                   >
-                    {memorySource === "review" && sessionWords.length === 0
-                      ? "全単語で練習する"
-                      : "もう一度はじめる"}
+                    もう一度はじめる
                   </button>
-                  {sessionWrongNos.size > 0 && memorySource !== "review" && (
+                  {sessionWrongNos.size > 0 && (
                     <button
                       type="button"
                       onClick={handleRetryWrong}
@@ -1334,43 +1216,54 @@ export default function WordsPage() {
         }
 
         .wordbook-mode-actions {
-          grid-template-columns: repeat(3, minmax(0, 1fr));
-          max-width: 760px;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          width: 100%;
           margin-top: 16px;
           gap: 12px;
         }
 
         .wordbook-mode-action {
-          min-height: 64px;
+          min-height: 72px;
           font-family: inherit;
-          border-color: rgba(255, 255, 255, 0.12) !important;
-          background: rgba(255, 255, 255, 0.06) !important;
-          color: #f8fafc !important;
-          box-shadow: none !important;
+          font-size: 15px !important;
+          font-weight: 900 !important;
+          border: 1.5px solid rgba(45, 212, 191, 0.42) !important;
+          border-radius: 14px !important;
+          background: linear-gradient(160deg, rgba(45, 212, 191, 0.12) 0%, rgba(20, 184, 166, 0.06) 100%) !important;
+          color: #f0fdfa !important;
+          box-shadow: 0 4px 16px rgba(45, 212, 191, 0.08) !important;
           white-space: nowrap;
+          transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease !important;
         }
 
         .wordbook-mode-action span {
+          font-size: 20px;
           line-height: 1;
         }
 
-        .wordbook-mode-action.active {
-          border-color: rgba(45, 212, 191, 0.48) !important;
-          background:
-            linear-gradient(135deg, rgba(20, 184, 166, 0.2), rgba(15, 23, 42, 0.76)) !important;
-          color: #ccfbf1 !important;
-          outline: 1px solid rgba(45, 212, 191, 0.28);
-          outline-offset: 3px;
+        .wordbook-mode-action:nth-child(2) {
+          border-color: rgba(168, 85, 247, 0.52) !important;
+          background: linear-gradient(160deg, rgba(168, 85, 247, 0.14) 0%, rgba(99, 102, 241, 0.08) 100%) !important;
+          color: #e9d5ff !important;
+          box-shadow: 0 4px 20px rgba(168, 85, 247, 0.1) !important;
         }
 
         .wordbook-mode-action:hover {
-          border-color: rgba(45, 212, 191, 0.36) !important;
-          background: rgba(45, 212, 191, 0.08) !important;
+          transform: translateY(-3px);
+          box-shadow: 0 8px 28px rgba(45, 212, 191, 0.24) !important;
+          background: linear-gradient(160deg, rgba(45, 212, 191, 0.22) 0%, rgba(20, 184, 166, 0.14) 100%) !important;
+          border-color: rgba(45, 212, 191, 0.72) !important;
         }
 
-        .wordbook-mode-action.active:hover {
-          background:
-            linear-gradient(135deg, rgba(20, 184, 166, 0.24), rgba(15, 23, 42, 0.8)) !important;
+        .wordbook-mode-action:nth-child(2):hover {
+          transform: translateY(-3px);
+          background: linear-gradient(160deg, rgba(168, 85, 247, 0.28) 0%, rgba(99, 102, 241, 0.18) 100%) !important;
+          box-shadow: 0 8px 30px rgba(168, 85, 247, 0.32) !important;
+          border-color: rgba(168, 85, 247, 0.82) !important;
+        }
+
+        .wordbook-mode-action.active {
+          border-color: rgba(45, 212, 191, 0.72) !important;
         }
 
         .wordbook-memory-toolbar {
@@ -1417,53 +1310,12 @@ export default function WordsPage() {
           flex-wrap: wrap;
         }
 
-        .memory-source-tabs {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          flex: 0 0 auto;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 999px;
-          padding: 3px;
-          background: rgba(2, 6, 23, 0.42);
-        }
-
-        .memory-source-tab {
-          min-height: 30px;
-          border: 0;
-          border-radius: 999px;
-          background: transparent;
-          color: #94a3b8;
-          padding: 0 11px;
-          font: inherit;
-          font-size: 11px;
-          font-weight: 1000;
-          white-space: nowrap;
-          cursor: pointer;
-          transition:
-            background 0.16s ease,
-            color 0.16s ease,
-            opacity 0.16s ease;
-        }
-
-        .memory-source-tab.active {
-          background: rgba(250, 204, 21, 0.16);
-          color: #fef3c7;
-        }
-
-        .memory-source-tab:disabled {
-          cursor: not-allowed;
-          opacity: 0.42;
-        }
-
         .memory-level-tabs {
           max-width: min(100%, 620px);
           display: flex;
           align-items: center;
           gap: 6px;
-          overflow-x: auto;
-          scrollbar-width: thin;
-          scrollbar-color: rgba(45, 212, 191, 0.42) transparent;
+          flex-wrap: wrap;
           padding: 2px;
         }
 
@@ -1502,16 +1354,14 @@ export default function WordsPage() {
         }
 
         .memory-range-tabs {
-          display: flex;
-          align-items: center;
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 6px;
-          flex-wrap: wrap;
           padding: 2px 0;
         }
 
         .memory-range-tab {
           min-height: 28px;
-          flex: 0 0 auto;
           border: 1px solid rgba(168, 85, 247, 0.28);
           border-radius: 999px;
           background: rgba(15, 23, 42, 0.6);
@@ -1541,6 +1391,10 @@ export default function WordsPage() {
           background: rgba(250, 204, 21, 0.12);
           color: #fef3c7;
           box-shadow: none;
+        }
+
+        .memory-range-tab-all {
+          grid-column: 1 / -1;
         }
 
         .wordbook-memory-back-button {
@@ -1766,7 +1620,7 @@ export default function WordsPage() {
 
         .memory-workspace {
           display: grid;
-          grid-template-columns: 96px minmax(0, 1fr);
+          grid-template-columns: auto minmax(0, 1fr);
           gap: 14px;
           align-items: start;
         }
@@ -1776,9 +1630,10 @@ export default function WordsPage() {
         }
 
         .memory-index {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+          display: grid !important;
+          grid-template-columns: repeat(5, 38px) !important;
           gap: 6px;
+          width: fit-content;
           max-height: calc(100svh - 190px);
           overflow: auto;
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1892,21 +1747,6 @@ export default function WordsPage() {
           letter-spacing: 0;
         }
 
-        .memory-meta-notices {
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          gap: 6px;
-          flex-shrink: 0;
-          flex-wrap: wrap;
-          margin: 0 0 0 auto;
-        }
-
-        .memory-meta-notices + .memory-keyboard-hint,
-        .memory-result + .memory-meta-notices {
-          display: none;
-        }
-
         .memory-progress-remain {
           color: #64748b !important;
         }
@@ -1924,78 +1764,6 @@ export default function WordsPage() {
           border-radius: inherit;
           background: linear-gradient(90deg, #2dd4bf, #fde047);
           transition: width 0.3s ease;
-        }
-
-        .memory-exp-notice {
-          width: fit-content;
-          max-width: 100%;
-          min-height: 26px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          border: 1px solid rgba(250, 204, 21, 0.42);
-          border-radius: 999px;
-          background:
-            radial-gradient(
-              circle at 50% 0%,
-              rgba(250, 204, 21, 0.22),
-              transparent 68%
-            ),
-            rgba(113, 63, 18, 0.24);
-          padding: 0 10px;
-          color: #fef3c7;
-          box-shadow: 0 16px 42px rgba(250, 204, 21, 0.12);
-          animation: memoryExpPop 0.28s ease both;
-        }
-
-        .memory-exp-notice strong {
-          font-size: 12px;
-          line-height: 1;
-          font-weight: 1000;
-        }
-
-        .memory-exp-notice span {
-          color: #cbd5e1;
-          font-size: 11px;
-          line-height: 1.2;
-          font-weight: 900;
-        }
-
-        .memory-gold-notice {
-          width: fit-content;
-          max-width: 100%;
-          min-height: 26px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          border: 1px solid rgba(52, 211, 153, 0.42);
-          border-radius: 999px;
-          background:
-            radial-gradient(
-              circle at 50% 0%,
-              rgba(52, 211, 153, 0.22),
-              transparent 68%
-            ),
-            rgba(6, 78, 59, 0.28);
-          padding: 0 10px;
-          color: #a7f3d0;
-          box-shadow: 0 16px 42px rgba(52, 211, 153, 0.1);
-          animation: memoryExpPop 0.28s ease both;
-        }
-
-        .memory-gold-notice strong {
-          font-size: 12px;
-          line-height: 1;
-          font-weight: 1000;
-        }
-
-        .memory-gold-notice span {
-          color: #cbd5e1;
-          font-size: 11px;
-          line-height: 1.2;
-          font-weight: 900;
         }
 
         .memory-badges {
@@ -2403,21 +2171,6 @@ export default function WordsPage() {
           border-radius: 18px;
         }
 
-        .memory-keyboard-hint {
-          flex: 0 0 auto;
-          margin: 0 0 0 auto;
-          text-align: right;
-          color: #64748b;
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.03em;
-          white-space: nowrap;
-        }
-
-        @media (hover: none) {
-          .memory-keyboard-hint { display: none; }
-        }
-
         .dict-index-bar {
           position: sticky;
           top: 0;
@@ -2757,14 +2510,15 @@ export default function WordsPage() {
           }
 
           .wordbook-mode-actions {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px;
             margin-top: 14px;
           }
 
           .wordbook-mode-action {
-            min-height: 48px;
-            font-size: 14px;
+            min-height: 60px;
+            font-size: 14px !important;
+            font-weight: 900 !important;
           }
 
           .eq-status-strip {
@@ -2858,7 +2612,7 @@ export default function WordsPage() {
           }
 
           .memory-index {
-            grid-template-columns: repeat(10, minmax(38px, 1fr));
+            grid-template-columns: repeat(5, 38px) !important;
             max-height: none;
             border-radius: 16px;
             padding: 8px;
@@ -2877,12 +2631,6 @@ export default function WordsPage() {
           .memory-progress-row {
             align-items: flex-start;
             flex-direction: column;
-          }
-
-          .memory-keyboard-hint {
-            margin-left: 0;
-            text-align: left;
-            white-space: normal;
           }
 
           .memory-progress-row button {
@@ -2906,7 +2654,7 @@ export default function WordsPage() {
           }
 
           .memory-choice-grid {
-            grid-template-columns: 1fr;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 8px;
             margin-top: 10px;
           }
@@ -2944,7 +2692,13 @@ export default function WordsPage() {
             gap: 8px;
           }
 
+          .words-word-area {
+            flex: none;
+            width: 100%;
+          }
+
           .words-badges {
+            flex: none;
             justify-content: flex-start;
             gap: 6px;
           }
