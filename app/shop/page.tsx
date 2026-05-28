@@ -329,7 +329,7 @@ export default function ShopPage() {
               <p className="eq-panel-kicker">EQUIP GUIDE</p>
               <h2 className="eq-panel-title">装備の効果一覧</h2>
             </div>
-            <span className="eq-panel-icon">💡</span>
+            <span className="eq-panel-icon">📜</span>
           </div>
 
           <div className="shop-guide-grid">

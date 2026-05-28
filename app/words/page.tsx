@@ -270,7 +270,7 @@ export default function WordsPage() {
   const router = useRouter();
   const [searchText, setSearchText] = useState("");
   const [studyMode, setStudyMode] = useState<StudyMode>("list");
-  const [memorySource, setMemorySource] = useState<MemorySource>("all");
+  const memorySource: MemorySource = "all";
   const [activeLetter, setActiveLetter] = useState("A");
   const [levelFilter, setLevelFilter] = useState("all");
   const [rangeIndex, setRangeIndex] = useState<number | null>(null);
@@ -356,11 +356,6 @@ export default function WordsPage() {
 
   const rangeCount = Math.ceil(levelOnlyWords.length / 100);
 
-  const reviewWordCount = useMemo(() => {
-    return learningWords.filter(
-      (word) => wordMemoryProgress[getWordKey(word)]?.needsReview
-    ).length;
-  }, [wordMemoryProgress]);
 
   const getMemoryWordsFor = useCallback((
     level: string,
@@ -478,10 +473,6 @@ export default function WordsPage() {
     resetMemorySessionForWords(getMemoryWordsFor(levelFilter, idx, memorySource));
   };
 
-  const handleMemorySourceChange = (source: MemorySource) => {
-    setMemorySource(source);
-    resetMemorySessionForWords(getMemoryWordsFor(levelFilter, rangeIndex, source));
-  };
 
   const handleModeChange = (mode: StudyMode) => {
     setStudyMode(mode);
@@ -535,7 +526,6 @@ export default function WordsPage() {
     } else {
       setWrongNos((prev) => new Set([...prev, studiedWord.no]));
       setSessionWrongNos((prev) => new Set([...prev, studiedWord.no]));
-      setStudyGoldNotice(null);
     }
   };
 

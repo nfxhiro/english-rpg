@@ -34,13 +34,7 @@ const levelLabels: Record<LevelFilter, string> = {
 
 const levelFilters: LevelFilter[] = ["英検5級", "英検4級", "英検3級", "英検準2級"];
 
-const categoryLabels: Record<WrittenQuestion["category"], string> = {
-  vocabulary: "語彙",
-  grammar: "文法",
-  phrase: "熟語",
-  conversation: "会話",
-  writing: "表現",
-};
+
 
 function shuffleArray<T>(arr: T[]): T[] {
   const result = [...arr];

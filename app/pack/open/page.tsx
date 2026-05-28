@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import CommonGameNav from "../../components/CommonGameNav";
 import type { Rarity } from "../../../data/cards";
@@ -240,7 +240,6 @@ function PackOpenContent() {
   const [leftPanelReveal, setLeftPanelReveal] = useState<{ item: PackOpenItem; key: number } | null>(null);
   const [dataReady, setDataReady] = useState(false);
   const openAreaRef = useRef<HTMLElement | null>(null);
-  const pageRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (mode === "ten") {
@@ -335,16 +334,6 @@ function PackOpenContent() {
     });
   }, [items.length]);
 
-  useLayoutEffect(() => {
-    if (phase === "opening" && window.innerWidth < 900) {
-      if (pageRef.current) {
-        pageRef.current.scrollTop = 0;
-      } else {
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-      }
-    }
-  }, [phase]);
 
   useEffect(() => {
     if (phase !== "opening" || !currentItem || revealed.has(index)) return;
@@ -383,7 +372,7 @@ function PackOpenContent() {
   }
 
   return (
-    <main ref={pageRef} className={`pack-open-page mode-${mode} rarity-${currentRarity.toLowerCase()} phase-${phase}${isGodPack ? " god-pack" : ""}${shouldShowTenPackBackground ? " tenpack-result-bg" : ""}`}>
+    <main className={`pack-open-page mode-${mode} rarity-${currentRarity.toLowerCase()} phase-${phase}${isGodPack ? " god-pack" : ""}${shouldShowTenPackBackground ? " tenpack-result-bg" : ""}`}>
       {flashKey > 0 && <div key={flashKey} className={`screen-flash rarity-${currentRarity.toLowerCase()}`} aria-hidden="true" />}
 
       <section className="open-shell" aria-live="polite">
@@ -2347,16 +2336,48 @@ function PackOpenContent() {
             padding: 14px;
           }
 
-          .summon-layout {
-            grid-template-columns: 1fr;
+          /* 10連パックはページ全体を固定高さの2段レイアウトに */
+          .pack-open-page.mode-ten {
+            height: 100svh;
+            overflow: hidden;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .pack-open-page.mode-ten .open-shell {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 100%;
+          }
+
+          .pack-open-page.mode-ten .summon-layout {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
           }
 
           .pack-open-page.mode-ten .pack-panel {
-            position: sticky;
-            top: 0;
-            z-index: 10;
+            flex-shrink: 0;
+            padding: 10px 14px 6px;
             background: #020617;
-            padding-bottom: 8px;
+          }
+
+          .pack-open-page.mode-ten .cards-panel {
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            padding: 0 14px 14px;
+          }
+
+          /* 通常（1枚）開封 */
+          .summon-layout {
+            grid-template-columns: 1fr;
           }
 
           .pack-panel-frame {
@@ -2368,11 +2389,12 @@ function PackOpenContent() {
           .pack-open-page.mode-ten .pack-panel-frame,
           .pack-panel-frame.result-card {
             width: min(100%, 252px);
-            height: 352px;
-            min-height: 352px;
-            max-height: 352px;
+            height: 260px;
+            min-height: 260px;
+            max-height: 260px;
             grid-template-columns: 1fr;
             text-align: center;
+            margin: 0 auto;
           }
 
           .pack-open-page.mode-ten .pack-panel-frame:not(.result-card) .pack-image {
@@ -2391,7 +2413,7 @@ function PackOpenContent() {
           }
 
           .card-tile {
-            min-height: 164px;
+            min-height: 140px;
           }
 
           .pack-open-page.tenpack-result-bg::before {
