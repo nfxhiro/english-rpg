@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { CSSProperties } from "react";
 import CommonGameNav from "../../components/CommonGameNav";
@@ -86,7 +86,7 @@ function getPrizeRevealClass(rarity: Rarity) {
 }
 
 function renderCardRevealEffects(rarity: Rarity) {
-  const sparkCount = rarity === "SAR" ? 24 : rarity === "UR" ? 20 : rarity === "SSR" ? 14 : 10;
+  const sparkCount = rarity === "SAR" ? 16 : rarity === "UR" ? 14 : rarity === "SSR" ? 10 : 8;
   return (
     <div className={`card-reveal-effects rarity-${rarity.toLowerCase()}`} aria-hidden="true">
       {Array.from({ length: sparkCount }, (_, i) => (
@@ -160,7 +160,7 @@ function PackImage({ phase }: { phase: Phase }) {
   );
 }
 
-function CardTile({
+const CardTile = memo(function CardTile({
   item,
   index,
   revealed,
@@ -199,7 +199,7 @@ function CardTile({
       )}
     </div>
   );
-}
+});
 
 function PanelMonsterInfo({ item }: { item: PackOpenItem }) {
   const dropLabel = getDropLabel(item.card.rarity);
@@ -256,6 +256,9 @@ function PackOpenContent() {
         router.replace("/pack");
         return;
       }
+
+      // バリデーション通過直後に魔法陣演出を開始（データ読み込みと並行）
+      setPhase("charge");
     }
 
     const timer = window.setTimeout(() => {
@@ -436,7 +439,7 @@ function PackOpenContent() {
             </div>
           ))}
           <div className="god-particles">
-            {Array.from({ length: 40 }, (_, i) => (
+            {Array.from({ length: 20 }, (_, i) => (
               <span key={i} style={{ "--gi": i } as CSSProperties} />
             ))}
           </div>
@@ -606,9 +609,9 @@ function PackOpenContent() {
           animation: flashOutSAR 0.64s ease both;
         }
         @keyframes flashOutLegend {
-          0%   { opacity: 0.92; filter: brightness(0.3); }
-          24%  { opacity: 0.88; filter: brightness(1.5); }
-          100% { opacity: 0; filter: brightness(1); }
+          0%   { opacity: 0.92; }
+          24%  { opacity: 0.88; }
+          100% { opacity: 0; }
         }
         @keyframes flashOutSAR {
           0%   { opacity: 0; transform: scale(0.94); filter: brightness(1.6); }
@@ -707,8 +710,15 @@ function PackOpenContent() {
           position: relative;
           z-index: 5;
           width: 100px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           animation: packSummonShake 0.18s ease-in-out infinite alternate;
           filter: drop-shadow(0 0 28px rgba(168, 85, 247, 0.6));
+        }
+
+        .prelude-pack .pack-image {
+          width: 100px;
         }
         .prelude-pack.god-charge {
           animation: packGodShake 0.12s ease-in-out infinite alternate;
@@ -765,6 +775,7 @@ function PackOpenContent() {
           overflow: hidden;
           pointer-events: none;
           animation: godOverlayFadeIn 0.35s ease both;
+          will-change: opacity;
         }
         @keyframes godOverlayFadeIn {
           from { opacity: 0; }
@@ -786,10 +797,11 @@ function PackOpenContent() {
           border-radius: 50%;
           border: 3px solid rgba(250, 204, 21, 0.85);
           box-shadow:
-            0 0 70px rgba(250, 204, 21, 0.5),
-            0 0 140px rgba(168, 85, 247, 0.35),
-            inset 0 0 70px rgba(250, 204, 21, 0.12);
+            0 0 50px rgba(250, 204, 21, 0.5),
+            0 0 100px rgba(168, 85, 247, 0.3),
+            inset 0 0 50px rgba(250, 204, 21, 0.1);
           animation: godCircleExpand 1.3s cubic-bezier(0.1, 1.15, 0.3, 1) both;
+          will-change: transform, opacity;
         }
         .god-magic-circle-inner {
           width: 52vmin;
@@ -817,6 +829,7 @@ function PackOpenContent() {
           animation: godCrack 0.7s ease-out both;
           animation-delay: calc(0.5s + var(--ci, 0) * 0.055s);
           opacity: 0;
+          will-change: opacity, clip-path;
         }
         .god-cracks span:nth-child(1) { transform: rotate(0deg); }
         .god-cracks span:nth-child(2) { transform: rotate(45deg); }
@@ -845,6 +858,7 @@ function PackOpenContent() {
           animation-delay: calc(0.25s + var(--pi, 0) * 0.12s);
           opacity: 0;
           left: calc(10% + var(--pi, 0) * 20%);
+          will-change: transform, opacity;
         }
         @keyframes pillarRise {
           from { opacity: 0; transform: scaleY(0); transform-origin: bottom; }
@@ -862,6 +876,7 @@ function PackOpenContent() {
           animation: monsterBurst 1.1s cubic-bezier(0.15, 1.3, 0.3, 1) both;
           animation-delay: calc(0.28s + var(--mi, 0) * 0.09s);
           opacity: 0;
+          will-change: transform, opacity;
         }
         .god-monster-0 { top: 8%;    left: 4%;   transform-origin: 20% 20%; }
         .god-monster-1 { top: 6%;    right: 5%;  transform-origin: 80% 20%; }
@@ -871,17 +886,24 @@ function PackOpenContent() {
         .god-monster-5 { top: 42%;   right: -2%; transform-origin: 95% 50%; font-size: 11vmin; }
         .god-monster-6 {
           top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
           font-size: 22vmin;
           z-index: 5;
           filter: drop-shadow(0 0 50px rgba(250, 204, 21, 1)) brightness(0.45) saturate(0.3) contrast(1.2);
+          animation-name: monsterBurstCenter;
           animation-delay: 0.7s;
           transform-origin: center center;
         }
+        /* filterをキーフレーム外に出してtransform/opacityのみアニメーション（GPU合成可能） */
         @keyframes monsterBurst {
-          from { opacity: 0; transform: scale(0.08) rotate(-20deg); filter: drop-shadow(0 0 50px rgba(250, 204, 21, 1)) brightness(0.35) saturate(0.25) blur(12px); }
-          55%  { opacity: 0.95; filter: drop-shadow(0 0 28px rgba(250, 204, 21, 0.8)) brightness(0.65) saturate(0.45) blur(0); }
+          from { opacity: 0; transform: scale(0.08) rotate(-20deg); }
+          55%  { opacity: 0.95; }
           to   { opacity: 0.82; transform: scale(1) rotate(0deg); }
+        }
+        /* monster-6専用: translate(-50%,-50%)をキーフレームに含めて中央固定 */
+        @keyframes monsterBurstCenter {
+          from { opacity: 0; transform: translate(-50%, -50%) scale(0.08) rotate(-20deg); }
+          55%  { opacity: 0.95; }
+          to   { opacity: 0.82; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
         }
 
         /* パーティクル */
@@ -897,7 +919,7 @@ function PackOpenContent() {
           animation: godParticle 2.4s ease both;
           animation-delay: calc(var(--gi, 0) * 0.06s);
           opacity: 0;
-          filter: blur(0.5px);
+          will-change: transform, opacity;
         }
         .god-particles span:nth-child(even) { background: rgba(168, 85, 247, 0.9); width: 3px; height: 3px; }
         .god-particles span:nth-child(3n)   { background: rgba(34, 211, 238, 0.9); }
@@ -914,6 +936,7 @@ function PackOpenContent() {
           text-align: center;
           animation: godTextPop 0.55s cubic-bezier(0.15, 1.6, 0.3, 1) 1.6s both;
           opacity: 0;
+          will-change: transform, opacity;
         }
         .god-text-en {
           font-size: clamp(42px, 13vw, 96px);
@@ -936,8 +959,8 @@ function PackOpenContent() {
           opacity: 0;
         }
         @keyframes godTextPop {
-          from { opacity: 0; transform: scale(0.25) translateY(24px); filter: blur(14px); }
-          to   { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+          from { opacity: 0; transform: scale(0.25) translateY(24px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         /* ============================================
@@ -955,8 +978,8 @@ function PackOpenContent() {
           to   { box-shadow: inset 0 0 18px rgba(168, 85, 247, 0.4), 0 0 10px rgba(168, 85, 247, 0.18); }
         }
         @keyframes cardTileCurrentPulse {
-          from { transform: scale(1);    box-shadow: 0 0 12px rgba(250, 204, 21, 0.45), inset 0 0 10px rgba(250, 204, 21, 0.15); }
-          to   { transform: scale(1.03); box-shadow: 0 0 36px rgba(250, 204, 21, 0.85), inset 0 0 20px rgba(250, 204, 21, 0.3); }
+          from { box-shadow: 0 0 12px rgba(250, 204, 21, 0.45), inset 0 0 10px rgba(250, 204, 21, 0.15); }
+          to   { box-shadow: 0 0 36px rgba(250, 204, 21, 0.85), inset 0 0 20px rgba(250, 204, 21, 0.3); }
         }
         /* GODパック時のカードタイル待機演出 */
         .pack-open-page.mode-ten.phase-opening.god-pack .card-tile.sealed {
@@ -1012,7 +1035,7 @@ function PackOpenContent() {
           box-shadow:
             0 30px 90px rgba(0, 0, 0, 0.5),
             inset 0 1px 0 rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(8px);
+          backdrop-filter: blur(4px);
         }
 
         .pack-open-page.mode-ten .pack-panel-frame,
@@ -1651,7 +1674,7 @@ function PackOpenContent() {
           height: 118px;
           border-radius: 999px;
           background: radial-gradient(ellipse, rgba(126, 34, 206, 0.28), rgba(34, 211, 238, 0.08) 46%, transparent 72%);
-          filter: blur(18px);
+          filter: blur(8px);
           opacity: 0.58;
           animation: summonMistDrift 5.8s ease-in-out infinite alternate;
         }
@@ -1764,7 +1787,7 @@ function PackOpenContent() {
           box-shadow:
             0 30px 96px rgba(0, 0, 0, 0.52),
             inset 0 1px 0 rgba(255, 255, 255, 0.08);
-          backdrop-filter: blur(8px);
+          backdrop-filter: blur(4px);
         }
 
         .result-head {
@@ -1814,7 +1837,9 @@ function PackOpenContent() {
           grid-template-columns: repeat(5, minmax(0, 1fr));
           grid-template-rows: repeat(2, minmax(172px, 1fr));
           gap: 10px;
+          contain: layout;
           align-self: stretch;
+          padding-top: 4px;
         }
 
         .card-tile {
@@ -1850,6 +1875,7 @@ function PackOpenContent() {
           outline: 2px solid rgba(34, 211, 238, 0.72);
           outline-offset: 2px;
           box-shadow: 0 0 28px rgba(34, 211, 238, 0.26), 0 4px 24px rgba(0, 0, 0, 0.32);
+          will-change: transform;
         }
 
         .card-tile.current.rarity-sr {
@@ -1905,6 +1931,7 @@ function PackOpenContent() {
 
         .card-tile.revealed {
           animation: flipIn 0.58s cubic-bezier(0.2, 1.16, 0.32, 1) both;
+          will-change: transform, opacity;
         }
 
         .card-tile.revealed.rarity-n {
@@ -2327,33 +2354,32 @@ function PackOpenContent() {
         .card-tile.revealed.rarity-ur  b { color: #a5f3fc; }
         .card-tile.revealed.rarity-sar b { color: #d8b4fe; }
 
-        /* ── SSR/UR/SAR: シマースイープ ── */
+        /* ── SSR/UR/SAR: シマースイープ（transform ベース・GPU合成） ── */
         .card-tile.revealed.rarity-ssr::after,
         .card-tile.revealed.rarity-ur::after,
         .card-tile.revealed.rarity-sar::after {
           content: "";
           position: absolute;
-          inset: 0;
+          top: 0; bottom: 0;
+          left: -100%; width: 300%;
           z-index: 0;
           border-radius: 16px;
           pointer-events: none;
           background: linear-gradient(
             110deg,
-            transparent 30%,
+            transparent 33%,
             rgba(255, 255, 255, 0.07) 50%,
-            transparent 70%
+            transparent 67%
           );
-          background-size: 250% 100%;
           animation: tileShimmer 3.0s linear 1.2s infinite;
+          will-change: transform;
         }
         .card-tile.revealed.rarity-ur::after {
-          background: linear-gradient(110deg, transparent 30%, rgba(34, 211, 238, 0.11) 50%, transparent 70%);
-          background-size: 250% 100%;
+          background: linear-gradient(110deg, transparent 33%, rgba(34, 211, 238, 0.11) 50%, transparent 67%);
           animation: tileShimmer 2.2s linear 1.0s infinite;
         }
         .card-tile.revealed.rarity-sar::after {
-          background: linear-gradient(110deg, transparent 30%, rgba(168, 85, 247, 0.14) 50%, transparent 70%);
-          background-size: 250% 100%;
+          background: linear-gradient(110deg, transparent 33%, rgba(168, 85, 247, 0.14) 50%, transparent 67%);
           animation: tileShimmer 1.9s linear 0.8s infinite;
         }
 
@@ -2374,25 +2400,25 @@ function PackOpenContent() {
           to   { filter: drop-shadow(0 4px 20px rgba(88, 28, 135, 0.76)) brightness(1.12); }
         }
         @keyframes tileShimmer {
-          0%   { background-position: -100% 0; }
-          100% { background-position: 200% 0; }
+          0%   { transform: translateX(0%); }
+          100% { transform: translateX(66.67%); }
         }
         @keyframes rareCardSpin {
           to { transform: rotate(360deg); }
         }
         @keyframes rareWaitingUR {
-          from { transform: translateY(0) scale(1); filter: brightness(1); }
-          to   { transform: translateY(-4px) scale(1.03); filter: brightness(1.34); }
+          from { transform: translateY(0); }
+          to   { transform: translateY(-4px); }
         }
 
         @keyframes rareWaitingSAR {
-          from { transform: translateY(0) scale(1); filter: brightness(0.94); }
-          to   { transform: translateY(-4px) scale(1.025); filter: brightness(1.22); }
+          from { transform: translateY(0); }
+          to   { transform: translateY(-4px); }
         }
 
         @keyframes sealCrackPulse {
-          0%, 42%, 100% { opacity: 0.18; filter: brightness(0.8); }
-          48%, 58%      { opacity: 0.78; filter: brightness(1.55); }
+          0%, 42%, 100% { opacity: 0.18; }
+          48%, 58%      { opacity: 0.78; }
         }
 
         @keyframes emojiPopN {
@@ -2650,7 +2676,7 @@ function PackOpenContent() {
           border-radius: 999px;
           padding: 8px 12px;
           background: rgba(2, 6, 23, 0.42);
-          backdrop-filter: blur(8px);
+          backdrop-filter: blur(4px);
         }
 
         button,
@@ -2741,23 +2767,23 @@ function PackOpenContent() {
         }
 
         @keyframes flipIn {
-          0%   { opacity: 0; transform: perspective(480px) rotateY(88deg) scale(0.88); filter: brightness(2.4); }
-          32%  { opacity: 1; filter: brightness(1.5); }
-          64%  { transform: perspective(480px) rotateY(-8deg) scale(1.06); filter: brightness(1.05); }
+          0%   { opacity: 0; transform: perspective(480px) rotateY(88deg) scale(0.88); }
+          32%  { opacity: 1; }
+          64%  { transform: perspective(480px) rotateY(-8deg) scale(1.06); }
           82%  { transform: perspective(480px) rotateY(3deg) scale(0.98); }
-          100% { transform: perspective(480px) rotateY(0deg) scale(1); filter: brightness(1); }
+          100% { transform: perspective(480px) rotateY(0deg) scale(1); }
         }
         @keyframes flipInLegend {
-          0%   { opacity: 0; transform: perspective(440px) rotateY(92deg) scale(0.76); filter: brightness(7) saturate(2.2); }
-          22%  { opacity: 1; filter: brightness(3.2) saturate(1.7); }
-          52%  { transform: perspective(440px) rotateY(-16deg) scale(1.20); filter: brightness(1.15); }
+          0%   { opacity: 0; transform: perspective(440px) rotateY(92deg) scale(0.76); }
+          22%  { opacity: 1; }
+          52%  { transform: perspective(440px) rotateY(-16deg) scale(1.20); }
           74%  { transform: perspective(440px) rotateY(5deg) scale(0.94); }
-          100% { transform: perspective(440px) rotateY(0deg) scale(1); filter: brightness(1); }
+          100% { transform: perspective(440px) rotateY(0deg) scale(1); }
         }
 
         @keyframes rareWaiting {
-          from { transform: translateY(0) scale(1); filter: brightness(1); }
-          to { transform: translateY(-3px) scale(1.02); filter: brightness(1.25); }
+          from { transform: translateY(0); }
+          to   { transform: translateY(-3px); }
         }
 
         @keyframes rareAfterglow {
@@ -2813,7 +2839,7 @@ function PackOpenContent() {
             flex: 1;
             min-height: 0;
             overflow-y: auto;
-            padding: 0 14px 14px;
+            padding: 8px 14px 14px;
           }
 
           /* 通常（1枚）開封 */
@@ -2874,7 +2900,33 @@ function PackOpenContent() {
             align-items: flex-start;
             flex-direction: column;
           }
+        }
 
+        /* ── モバイル軽量化 ── */
+        @media (max-width: 768px) {
+          .summon-mist { filter: blur(4px); }
+          .god-pillars span { filter: blur(2px); }
+          .card-reveal-effects span { width: 3px; height: 3px; }
+          .pack-open-page.tenpack-result-bg .pack-panel-frame,
+          .pack-open-page.tenpack-result-bg .cards-panel { backdrop-filter: none; }
+        }
+
+        /* ── reduced-motion 対応 ── */
+        @media (prefers-reduced-motion: reduce) {
+          .card-tile,
+          .card-tile::after,
+          .card-tile::before,
+          .prelude-circle,
+          .prelude-ring,
+          .prelude-particles span,
+          .god-monster,
+          .god-particles span,
+          .summon-mist,
+          .summon-aura {
+            animation-duration: 0.01s !important;
+            animation-iteration-count: 1 !important;
+          }
+          .screen-flash { animation-duration: 0.15s !important; }
         }
 
         /* ============================================
