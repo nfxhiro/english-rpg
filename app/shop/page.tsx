@@ -1,5 +1,6 @@
 "use client";
 
+import "./shop.css";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import PageTopBar from "../components/PageTopBar";
@@ -144,6 +145,10 @@ export default function ShopPage() {
 
   return (
     <main className="eq-page shop-page">
+      <div className="shop-bg-overlay" />
+      <div className="shop-bg-overlay-grad" />
+      <div className="shop-bg-overlay-side" />
+      <div className="shop-content-wrap">
       <div className="eq-bg-orb eq-bg-orb-one" />
       <div className="eq-bg-orb eq-bg-orb-two" />
       <div className="eq-bg-orb eq-bg-orb-three" />
@@ -198,15 +203,19 @@ export default function ShopPage() {
                 onClick={() => setActiveTab(id)}
               >
                 <span className="strip-icon-frame">
-                  <Image
-                    src={image}
-                    alt=""
-                    width={1254}
-                    height={1254}
-                    className="strip-icon-image"
-                    sizes="36px"
-                    aria-hidden="true"
-                  />
+                  {equippedItem ? (
+                    <span className="strip-icon-emoji">{equippedItem.icon}</span>
+                  ) : (
+                    <Image
+                      src={image}
+                      alt=""
+                      width={1254}
+                      height={1254}
+                      className="strip-icon-image"
+                      sizes="36px"
+                      aria-hidden="true"
+                    />
+                  )}
                 </span>
                 <span className="strip-label">{label}</span>
                 <strong className="strip-name">{equippedItem ? equippedItem.name : "未装備"}</strong>
@@ -222,7 +231,7 @@ export default function ShopPage() {
               <p className="eq-panel-kicker">TOTAL EFFECTS</p>
               <h2 className="eq-panel-title">装備効果合計</h2>
             </div>
-            <span className="eq-panel-icon">✨</span>
+            <span className="eq-panel-icon">💎</span>
           </div>
           {hasEffects ? (
             <div className="effects-grid">
@@ -536,6 +545,11 @@ export default function ShopPage() {
           object-fit: contain;
         }
 
+        .strip-icon-emoji {
+          font-size: 26px;
+          line-height: 1;
+        }
+
         .strip-label {
           font-size: 10px;
           color: #64748b;
@@ -798,7 +812,7 @@ export default function ShopPage() {
         }
 
         .shop-card-body {
-          padding: 13px;
+          padding: 13px 14px 18px;
         }
 
         .shop-card-name {
@@ -851,6 +865,7 @@ export default function ShopPage() {
           justify-content: space-between;
           gap: 10px;
           margin-top: 12px;
+          flex-wrap: wrap;
         }
 
         .shop-card-price {
@@ -870,7 +885,9 @@ export default function ShopPage() {
           cursor: pointer;
           transition: all 0.15s ease;
           white-space: nowrap;
-          flex-shrink: 0;
+          flex: 1 1 auto;
+          min-width: 0;
+          max-width: 100%;
           font-family: inherit;
         }
 
@@ -971,10 +988,6 @@ export default function ShopPage() {
             margin-top: 0;
           }
 
-          .shop-grid {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-          }
-
           .equipment-category-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
@@ -987,22 +1000,69 @@ export default function ShopPage() {
             grid-template-columns: repeat(3, minmax(0, 1fr));
           }
 
-          .shop-guide-grid {
-            grid-template-columns: 1fr;
-          }
         }
 
         @media (max-width: 580px) {
           .shop-grid {
-            grid-template-columns: 1fr;
+            gap: 8px;
+          }
+
+          .shop-card-preview {
+            height: 64px;
+          }
+
+          .shop-card-emoji {
+            font-size: 34px;
+          }
+
+          .shop-card-body {
+            padding: 8px 10px 12px;
+          }
+
+          .shop-card-name {
+            font-size: 12px;
+          }
+
+          .shop-card-desc {
+            font-size: 10px;
+            margin-top: 3px;
+          }
+
+          .shop-card-rec {
+            display: none;
+          }
+
+          .shop-stat-row {
+            gap: 4px;
+            margin-top: 5px;
+          }
+
+          .shop-stat-row span {
+            font-size: 9px;
+            padding: 3px 6px;
+          }
+
+          .shop-card-price {
+            font-size: 12px;
+          }
+
+          .shop-btn {
+            font-size: 10px;
+            min-height: 28px;
+            padding: 0 8px;
+            border-radius: 8px;
+          }
+
+          .shop-equipped-badge {
+            font-size: 9px;
+            padding: 3px 7px;
+            top: 6px;
+            right: 6px;
           }
 
           .equipment-category-grid {
-            display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            overflow-x: visible;
-            gap: 10px;
-            max-width: 100%;
+            gap: 8px;
             padding-bottom: 0;
           }
 
@@ -1023,20 +1083,64 @@ export default function ShopPage() {
           }
 
           .shop-equipped-strip {
-            display: grid;
             grid-template-columns: repeat(5, minmax(0, 1fr));
-            overflow-x: visible;
-            max-width: 100%;
+            gap: 4px;
             padding-bottom: 0;
           }
 
           .strip-slot {
             flex: unset;
-            padding: 8px 4px;
+            padding: 6px 2px;
             scroll-snap-align: unset;
           }
+
+          .strip-icon-frame {
+            width: 28px;
+            height: 28px;
+          }
+
+          .strip-label {
+            font-size: 9px;
+          }
+
+          .strip-name {
+            font-size: 9px;
+          }
+        }
+        /* ── 背景オーバーレイ ── */
+        .shop-bg-overlay,
+        .shop-bg-overlay-grad,
+        .shop-bg-overlay-side {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+        }
+        .shop-bg-overlay {
+          background: rgba(0, 0, 0, 0.55);
+        }
+        .shop-bg-overlay-grad {
+          background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.45),
+            rgba(0, 0, 0, 0.25) 50%,
+            rgba(0, 0, 0, 0.72)
+          );
+        }
+        .shop-bg-overlay-side {
+          background: linear-gradient(
+            to right,
+            rgba(59, 7, 100, 0.30),
+            transparent 50%,
+            rgba(0, 0, 0, 0.35)
+          );
+        }
+        .shop-content-wrap {
+          position: relative;
+          z-index: 1;
         }
       `}</style>
+      </div>
     </main>
   );
 }

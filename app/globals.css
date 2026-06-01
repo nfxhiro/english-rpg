@@ -2479,9 +2479,9 @@ a {
   box-shadow: none !important;
 }
 
-:where(.eq-status-card.is-highlight, .status-card.highlight, .fmp-card.is-selected, .hero-road-item.next) {
-  border-color: rgba(250, 204, 21, 0.34) !important;
-  background: rgba(250, 204, 21, 0.1) !important;
+:where(.eq-status-card.is-highlight, .status-card.highlight, .fmp-card.is-selected, .hero-road-item.achieved) {
+  border-color: rgba(250, 204, 21, 0.5) !important;
+  background: linear-gradient(135deg, rgba(120, 80, 10, 0.55), rgba(80, 45, 5, 0.6)) !important;
 }
 
 :where(
@@ -3029,7 +3029,6 @@ body {
     .hero-copy h1,
     .detail-copy h1,
     .wordbook-hero h1,
-    .frontierTitleBlock h1,
     .header h1,
     .select-title
   ) {
@@ -3038,6 +3037,7 @@ body {
     overflow-wrap: anywhere !important;
     word-break: normal !important;
   }
+
 
   :where(.home-page .hero-copy h1) {
     font-size: 30px !important;
@@ -3055,8 +3055,6 @@ body {
     .home-stats,
     .eq-status-strip,
     .shop-tabs,
-    .shop-grid,
-    .shop-guide-grid,
     .pack-shop-grid,
     .pack-stat-grid,
     .hero-dashboard,

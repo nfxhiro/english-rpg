@@ -254,8 +254,8 @@ export default function Home() {
               <HomeIcon name="written" className="home-action-icon-image" />
             </span>
             <span className="action-label">Words</span>
-            <strong>単語トレーニング</strong>
-            <small>単語を見て暗記と筆記へ進む</small>
+            <strong>単語帳</strong>
+            <small>英単語・熟語を意味と例文で確認</small>
           </Link>
         </nav>
 
@@ -1129,11 +1129,15 @@ export default function Home() {
 
           .main-actions,
           .home-stats,
-          .home-action-grid,
           .dashboard-grid,
           .hero-status-panel,
           .hero-level-row {
             grid-template-columns: 1fr;
+          }
+
+          .home-action-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
           }
 
           .home-showcase-card {

@@ -226,7 +226,6 @@ export default function HeroPage() {
                       <div className="hero-road-top">
                         <span>{milestone.level ? `Lv.${milestone.level}` : milestone.conditionLabel}</span>
                         {isAchieved && <strong>達成済み</strong>}
-                        {isNext && <strong>次の目標</strong>}
                       </div>
 
                       <h3>{milestone.label}</h3>
@@ -460,14 +459,16 @@ export default function HeroPage() {
         }
 
         .hero-road-item.achieved {
-          border-color: rgba(52, 211, 153, 0.3);
-          background: rgba(52, 211, 153, 0.08);
+          border-color: rgba(251, 191, 36, 0.5);
+          background: linear-gradient(135deg, rgba(120, 80, 10, 0.55), rgba(80, 45, 5, 0.6));
         }
 
-        .hero-road-item.next {
-          border-color: rgba(251, 191, 36, 0.34);
-          background: rgba(251, 191, 36, 0.09);
+        .hero-road-item.achieved .hero-road-top strong {
+          background: rgba(251, 191, 36, 0.18);
+          color: #fde68a;
+          border: 1px solid rgba(251, 191, 36, 0.38);
         }
+
 
         .hero-road-icon {
           width: 54px;

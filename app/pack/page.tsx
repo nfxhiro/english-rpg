@@ -441,32 +441,27 @@ export default function PackPage() {
               <strong className="pack-gold-amount">{gold.toLocaleString()}G</strong>
             </div>
 
-            <div className="pack-shop">
-              <div className="pack-shop-grid">
-                <button
-                  type="button"
-                  className={gold >= TICKET_PRICE_ONE ? "pack-shop-btn" : "pack-shop-btn disabled"}
-                  disabled={gold < TICKET_PRICE_ONE}
-                  onClick={() => buyTickets(1)}
-                >
-                  <span>🎫</span>
-                  <strong>チケットを1枚買う</strong>
-                  <small>{TICKET_PRICE_ONE}G</small>
-                </button>
-                <button
-                  type="button"
-                  className={gold >= TICKET_PRICE_TEN ? "pack-shop-btn pack-shop-btn-ten" : "pack-shop-btn pack-shop-btn-ten disabled"}
-                  disabled={gold < TICKET_PRICE_TEN}
-                  onClick={() => buyTickets(10)}
-                >
-                  <span>🌟</span>
-                  <strong>チケットを10枚買う</strong>
-                  <small>{TICKET_PRICE_TEN}G（お得）</small>
-                </button>
-              </div>
-            </div>
-
-            <div className="eq-actions">
+            <div className="pack-action-grid">
+              <button
+                type="button"
+                className={gold >= TICKET_PRICE_ONE ? "pack-shop-btn" : "pack-shop-btn disabled"}
+                disabled={gold < TICKET_PRICE_ONE}
+                onClick={() => buyTickets(1)}
+              >
+                <span>🎫</span>
+                <strong>チケットを1枚買う</strong>
+                <small>{TICKET_PRICE_ONE}G</small>
+              </button>
+              <button
+                type="button"
+                className={gold >= TICKET_PRICE_TEN ? "pack-shop-btn pack-shop-btn-ten" : "pack-shop-btn pack-shop-btn-ten disabled"}
+                disabled={gold < TICKET_PRICE_TEN}
+                onClick={() => buyTickets(10)}
+              >
+                <span>🌟</span>
+                <strong>チケットを10枚買う</strong>
+                <small>{TICKET_PRICE_TEN}G（お得）</small>
+              </button>
               <button
                 type="button"
                 onClick={openPack}
@@ -478,9 +473,8 @@ export default function PackPage() {
                 }
               >
                 <span>{isOpening ? "✨" : "🎁"}</span>
-                {isOpening ? "開封中..." : "1枚開封（チケット×1）"}
+                {isOpening ? "開封中..." : "1枚開封"}
               </button>
-
               <button
                 type="button"
                 onClick={openTenPack}
@@ -492,7 +486,7 @@ export default function PackPage() {
                 }
               >
                 <span>{isOpeningTen ? "✨" : "🌟"}</span>
-                {isOpeningTen ? "開封中..." : "10連開封（チケット×10）"}
+                {isOpeningTen ? "開封中..." : "10連開封"}
               </button>
             </div>
           </div>
@@ -648,7 +642,7 @@ export default function PackPage() {
                     <p>{isOpening ? "パック開封" : "パック召喚"}</p>
                     <h2>{isOpening ? "開封中..." : `${packTickets}枚`}</h2>
                     <span>
-                      {isOpening ? "カードを呼び出しています" : "open a monster card"}
+                      {isOpening ? "カードを呼び出しています" : "モンスターカードを開封する"}
                     </span>
                   </>
                 )}
@@ -763,20 +757,16 @@ export default function PackPage() {
           width: 100%;
         }
 
-        .pack-shop-grid {
+        .pack-action-grid {
           display: grid;
           grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 16px;
-        }
-
-        .pack-page .eq-actions {
-          max-width: 100%;
+          gap: 12px;
           width: 100%;
           margin-top: 20px;
         }
 
         .pack-page .eq-button.pack-open-button {
-          font-size: 15px;
+          font-size: 14px;
           min-height: 58px;
         }
 

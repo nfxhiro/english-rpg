@@ -81,6 +81,14 @@ import {
   getPartnerRarityGoldBonusRate,
   type BuddyExpResult,
 } from "../../data/progression";
+import {
+  getWrittenClearedQuestModeCount,
+  getWrittenProgressPercent,
+  isWrittenModeCleared,
+  isWrittenModeCrowned,
+  loadWrittenProgress,
+  type WrittenProgress,
+} from "../../data/writtenProgress";
 import styles from "./quest-mode.module.css";
 
 type AnswerRecord = {
@@ -949,8 +957,11 @@ export default function QuizPage() {
 
   // Reset all answer state when question changes
   useEffect(() => {
-    setSelectedAnswer(null);
-    setAnswerEffect(null);
+    const id = window.setTimeout(() => {
+      setSelectedAnswer(null);
+      setAnswerEffect(null);
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [currentIndex]);
 
   const currentQuestion = questions[currentIndex];
@@ -1525,6 +1536,7 @@ export default function QuizPage() {
       heroLevel={heroLevel}
       heroMaxHp={heroMaxHp}
       onAnswer={handleAnswer}
+      onBackToSelect={backToSelect}
       onToggleFurigana={toggleFurigana}
       playerHp={playerHp}
       questMode={activeQuestConfig.mode}
@@ -1568,23 +1580,29 @@ function QuestSelectScreen({
   );
   const selectedWorld = getQuestWorldByLevel(selectedLevel);
   const battlePreviewContext = useMemo(() => loadBattlePreviewContext(), []);
-  const selectedLevelProgress =
-    selectedGroups.length > 0
-      ? Math.round(
-          selectedGroups.reduce((total, group) => {
-            return (
-              total +
-              getBlockProgressPercent(getBlockProgress(questProgress, group.id))
-            );
-          }, 0) / selectedGroups.length
-        )
-      : 0;
+  const [writtenProgress, setWrittenProgress] = useState<WrittenProgress>(
+    () => loadWrittenProgress()
+  );
+  const hasWrittenQuest = WRITTEN_QUEST_LEVELS.has(selectedLevel);
+  const writtenClearedQuestModeCount = hasWrittenQuest
+    ? getWrittenClearedQuestModeCount(writtenProgress, selectedLevel)
+    : 0;
+  const writtenTotalQuestModeCount = hasWrittenQuest ? questModeConfigList.length : 0;
+  const writtenCompleteCleared =
+    hasWrittenQuest &&
+    isWrittenModeCleared(writtenProgress, selectedLevel, "complete");
+  const writtenCrowned =
+    hasWrittenQuest &&
+    isWrittenModeCrowned(writtenProgress, selectedLevel, "complete");
   const clearedBlockCount = selectedGroups.filter((group) => {
     return getBlockProgress(questProgress, group.id).completeCleared;
   }).length;
   const crownedBlockCount = selectedGroups.filter((group) => {
     return getBlockProgress(questProgress, group.id).crowned;
   }).length;
+  const totalBlockCount = selectedGroups.length + (hasWrittenQuest ? 1 : 0);
+  const totalClearedBlockCount = clearedBlockCount + (writtenCompleteCleared ? 1 : 0);
+  const totalCrownedBlockCount = crownedBlockCount + (writtenCrowned ? 1 : 0);
   const clearedQuestModeCount = selectedGroups.reduce((total, group) => {
     const progress = getBlockProgress(questProgress, group.id);
     const clearedModes = questModeConfigList.filter((config) => {
@@ -1593,8 +1611,30 @@ function QuestSelectScreen({
 
     return total + clearedModes;
   }, 0);
-  const totalQuestModeCount = selectedGroups.length * questModeConfigList.length;
+  const totalQuestModeCount =
+    selectedGroups.length * questModeConfigList.length + writtenTotalQuestModeCount;
+  const totalClearedQuestModeCount =
+    clearedQuestModeCount + writtenClearedQuestModeCount;
+  const selectedLevelProgress =
+    totalQuestModeCount > 0
+      ? Math.round((totalClearedQuestModeCount / totalQuestModeCount) * 100)
+      : 0;
   const levelSuffix = getLevelColorSuffix(selectedLevel);
+
+  useEffect(() => {
+    const refreshWrittenProgress = () => {
+      setWrittenProgress(loadWrittenProgress());
+    };
+
+    refreshWrittenProgress();
+    window.addEventListener("focus", refreshWrittenProgress);
+    window.addEventListener("storage", refreshWrittenProgress);
+
+    return () => {
+      window.removeEventListener("focus", refreshWrittenProgress);
+      window.removeEventListener("storage", refreshWrittenProgress);
+    };
+  }, []);
 
   return (
     <main className={styles.root} style={getQuestWorldBackgroundStyle(selectedWorld?.id)}>
@@ -1633,7 +1673,7 @@ function QuestSelectScreen({
               <span>🌍 {selectedWorld?.worldName ?? "冒険ワールド"}</span>
               <span>💎 {selectedLevelWords.length}語</span>
               <span>🗺️ {selectedGroups.length}エリア</span>
-              <span>👑 王冠 {crownedBlockCount}</span>
+              <span>👑 王冠 {totalCrownedBlockCount}</span>
             </div>
           </div>
 
@@ -1718,13 +1758,13 @@ function QuestSelectScreen({
               </div>
               <div className={styles.questBoardProgressStats}>
                 <span>
-                  <strong>{clearedQuestModeCount}</strong> / {totalQuestModeCount} CLEAR
+                  <strong>{totalClearedQuestModeCount}</strong> / {totalQuestModeCount} CLEAR
                 </span>
                 <span>
-                  <strong>{clearedBlockCount}</strong> / {selectedGroups.length} 完全
+                  <strong>{totalClearedBlockCount}</strong> / {totalBlockCount} 完全
                 </span>
                 <span>
-                  <strong>{crownedBlockCount}</strong> 王冠
+                  <strong>{totalCrownedBlockCount}</strong> 王冠
                 </span>
               </div>
             </div>
@@ -1742,12 +1782,132 @@ function QuestSelectScreen({
                 progress={getBlockProgress(questProgress, group.id)}
               />
             ))}
+            <WrittenQuestCard level={selectedLevel} writtenProgress={writtenProgress} />
           </div>
         </section>
 
 
       </section>
     </main>
+  );
+}
+
+const WRITTEN_QUEST_LEVELS = new Set(["英検5級", "英検4級", "英検3級", "英検準2級"]);
+
+function WrittenQuestCard({
+  level,
+  writtenProgress,
+}: {
+  level: string;
+  writtenProgress: WrittenProgress;
+}) {
+  if (!WRITTEN_QUEST_LEVELS.has(level)) return null;
+
+  const world = getQuestWorldByLevel(level);
+  const background = getQuestBackgroundConfig(undefined, world?.id);
+  const backgroundStyle = getQuestBackgroundStyle(background);
+  const progressPercent = getWrittenProgressPercent(writtenProgress, level);
+
+  return (
+    <article
+      className={cx(styles.questRangePanel, styles.writtenRangePanel)}
+      style={backgroundStyle}
+    >
+      <div className={styles.rangePanelHead}>
+        <div className={styles.rangeVisual} aria-hidden="true">
+          <div className={styles.rangeScenePreview} />
+          <div className={cx(styles.rangeMapIcon, styles.phraseMapIcon)}>✍️</div>
+        </div>
+        <div className={styles.rangeTitle}>
+          <p>WRITTEN QUEST</p>
+          <h3>筆記バトル</h3>
+          <span>筆記 001-100 · 100語</span>
+        </div>
+        <div className={styles.blockProgress}>
+          <span>進行度 {progressPercent}%</span>
+          <div className={styles.blockProgressTrack} aria-hidden="true">
+            <div
+              className={styles.blockProgressFill}
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className={styles.questModeGrid}>
+        {questModeConfigList
+          .filter((config) => config.mode !== "complete")
+          .map((config) => {
+            const cleared = isWrittenModeCleared(writtenProgress, level, config.mode);
+
+            return (
+              <Link
+                key={config.mode}
+                href={`/written?level=${encodeURIComponent(level)}&mode=${config.mode}&autostart=1`}
+                className={cx(
+                  styles.questModeButton,
+                  styles.frontierQuestCard,
+                  getQuestModeClass(config.mode),
+                  cleared && styles.questModeCleared
+                )}
+              >
+                <div className={styles.questCardTopline}>
+                  <span className={styles.questCardIcon}>{config.copy.icon}</span>
+                  <span
+                    className={cx(
+                      styles.questCardState,
+                      cleared && styles.questCardStateClear
+                    )}
+                  >
+                    {cleared ? "CLEAR" : "未クリア"}
+                  </span>
+                </div>
+                <strong>{config.label}</strong>
+                <small className={styles.questCardName}>{config.copy.short}</small>
+                <div className={styles.questInfoPills}>
+                  <span>{QUEST_MODE_BATTLE_LABELS[config.mode]}</span>
+                  <span>{config.questionCount}問バトル</span>
+                  <span>HP0で失敗</span>
+                </div>
+              </Link>
+            );
+          })}
+        {(() => {
+          const cleared = isWrittenModeCleared(writtenProgress, level, "complete");
+
+          return (
+        <Link
+          href={`/written?level=${encodeURIComponent(level)}&mode=complete&autostart=1`}
+          className={cx(
+            styles.questModeButton,
+            styles.frontierQuestCard,
+            styles.questModeComplete,
+            cleared && styles.questModeCleared
+          )}
+        >
+          <div className={styles.questCardTopline}>
+            <span className={styles.questCardIcon}>👑</span>
+            <span
+              className={cx(
+                styles.questCardState,
+                cleared && styles.questCardStateClear
+              )}
+            >
+              {cleared ? "CLEAR" : "未クリア"}
+            </span>
+          </div>
+          <strong>完全制覇</strong>
+          <small className={styles.questCardName}>完全制覇を狙う</small>
+          <div className={styles.questInfoPills}>
+            <span>📜 完全制覇</span>
+            <span>⚔️ 撃破後も継続</span>
+            <span>👑 全問正解</span>
+          </div>
+        </Link>
+          );
+        })()}
+      </div>
+    </article>
   );
 }
 
@@ -1774,7 +1934,10 @@ function QuestBlockCard({
 
   return (
     <article
-      className={cx(styles.questRangePanel, isPhrase && styles.phraseRangePanel)}
+      className={cx(
+        styles.questRangePanel,
+        isPhrase ? styles.phraseRangePanel : styles.wordRangePanel
+      )}
       style={backgroundStyle}
     >
       <div className={styles.rangePanelHead}>
@@ -1899,6 +2062,7 @@ function QuestBattleMode({
   heroLevel,
   heroMaxHp,
   onAnswer,
+  onBackToSelect,
   onToggleFurigana,
   playerHp,
   questMode,
@@ -1920,6 +2084,7 @@ function QuestBattleMode({
   heroLevel: number;
   heroMaxHp: number;
   onAnswer: (choice: string) => void;
+  onBackToSelect: () => void;
   onToggleFurigana: () => void;
   playerHp: number;
   questMode: QuestMode;
@@ -1929,7 +2094,7 @@ function QuestBattleMode({
   return (
     <main className={styles.root} style={getQuestWorldBackgroundStyle(worldId)}>
       <section className={styles.screen} aria-label="英検クエスト フロンティア">
-        <PageTopBar className={styles.battleTopbar}>
+        <PageTopBar className={styles.battleTopbar} onQuestClick={onBackToSelect}>
           <FuriganaToggle
             furiganaEnabled={furiganaEnabled}
             onToggle={onToggleFurigana}
@@ -2163,6 +2328,7 @@ const shapeGroupMap = {
 } satisfies Record<Boss["shape"], BossShapeGroup>;
 
 const BOSS_SHAPE_CLASSES: Partial<Record<BossShapeGroup, string>> = {
+  demon: styles.bossSpriteWizard,
   dragon: styles.bossSpriteDragon,
   golem: styles.bossSpriteGolem,
   slime: styles.bossSpriteSlime,

@@ -60,22 +60,6 @@ function getRarityLabel(rarity: Rarity) {
   return "ノーマル";
 }
 
-function getOpeningText(rarity: Rarity, isGodPack: boolean, revealed: boolean) {
-  if (isGodPack) {
-    return revealed ? "特別なパックから強い光が広がっています" : "いつもと違う重みのあるパックです";
-  }
-
-  if (rarity === "SAR") return revealed ? "特別な一枚が現れました" : "袋の奥で虹色の箔がきらめいています";
-  if (rarity === "UR") return revealed ? "最高レアの輝きです" : "開け口から強い光が漏れています";
-  if (rarity === "SSR") return revealed ? "大当たりのカードです" : "金色の反射が走っています";
-  if (rarity === "SR") return revealed ? "レアなカードが出ました" : "少し厚みのあるカードが見えます";
-  if (rarity === "R") return "カードのふちが光っています";
-  return "次のカードを開封しています";
-}
-
-function isPrizeRarity(rarity: Rarity) {
-  return rarity === "SAR" || rarity === "UR" || rarity === "SSR" || rarity === "SR";
-}
 
 function getPrizeRevealClass(rarity: Rarity) {
   if (rarity === "SAR") return " prize-reveal prize-sar";
@@ -92,15 +76,6 @@ function renderCardRevealEffects(rarity: Rarity) {
       {Array.from({ length: sparkCount }, (_, i) => (
         <span key={i} />
       ))}
-    </div>
-  );
-}
-
-function renderPrizeRays(rarity: Rarity) {
-  const rayCount = rarity === "SAR" ? 14 : rarity === "UR" ? 12 : rarity === "SSR" ? 8 : 6;
-  return (
-    <div className={`pack-prize-effects rays-${rarity.toLowerCase()}`} aria-hidden="true">
-      {Array.from({ length: rayCount }, (_, i) => <span key={i} />)}
     </div>
   );
 }
@@ -129,18 +104,6 @@ function getHoldDelay(rarity: Rarity, isLast: boolean) {
   return base + (isLast ? 350 : 0);
 }
 
-function getSummonText(rarity: Rarity, isGodPack: boolean, revealed: boolean) {
-  if (isGodPack) {
-    return revealed ? "すべての封印が共鳴している..." : "禁じられた召喚が始まる...";
-  }
-
-  if (rarity === "SAR") return revealed ? "神話級のカードが現れる..." : "星々が沈黙した...";
-  if (rarity === "UR") return revealed ? "古の力が目覚める..." : "封印が砕け始めた...";
-  if (rarity === "SSR") return revealed ? "ただならぬ気配がする..." : "空気が震えている...";
-  if (rarity === "SR") return revealed ? "黄金の魔力が集まる..." : "強い光が漏れ出した...";
-  if (rarity === "R") return "魔力がカードに宿る...";
-  return "封印を解いています...";
-}
 
 function PackImage({ phase }: { phase: Phase }) {
   const imagePhase = phase === "opening" ? "opening" : phase;
@@ -201,31 +164,7 @@ const CardTile = memo(function CardTile({
   );
 });
 
-function PanelMonsterInfo({ item }: { item: PackOpenItem }) {
-  const dropLabel = getDropLabel(item.card.rarity);
 
-  return (
-    <>
-      {dropLabel && (
-        <div className={`panel-drop-label label-${item.card.rarity.toLowerCase()}`}>
-          {dropLabel}
-        </div>
-      )}
-      <div className="panel-rarity-chip">{item.card.rarity} / {getRarityLabel(item.card.rarity)}</div>
-      <div className="panel-monster-emoji">{item.card.monsterEmoji}</div>
-      <div className="panel-status">{item.isNew ? "新しいカード" : "獲得済み"}</div>
-      <div className="panel-card-name">{item.card.name}</div>
-      <div className="panel-card-meta">
-        {item.card.emoji} {item.card.attribute}属性 / {item.card.species}
-      </div>
-      <div className="panel-footer">
-        <div className={item.isNew ? "panel-stage-chip new" : "panel-stage-chip"}>
-          {item.isNew ? "NEW CARD" : `${item.ownedCopies}枚目`}
-        </div>
-      </div>
-    </>
-  );
-}
 
 function PackOpenContent() {
   const router = useRouter();
@@ -244,6 +183,8 @@ function PackOpenContent() {
   const openAreaRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    let chargeTimer: number | null = null;
+
     if (mode === "ten") {
       const readyKey = openId ? `pack-open-ready:${openId}` : "";
       const consumedKey = openId ? `pack-open-consumed:${openId}` : "";
@@ -258,7 +199,7 @@ function PackOpenContent() {
       }
 
       // バリデーション通過直後に魔法陣演出を開始（データ読み込みと並行）
-      setPhase("charge");
+      chargeTimer = window.setTimeout(() => setPhase("charge"), 0);
     }
 
     const timer = window.setTimeout(() => {
@@ -279,7 +220,10 @@ function PackOpenContent() {
       setDataReady(true);
     }, 260);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      if (chargeTimer !== null) window.clearTimeout(chargeTimer);
+      window.clearTimeout(timer);
+    };
   }, [mode, openId, router]);
 
   useEffect(() => {
@@ -336,8 +280,6 @@ function PackOpenContent() {
   const currentIsLast = index === items.length - 1;
   const isTenPackResultScreen = mode === "ten" && phase === "done";
   const shouldShowTenPackBackground = mode === "ten" && phase !== "error";
-  const openedCount = revealed.size;
-  const openingText = getOpeningText(currentRarity, isGodPack, revealed.has(index));
   const bestItem = useMemo(() => {
     if (!items.length) return null;
     return items.reduce((best, item) =>
@@ -464,8 +406,27 @@ function PackOpenContent() {
             <div className="summon-layout">
               <aside className="pack-panel">
                 {isTenPackResultScreen && bestItem ? (
-                  <div className={`pack-panel-frame result-card result-best revealed rarity-${bestItem.card.rarity.toLowerCase()}`}>
-                    <PanelMonsterInfo item={bestItem} />
+                  <div className={`pack-display result-best opened rarity-${bestItem.card.rarity.toLowerCase()}${getPrizeRevealClass(bestItem.card.rarity)}`}>
+                    <div className="eq-display-shine" />
+                    <div className="result-best-badge">✦ BEST CARD ✦</div>
+                    {getDropLabel(bestItem.card.rarity) && (
+                      <div className={`pack-rarity-callout callout-${bestItem.card.rarity.toLowerCase()}`}>
+                        {getDropLabel(bestItem.card.rarity)}
+                      </div>
+                    )}
+                    <div className="pack-card-rarity">
+                      {bestItem.card.rarity} / {rarityLabel[bestItem.card.rarity]}
+                    </div>
+                    <div className="pack-result-emoji">{bestItem.card.monsterEmoji}</div>
+                    <p>{bestItem.isNew ? "新しいカード" : "獲得済み"}</p>
+                    <h2>{bestItem.card.name}</h2>
+                    <span className="pack-display-meta">
+                      {bestItem.card.emoji} {bestItem.card.attribute}属性 /{" "}
+                      {bestItem.card.species}
+                    </span>
+                    <div className={bestItem.isNew ? "pack-stage-chip new" : "pack-stage-chip"}>
+                      {bestItem.isNew ? "NEW CARD" : `${bestItem.ownedCopies}枚目`}
+                    </div>
                   </div>
                 ) : leftPanelReveal && phase === "opening" ? (
                   <div
@@ -511,6 +472,15 @@ function PackOpenContent() {
                   </div>
                   {isGodPack && phase === "opening" && <div className="god-pack-omen">GOD PACK 開封中</div>}
                   {isGodPack && phase === "done" && <div className="god-pack-badge">GOD PACK</div>}
+                  {phase !== "done" ? (
+                    <button type="button" onClick={skip} disabled={items.length === 0} className="result-head-skip">
+                      スキップ
+                    </button>
+                  ) : (
+                    <div className="result-nav-icons">
+                      <CommonGameNav />
+                    </div>
+                  )}
                 </header>
 
                 <div className="cards-grid">
@@ -525,18 +495,6 @@ function PackOpenContent() {
                     />
                   ))}
                 </div>
-
-                <nav className="result-actions">
-                  {phase !== "done" ? (
-                    <button type="button" onClick={skip} disabled={items.length === 0}>
-                      スキップ
-                    </button>
-                  ) : (
-                    <div className="result-nav-icons">
-                      <CommonGameNav />
-                    </div>
-                  )}
-                </nav>
               </section>
             </div>
           </>
@@ -1041,16 +999,17 @@ function PackOpenContent() {
         .pack-open-page.mode-ten .pack-panel-frame,
         .pack-panel-frame.result-card {
           width: min(100%, 252px);
-          height: 352px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: auto;
           min-height: 352px;
-          max-height: 352px;
           align-self: center;
           justify-self: center;
-          align-content: center;
           gap: 8px;
           padding: 18px;
           border-radius: 32px;
-          grid-template-columns: 1fr;
           text-align: center;
         }
 
@@ -1086,13 +1045,28 @@ function PackOpenContent() {
           font-size: 21px;
         }
 
+        /* ── BEST CARD result display ── */
+        .pack-display.result-best {
+          gap: 8px;
+          justify-content: center;
+        }
+
+        .pack-display.result-best .panel-monster-emoji {
+          font-size: 60px;
+          line-height: 1;
+          filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.5));
+        }
+
+        .pack-display.result-best .panel-card-name {
+          font-size: 20px;
+          padding: 0 4px;
+        }
+
         /* ── BEST CARD バッジ ── */
-        .pack-panel-frame.result-best::after {
-          content: "✦ BEST CARD ✦";
-          position: absolute;
-          top: 12px;
-          left: 50%;
-          transform: translateX(-50%);
+        .result-best-badge {
+          position: relative;
+          z-index: 3;
+          align-self: center;
           background: linear-gradient(135deg, #fde047, #fb923c);
           color: #111827;
           font-size: 10px;
@@ -1101,13 +1075,12 @@ function PackOpenContent() {
           padding: 4px 14px;
           border-radius: 999px;
           white-space: nowrap;
-          z-index: 10;
           box-shadow: 0 4px 18px rgba(250, 204, 21, 0.45);
-          animation: bestBadgePop 0.5s cubic-bezier(0.2, 1.5, 0.3, 1) 0.4s both;
+          animation: bestBadgePop 0.45s ease 0.3s both;
         }
         @keyframes bestBadgePop {
-          from { transform: translateX(-50%) scale(0.4); opacity: 0; }
-          to   { transform: translateX(-50%) scale(1);   opacity: 1; }
+          from { opacity: 0; transform: translateY(-6px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
 
         /* ── レアリティ別パネル背景 ── */
@@ -1840,6 +1813,60 @@ function PackOpenContent() {
           contain: layout;
           align-self: stretch;
           padding-top: 4px;
+        }
+
+        /* ── 結果画面：大きいカード表示 ── */
+        .cards-grid-result {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 10px;
+          align-self: stretch;
+          padding-top: 4px;
+          overflow-y: auto;
+          animation: gridDoneReveal 0.65s cubic-bezier(0.18, 1.26, 0.32, 1) both;
+        }
+
+        .cards-grid-result .pack-display {
+          gap: 6px;
+          justify-content: center;
+          animation: cardIn 0.28s ease calc(var(--i, 0) * 0.04s) both;
+        }
+
+        .cards-grid-result .pack-result-emoji {
+          font-size: 52px;
+          margin-top: 10px;
+        }
+
+        .cards-grid-result h2 {
+          font-size: 14px;
+          margin: 4px 6px 0;
+        }
+
+        .cards-grid-result .pack-display-meta {
+          font-size: 11px;
+          margin-top: 4px;
+        }
+
+        .cards-grid-result .pack-rarity-callout {
+          margin: 6px auto -2px;
+          padding: 4px 9px;
+          font-size: 9px;
+        }
+
+        .cards-grid-result .pack-card-rarity {
+          margin-top: 8px;
+          padding: 5px 10px;
+          font-size: 10px;
+        }
+
+        .cards-grid-result .pack-display p {
+          margin-top: 6px;
+          font-size: 10px;
+        }
+
+        .cards-grid-result .pack-stage-chip {
+          padding: 5px 10px;
+          font-size: 11px;
         }
 
         .card-tile {
@@ -2668,8 +2695,14 @@ function PackOpenContent() {
 
         .result-nav-icons {
           display: flex;
-          justify-content: center;
-          width: 100%;
+          align-items: center;
+          flex-shrink: 0;
+        }
+
+        .result-head-skip {
+          flex-shrink: 0;
+          font-size: 13px;
+          padding: 0 16px;
         }
 
         .pack-open-page.tenpack-result-bg .result-nav-icons {
@@ -2833,6 +2866,10 @@ function PackOpenContent() {
             flex-shrink: 0;
             padding: 10px 14px 6px;
             background: #020617;
+            height: 60svh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
 
           .pack-open-page.mode-ten .cards-panel {
@@ -2856,12 +2893,17 @@ function PackOpenContent() {
           .pack-open-page.mode-ten .pack-panel-frame,
           .pack-panel-frame.result-card {
             width: min(100%, 252px);
-            height: 260px;
-            min-height: 260px;
-            max-height: 260px;
-            grid-template-columns: 1fr;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: auto;
+            min-height: 352px;
+            max-height: none;
             text-align: center;
             margin: 0 auto;
+            gap: 8px;
+            padding: 18px;
           }
 
           .pack-open-page.mode-ten .pack-panel-frame:not(.result-card) .pack-image {
@@ -2877,6 +2919,10 @@ function PackOpenContent() {
           .cards-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
             grid-template-rows: none;
+          }
+
+          .cards-grid-result {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
           }
 
           .card-tile {
@@ -2938,6 +2984,15 @@ function PackOpenContent() {
           height: auto;
           align-self: center;
           justify-self: center;
+          justify-content: center;
+          gap: 8px;
+        }
+
+        @media (max-width: 900px) {
+          .pack-panel .pack-display {
+            height: 100%;
+            min-height: unset;
+          }
         }
 
         /* 初期状態のパック画像サイズ */

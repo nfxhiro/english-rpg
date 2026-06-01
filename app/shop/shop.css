@@ -1,0 +1,7 @@
+.shop-page {
+  background-image: url("/equipment-shop-bg.png") !important;
+  background-size: cover !important;
+  background-position: center top !important;
+  background-repeat: no-repeat !important;
+  background-attachment: scroll !important;
+}

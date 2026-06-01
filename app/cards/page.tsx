@@ -96,7 +96,10 @@ export default function CardsPage() {
   const [rarityFilter, setRarityFilter] = useState<"すべて" | Rarity>("すべて");
   const [ownedFilter, setOwnedFilter] = useState<OwnedFilter>("all");
   const [attributeFilter, setAttributeFilter] = useState("すべて");
-  const [displayCount, setDisplayCount] = useState(INITIAL_LIMIT);
+  const [displayLimit, setDisplayLimit] = useState({
+    count: INITIAL_LIMIT,
+    filterKey: "",
+  });
 
   const deferredRarityFilter = useDeferredValue(rarityFilter);
   const deferredOwnedFilter = useDeferredValue(ownedFilter);
@@ -110,22 +113,15 @@ export default function CardsPage() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const loaded = loadEarnedCards();
-      if (process.env.NODE_ENV === "development") {
-        const validIds = new Set(monsterCards.map((c) => c.id));
-        const invalidCount = loaded.filter((c) => !validIds.has(c.cardId)).length;
-        console.log(`[cards] 所持: ${loaded.length}件 / master: ${monsterCards.length}件 / 不正: ${invalidCount}件`);
-      }
       setEarnedCards(loaded);
     }, 0);
 
     return () => window.clearTimeout(timer);
   }, []);
 
-  // Reset pagination when filter changes (after deferred update settles)
   const filterKey = `${deferredRarityFilter}|${deferredOwnedFilter}|${deferredAttributeFilter}`;
-  useEffect(() => {
-    setDisplayCount(INITIAL_LIMIT);
-  }, [filterKey]);
+  const displayCount =
+    displayLimit.filterKey === filterKey ? displayLimit.count : INITIAL_LIMIT;
 
   const earnedCardMap = useMemo(() => {
     return new Map(earnedCards.map((card) => [card.cardId, card]));
@@ -431,7 +427,12 @@ export default function CardsPage() {
           <button
             type="button"
             className="cards-load-more"
-            onClick={() => setDisplayCount((c) => c + PAGE_SIZE)}
+            onClick={() =>
+              setDisplayLimit({
+                count: displayCount + PAGE_SIZE,
+                filterKey,
+              })
+            }
           >
             さらに {Math.min(PAGE_SIZE, filteredCards.length - displayCount)} 件表示
             <span className="cards-load-more-count">

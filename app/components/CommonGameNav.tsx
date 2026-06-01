@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { MouseEvent } from "react";
 
 const NAV_ICON_ASSETS = {
   home: {
@@ -101,8 +102,18 @@ function isActivePath(pathname: string, matchPaths: readonly string[]) {
   });
 }
 
-export default function CommonGameNav() {
+export default function CommonGameNav({
+  onQuestClick,
+}: {
+  onQuestClick?: () => void;
+}) {
   const pathname = usePathname();
+
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>, key: string) => {
+    if (key !== "quest" || !onQuestClick) return;
+    event.preventDefault();
+    onQuestClick();
+  };
 
   return (
     <nav className="common-game-nav" aria-label="共通ゲームナビゲーション">
@@ -116,6 +127,7 @@ export default function CommonGameNav() {
             className={`common-game-nav__item${isActive ? " is-active" : ""}`}
             aria-label={`${item.label}へ移動`}
             aria-current={isActive ? "page" : undefined}
+            onClick={(event) => handleClick(event, item.key)}
           >
             <span className="common-game-nav__icon">
               <Image

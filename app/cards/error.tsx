@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
+
 export default function CardsError({
-  error: _error,
   reset,
 }: {
   error: Error;
@@ -63,7 +64,7 @@ export default function CardsError({
           >
             再読み込み
           </button>
-          <a
+          <Link
             href="/"
             style={{
               borderRadius: "12px",
@@ -76,7 +77,7 @@ export default function CardsError({
             }}
           >
             ホームへ戻る
-          </a>
+          </Link>
         </div>
       </div>
     </main>
