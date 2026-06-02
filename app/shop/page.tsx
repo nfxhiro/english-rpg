@@ -196,10 +196,11 @@ export default function ShopPage() {
           {CATEGORY_TABS.map(({ id, label, image }) => {
             const equippedId = equipState.equippedItems[id];
             const equippedItem = equippedId ? EQUIP_ITEMS.find((i) => i.id === equippedId) : null;
+            const isEmpty = !equippedItem;
             return (
               <button
                 key={id}
-                className={`strip-slot${equippedItem ? " is-equipped" : ""}${activeTab === id ? " is-active" : ""}`}
+                className={`strip-slot${equippedItem ? " is-equipped" : ""}${isEmpty ? " is-empty" : ""}${activeTab === id ? " is-active" : ""}`}
                 onClick={() => setActiveTab(id)}
               >
                 <span className="strip-icon-frame">
@@ -211,11 +212,12 @@ export default function ShopPage() {
                       alt=""
                       width={1254}
                       height={1254}
-                      className="strip-icon-image"
+                      className="strip-icon-image is-empty"
                       sizes="36px"
                       aria-hidden="true"
                     />
                   )}
+                  {isEmpty && <span className="strip-empty-mark" aria-hidden="true">+</span>}
                 </span>
                 <span className="strip-label">{label}</span>
                 <strong className="strip-name">{equippedItem ? equippedItem.name : "未装備"}</strong>
@@ -523,11 +525,27 @@ export default function ShopPage() {
           background: rgba(34,197,94,0.07);
         }
 
+        .strip-slot.is-empty {
+          border-color: rgba(148, 163, 184, 0.16);
+          background:
+            radial-gradient(circle at 50% 28%, rgba(34, 211, 238, 0.08), transparent 48%),
+            rgba(15, 23, 42, 0.28);
+        }
+
+        .strip-slot.is-empty:hover,
+        .strip-slot.is-empty.is-active {
+          border-color: rgba(250,204,21,0.45);
+          background:
+            radial-gradient(circle at 50% 28%, rgba(250,204,21,0.12), transparent 52%),
+            rgba(250,204,21,0.06);
+        }
+
         .strip-slot.is-equipped.is-active {
           border-color: rgba(34,197,94,0.65);
         }
 
         .strip-icon-frame {
+          position: relative;
           width: 38px;
           height: 38px;
           display: inline-flex;
@@ -538,11 +556,55 @@ export default function ShopPage() {
             drop-shadow(0 0 10px rgba(34, 211, 238, 0.12));
         }
 
+        .strip-slot.is-empty .strip-icon-frame::before {
+          content: "";
+          position: absolute;
+          inset: 2px;
+          border: 1px dashed rgba(148, 163, 184, 0.48);
+          border-radius: 50%;
+          background: rgba(15, 23, 42, 0.22);
+        }
+
+        .strip-slot.is-empty.is-active .strip-icon-frame::before,
+        .strip-slot.is-empty:hover .strip-icon-frame::before {
+          border-color: rgba(250, 204, 21, 0.68);
+          background: rgba(250, 204, 21, 0.06);
+        }
+
         .strip-icon-image {
+          position: relative;
+          z-index: 1;
           display: block;
           width: 100%;
           height: 100%;
           object-fit: contain;
+        }
+
+        .strip-icon-image.is-empty {
+          width: 74%;
+          height: 74%;
+          opacity: 0.46;
+          filter: grayscale(0.75) saturate(0.82) brightness(1.16);
+        }
+
+        .strip-empty-mark {
+          position: absolute;
+          z-index: 2;
+          right: 1px;
+          bottom: 1px;
+          width: 15px;
+          height: 15px;
+          border-radius: 50%;
+          border: 1px solid rgba(255, 255, 255, 0.35);
+          background: linear-gradient(135deg, #facc15, #22d3ee);
+          color: #111827;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 12px;
+          font-weight: 900;
+          line-height: 1;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.32);
         }
 
         .strip-icon-emoji {

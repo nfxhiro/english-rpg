@@ -1,22 +1,35 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import PageTopBar from "../components/PageTopBar";
-import { getReadingForLevel } from "../../data/readings";
 import {
   getStoredFuriganaEnabled,
   setStoredFuriganaEnabled,
   subscribeToFuriganaEnabledChange,
 } from "../../data/preferences";
-import { learningWords, type LearningWord } from "../../data/words";
 import SpeechButton from "../components/SpeechButton";
 
 const ALL_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
-function getFilteredWords(searchText: string, levelFilter: string) {
+type WordbookWord = {
+  no: string;
+  word: string;
+  meaning: string;
+  type: string;
+  level: string;
+  example: string;
+  exampleMeaning: string;
+  reading: string | null;
+};
+
+function getFilteredWords(
+  words: WordbookWord[],
+  searchText: string,
+  levelFilter: string
+) {
   const keyword = searchText.trim().toLowerCase();
-  return learningWords.filter((word) => {
+  return words.filter((word) => {
     const matchesSearch =
       keyword === "" ||
       word.word.toLowerCase().includes(keyword) ||
@@ -27,6 +40,9 @@ function getFilteredWords(searchText: string, levelFilter: string) {
 }
 
 export default function WordsPage() {
+  const [words, setWords] = useState<WordbookWord[]>([]);
+  const [isLoadingWords, setIsLoadingWords] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [activeLetter, setActiveLetter] = useState("A");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -37,12 +53,41 @@ export default function WordsPage() {
     () => false
   );
 
-  const filteredWords = useMemo(() => getFilteredWords(searchText, "all"), [searchText]);
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadWords() {
+      try {
+        const response = await fetch("/api/words");
+        if (!response.ok) throw new Error("Failed to load words");
+        const data = (await response.json()) as { words?: WordbookWord[] };
+        if (!isMounted) return;
+        setWords(Array.isArray(data.words) ? data.words : []);
+        setLoadError(null);
+      } catch {
+        if (!isMounted) return;
+        setLoadError("Failed to load word data.");
+      } finally {
+        if (isMounted) setIsLoadingWords(false);
+      }
+    }
+
+    loadWords();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filteredWords = useMemo(
+    () => getFilteredWords(words, searchText, "all"),
+    [words, searchText]
+  );
 
   const suggestions = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
     if (!keyword) return [];
-    return learningWords
+    return words
       .filter((w) => w.word.toLowerCase().includes(keyword))
       .sort((a, b) => {
         const aStarts = a.word.toLowerCase().startsWith(keyword);
@@ -52,13 +97,13 @@ export default function WordsPage() {
         return a.word.localeCompare(b.word);
       })
       .slice(0, 8);
-  }, [searchText]);
+  }, [words, searchText]);
 
   const dictGroups = useMemo(() => {
     const sorted = [...filteredWords].sort((a, b) =>
       a.word.toLowerCase().localeCompare(b.word.toLowerCase())
     );
-    const groups = new Map<string, LearningWord[]>();
+    const groups = new Map<string, WordbookWord[]>();
     for (const word of sorted) {
       const first = word.word[0]?.toUpperCase() ?? "#";
       const key = /^[A-Z]$/.test(first) ? first : "#";
@@ -86,14 +131,14 @@ export default function WordsPage() {
     if (hasSearchKeyword) return sortedEntries;
 
     const words = dictGroups.get(currentDictLetter);
-    return words ? [[currentDictLetter, words] as [string, LearningWord[]]] : [];
+    return words ? [[currentDictLetter, words] as [string, WordbookWord[]]] : [];
   }, [currentDictLetter, dictGroups, hasSearchKeyword]);
 
   const handleSearchChange = (value: string) => {
     setSearchText(value);
   };
 
-  const handleSuggestionSelect = (word: LearningWord) => {
+  const handleSuggestionSelect = (word: WordbookWord) => {
     handleSearchChange(word.word);
     setShowSuggestions(false);
     if (suggestionBlurTimeoutRef.current !== null) {
@@ -152,7 +197,7 @@ export default function WordsPage() {
             <div className="wordbook-stats-row">
               <span className="wordbook-stat-item">
                 <em>収録語数</em>
-                <strong>{learningWords.length}</strong>
+                <strong>{isLoadingWords ? "..." : words.length}</strong>
               </span>
               <span className="wordbook-stat-item">
                 <em>表示中</em>
@@ -183,7 +228,7 @@ export default function WordsPage() {
                 <span>E</span>
               </div>
               <p>WORD BOOK</p>
-              <h2>{learningWords.length}</h2>
+              <h2>{isLoadingWords ? "..." : words.length}</h2>
               <span>words ready</span>
             </div>
           </div>
@@ -221,7 +266,19 @@ export default function WordsPage() {
           )}
         </div>
 
-        {filteredWords.length === 0 ? (
+        {isLoadingWords ? (
+          <div className="eq-panel words-empty">
+            <div>...</div>
+            <h2>Loading words...</h2>
+            <p>Preparing the word book data.</p>
+          </div>
+        ) : loadError ? (
+          <div className="eq-panel words-empty">
+            <div>!</div>
+            <h2>Could not load words</h2>
+            <p>{loadError}</p>
+          </div>
+        ) : filteredWords.length === 0 ? (
           <div className="eq-panel words-empty">
             <div>🔍</div>
             <h2>該当する単語がありません</h2>
@@ -258,7 +315,7 @@ export default function WordsPage() {
                     </div>
                     <div className="dict-words-grid">
                       {words.map((word, index) => {
-                        const reading = getReadingForLevel(word.level, word.meaning);
+                        const reading = word.reading;
                         return (
                           <article key={`${word.word}-${index}`} className="words-card">
                             <div className="words-card-top">

@@ -1214,6 +1214,36 @@
   color: #fffbeb;
 }
 
+.screen,
+.selectScreen {
+  max-width: 1180px;
+}
+
+@keyframes quest-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.screen,
+.selectScreen {
+  max-width: 1180px;
+  animation: quest-page-enter 0.45s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen,
+  .selectScreen {
+    animation: none;
+  }
+}
+
 .writtenRangePanel .rangeMapIcon {
   background:
     radial-gradient(circle at 35% 20%, rgba(254, 243, 199, 0.28), transparent 44%),
@@ -6670,4 +6700,9 @@
   border-color: rgba(251, 191, 36, 0.34);
   background: rgba(120, 53, 15, 0.42);
   color: #fffbeb;
+}
+
+.screen,
+.selectScreen {
+  max-width: 1180px;
 }

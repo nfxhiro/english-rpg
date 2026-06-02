@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
 
 const NAV_ICON_ASSETS = {
@@ -108,11 +108,16 @@ export default function CommonGameNav({
   onQuestClick?: () => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>, key: string) => {
     if (key !== "quest" || !onQuestClick) return;
     event.preventDefault();
     onQuestClick();
+  };
+
+  const prefetchRoute = (href: string) => {
+    router.prefetch(href);
   };
 
   return (
@@ -128,6 +133,9 @@ export default function CommonGameNav({
             aria-label={`${item.label}へ移動`}
             aria-current={isActive ? "page" : undefined}
             onClick={(event) => handleClick(event, item.key)}
+            onMouseEnter={() => prefetchRoute(item.href)}
+            onFocus={() => prefetchRoute(item.href)}
+            prefetch={false}
           >
             <span className="common-game-nav__icon">
               <Image

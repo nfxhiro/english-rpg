@@ -2449,7 +2449,17 @@ function BattleArea({
   const [currentHeroSprite, setCurrentHeroSprite] = useState<HeroSprite>("ready");
   const [heroOffsetX, setHeroOffsetX] = useState(0);
   const [isEnemyHit, setIsEnemyHit] = useState(false);
+  const [displayedBossHp, setDisplayedBossHp] = useState(bossHp);
   const attackingRef = useRef(false);
+  const pendingBossHpRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!attackingRef.current) {
+      setDisplayedBossHp(bossHp);
+    } else {
+      pendingBossHpRef.current = bossHp;
+    }
+  }, [bossHp]);
 
   useEffect(() => {
     if (answerEffect?.type !== "correct" || attackingRef.current) return;
@@ -2468,6 +2478,10 @@ function BattleArea({
         setHeroOffsetX(x);
         if (sprite === "slash") {
           setIsEnemyHit(true);
+          if (pendingBossHpRef.current !== null) {
+            setDisplayedBossHp(pendingBossHpRef.current);
+            pendingBossHpRef.current = null;
+          }
           const hitTimer = setTimeout(() => {
             if (!cancelled) setIsEnemyHit(false);
           }, 380);
@@ -2483,6 +2497,10 @@ function BattleArea({
         setCurrentHeroSprite("ready");
         setHeroOffsetX(0);
         attackingRef.current = false;
+        if (pendingBossHpRef.current !== null) {
+          setDisplayedBossHp(pendingBossHpRef.current);
+          pendingBossHpRef.current = null;
+        }
       }
     }, elapsed);
     timers.push(resetTimer);
@@ -2494,6 +2512,10 @@ function BattleArea({
       setCurrentHeroSprite("ready");
       setHeroOffsetX(0);
       setIsEnemyHit(false);
+      if (pendingBossHpRef.current !== null) {
+        setDisplayedBossHp(pendingBossHpRef.current);
+        pendingBossHpRef.current = null;
+      }
     };
   }, [answerEffect]);
 
@@ -2522,7 +2544,7 @@ function BattleArea({
         <div className={styles.enemyHpSlot}>
           <HpMeter
             label="敵HP"
-            current={bossHp}
+            current={displayedBossHp}
             max={bossMaxHp}
             defeated={completeChallengeActive}
           />
@@ -2909,8 +2931,6 @@ function QuestResultScreen({
   return (
     <main className={styles.root} style={getQuestWorldBackgroundStyle(worldId)}>
       <section className={cx(styles.screen, styles.resultScreen)}>
-        <QuestHeader />
-
         <section
           className={cx(
             styles.resultPanel,
